@@ -358,6 +358,19 @@ Terminal.prototype.focus = function() {
 };
 
 /**
+ * Sets an option on the terminal.
+ * @param {string} key The option key.
+ * @param {string} value The option value.
+ */
+Terminal.prototype.setOption = function(key, value) {
+  if (!(key in Terminal.defaults)) {
+    throw new Error('No option with key "' + key + '"');
+  }
+  this[key] = value;
+  this.options[key] = value;
+};
+
+/**
  * Binds the desired focus behavior on a given terminal object.
  *
  * @static
@@ -623,7 +636,7 @@ Terminal.prototype.open = function(parent) {
   // Ensure there is a Terminal.focus.
   this.focus();
 
-  on(this.element, 'mouseup', function() {
+  on(this.element, 'click', function() {
     var selection = document.getSelection(),
         collapsed = selection.isCollapsed,
         isRange = typeof collapsed == 'boolean' ? !collapsed : selection.type == 'Range';
