@@ -519,6 +519,10 @@ i=0;for(;i<24;i++){r=8+i*10;out(r,r,r);}function out(r,g,b){colors.push('#'+hex(
 };Terminal.options={};Terminal.focus=null;each(keys(Terminal.defaults),function(key){Terminal[key]=Terminal.defaults[key];Terminal.options[key]=Terminal.defaults[key];});/**
  * Focus the terminal. Delegates focus handling to the terminal's DOM element.
  */Terminal.prototype.focus=function(){return this.textarea.focus();};/**
+ * Sets an option on the terminal.
+ * @param {string} key The option key.
+ * @param {string} value The option value.
+ */Terminal.prototype.setOption=function(key,value){if(!(key in Terminal.defaults)){throw new Error('No option with key "'+key+'"');}this[key]=value;this.options[key]=value;};/**
  * Binds the desired focus behavior on a given terminal object.
  *
  * @static
@@ -573,7 +577,7 @@ this.element.appendChild(this.helperContainer);this.textarea=document.createElem
 this.refresh(0,this.rows-1);// Initialize global actions that
 // need to be taken on the document.
 this.initGlobal();// Ensure there is a Terminal.focus.
-this.focus();on(this.element,'mouseup',function(){var selection=document.getSelection(),collapsed=selection.isCollapsed,isRange=typeof collapsed=='boolean'?!collapsed:selection.type=='Range';if(!isRange){self.focus();}});// Listen for mouse events and translate
+this.focus();on(this.element,'click',function(){var selection=document.getSelection(),collapsed=selection.isCollapsed,isRange=typeof collapsed=='boolean'?!collapsed:selection.type=='Range';if(!isRange){self.focus();}});// Listen for mouse events and translate
 // them into terminal mouse protocols.
 this.bindMouse();// Figure out whether boldness affects
 // the character width of monospace fonts.
