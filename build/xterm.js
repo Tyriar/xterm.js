@@ -340,13 +340,6 @@ Viewport.prototype.refresh = function (charSize) {
  * Updates dimensions and synchronizes the scroll area if necessary.
  */
 Viewport.prototype.syncScrollArea = function () {
-  if (this.isApplicationMode) {
-    // Fix scroll bar in application mode
-    this.lastRecordedBufferLength = this.terminal.rows;
-    this.refresh();
-    return;
-  }
-
   if (this.lastRecordedBufferLength !== this.terminal.lines.length) {
     // If buffer height changed
     this.lastRecordedBufferLength = this.terminal.lines.length;
@@ -370,25 +363,11 @@ Viewport.prototype.syncScrollArea = function () {
 };
 
 /**
- * Sets the application mode of the viewport.
- * @param {boolean} isApplicationMode Sets whether the terminal is in application mode. true
- * for application mode (DECKPAM) and false for normal mode (DECKPNM).
- */
-Viewport.prototype.setApplicationMode = function (isApplicationMode) {
-  this.isApplicationMode = isApplicationMode;
-  this.syncScrollArea();
-};
-
-/**
  * Handles scroll events on the viewport, calculating the new viewport and requesting the
  * terminal to scroll to it.
  * @param {Event} ev The scroll event.
  */
 Viewport.prototype.onScroll = function (ev) {
-  if (this.isApplicationMode) {
-    // Scrolling via the scroll bar is disabled during application mode
-    return;
-  }
   var newRow = Math.round(this.viewportElement.scrollTop / this.currentRowHeight);
   var diff = newRow - this.terminal.ydisp;
   this.terminal.scrollDisp(diff, true);
@@ -661,7 +640,7 @@ if(!self.x10Mouse){on(self.document,'mouseup',function up(ev){sendButton(ev);if(
 //}
 on(el,'wheel',function(ev){if(!self.mouseEvents)return;if(self.x10Mouse||self.vt300Mouse||self.decLocator)return;sendButton(ev);return self.cancel(ev);});// allow wheel scrolling in
 // the shell for example
-on(el,'wheel',function(ev){if(self.mouseEvents)return;if(self.applicationKeypad)return;self.viewport.onWheel(ev);return self.cancel(ev);});};/**
+on(el,'wheel',function(ev){if(self.mouseEvents)return;self.viewport.onWheel(ev);return self.cancel(ev);});};/**
  * Destroys the terminal.
  */Terminal.prototype.destroy=function(){this.readable=false;this.writable=false;this._events={};this.handler=function(){};this.write=function(){};if(this.element.parentNode){this.element.parentNode.removeChild(this.element);}//this.emit('close');
 };/**
@@ -802,8 +781,8 @@ case'7':this.saveCursor();this.state=normal;break;// ESC 8 Restore Cursor (DECRC
 case'8':this.restoreCursor();this.state=normal;break;// ESC # 3 DEC line height/width
 case'#':this.state=normal;i++;break;// ESC H Tab Set (HTS is 0x88).
 case'H':this.tabSet();break;// ESC = Application Keypad (DECKPAM).
-case'=':this.log('Serial port requested application keypad.');this.applicationKeypad=true;this.viewport.setApplicationMode(true);this.state=normal;break;// ESC > Normal Keypad (DECKPNM).
-case'>':this.log('Switching back to normal keypad.');this.applicationKeypad=false;this.viewport.setApplicationMode(false);this.state=normal;break;default:this.state=normal;this.error('Unknown ESC control: %s.',ch);break;}break;case charset:switch(ch){case'0':// DEC Special Character and Line Drawing Set.
+case'=':this.log('Serial port requested application keypad.');this.applicationKeypad=true;this.viewport.syncScrollArea();this.state=normal;break;// ESC > Normal Keypad (DECKPNM).
+case'>':this.log('Switching back to normal keypad.');this.applicationKeypad=false;this.viewport.syncScrollArea();this.state=normal;break;default:this.state=normal;this.error('Unknown ESC control: %s.',ch);break;}break;case charset:switch(ch){case'0':// DEC Special Character and Line Drawing Set.
 cs=Terminal.charsets.SCLD;break;case'A':// UK
 cs=Terminal.charsets.UK;break;case'B':// United States (USASCII).
 cs=Terminal.charsets.US;break;case'4':// Dutch
@@ -1258,7 +1237,7 @@ return;}this.lines=[this.lines[this.ybase+this.y]];this.ydisp=0;this.ybase=0;thi
 this.lines.splice(this.y+this.ybase,0,this.blankLine(true));j=this.rows-1-this.scrollBottom;this.lines.splice(this.rows-1+this.ybase-j+1,1);// this.maxRange();
 this.updateRange(this.scrollTop);this.updateRange(this.scrollBottom);}this.state=normal;};/**
  * ESC c Full Reset (RIS).
- */Terminal.prototype.reset=function(){this.options.rows=this.rows;this.options.cols=this.cols;var customKeydownHandler=this.customKeydownHandler;Terminal.call(this,this.options);this.customKeydownHandler=customKeydownHandler;this.refresh(0,this.rows-1);};/**
+ */Terminal.prototype.reset=function(){this.options.rows=this.rows;this.options.cols=this.cols;var customKeydownHandler=this.customKeydownHandler;Terminal.call(this,this.options);this.customKeydownHandler=customKeydownHandler;this.refresh(0,this.rows-1);this.viewport.syncScrollArea();};/**
  * ESC H Tab Set (HTS is 0x88).
  */Terminal.prototype.tabSet=function(){this.tabs[this.x]=true;this.state=normal;};/**
  * CSI
@@ -1606,7 +1585,7 @@ this.send(params[0]+'c');}else if(this.is('screen')){this.send('\x1b[>83;40003;0
 break;}}else if(this.prefix==='?'){switch(params){case 1:this.applicationCursor=true;break;case 2:this.setgCharset(0,Terminal.charsets.US);this.setgCharset(1,Terminal.charsets.US);this.setgCharset(2,Terminal.charsets.US);this.setgCharset(3,Terminal.charsets.US);// set VT100 mode here
 break;case 3:// 132 col mode
 this.savedCols=this.cols;this.resize(132,this.rows);break;case 6:this.originMode=true;break;case 7:this.wraparoundMode=true;break;case 12:// this.cursorBlink = true;
-break;case 66:this.log('Serial port requested application keypad.');this.applicationKeypad=true;this.viewport.setApplicationMode(true);break;case 9:// X10 Mouse
+break;case 66:this.log('Serial port requested application keypad.');this.applicationKeypad=true;this.viewport.syncScrollArea();break;case 9:// X10 Mouse
 // no release, no motion, no wheel, no modifiers.
 case 1000:// vt200 mouse
 // no motion.
@@ -1724,7 +1703,7 @@ if(!this.normal){var normal={lines:this.lines,ybase:this.ybase,ydisp:this.ydisp,
  *     Ps = 2 0 0 4  -> Reset bracketed paste mode.
  */Terminal.prototype.resetMode=function(params){if((typeof params==='undefined'?'undefined':_typeof(params))==='object'){var l=params.length,i=0;for(;i<l;i++){this.resetMode(params[i]);}return;}if(!this.prefix){switch(params){case 4:this.insertMode=false;break;case 20://this.convertEol = false;
 break;}}else if(this.prefix==='?'){switch(params){case 1:this.applicationCursor=false;break;case 3:if(this.cols===132&&this.savedCols){this.resize(this.savedCols,this.rows);}delete this.savedCols;break;case 6:this.originMode=false;break;case 7:this.wraparoundMode=false;break;case 12:// this.cursorBlink = false;
-break;case 66:this.log('Switching back to normal keypad.');this.applicationKeypad=false;this.viewport.setApplicationMode(false);break;case 9:// X10 Mouse
+break;case 66:this.log('Switching back to normal keypad.');this.applicationKeypad=false;this.viewport.syncScrollArea();break;case 9:// X10 Mouse
 case 1000:// vt200 mouse
 case 1002:// button event mouse
 case 1003:// any event mouse
@@ -1845,7 +1824,7 @@ this.updateRange(this.scrollTop);this.updateRange(this.scrollBottom);};/**
  * http://vt100.net/docs/vt220-rm/table4-10.html
  */Terminal.prototype.softReset=function(params){this.cursorHidden=false;this.insertMode=false;this.originMode=false;this.wraparoundMode=false;// autowrap
 this.applicationKeypad=false;// ?
-this.viewport.setApplicationMode(false);this.applicationCursor=false;this.scrollTop=0;this.scrollBottom=this.rows-1;this.curAttr=this.defAttr;this.x=this.y=0;// ?
+this.viewport.syncScrollArea();this.applicationCursor=false;this.scrollTop=0;this.scrollBottom=this.rows-1;this.curAttr=this.defAttr;this.x=this.y=0;// ?
 this.charset=null;this.glevel=0;// ??
 this.charsets=[null];// ??
 };/**
