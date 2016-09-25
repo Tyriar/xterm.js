@@ -10,6 +10,22 @@ describe('xterm.js', function() {
     xterm.refresh = function(){};
   });
 
+  describe('getOption', function() {
+    it('should retrieve the option correctly', function() {
+      // In the `options` namespace.
+      xterm.options.cursorBlink = true;
+      assert.equal(xterm.getOption('cursorBlink'), true);
+
+      // On the Terminal instance
+      delete xterm.options.cursorBlink;
+      xterm.cursorBlink = false;
+      assert.equal(xterm.getOption('cursorBlink'), false);
+    });
+    it('should throw when retrieving a non-existant option', function() {
+      assert.throws(xterm.getOption.bind(xterm, 'fake', true));
+    });
+  });
+
   describe('setOption', function() {
     it('should set the option correctly', function() {
       xterm.setOption('cursorBlink', true);
@@ -378,7 +394,7 @@ describe('xterm.js', function() {
 
   describe('unicode - surrogates', function() {
     it('2 characters per cell', function () {
-      var high = '\uD800';
+      var high = String.fromCharCode(0xD800);
       for (var i=0xDC00; i<=0xDCFF; ++i) {
         xterm.write(high + String.fromCharCode(i));
         var tchar = xterm.lines[0][0];
@@ -390,7 +406,7 @@ describe('xterm.js', function() {
       }
     });
     it('2 characters at last cell', function() {
-      var high = '\uD800';
+      var high = String.fromCharCode(0xD800);
       for (var i=0xDC00; i<=0xDCFF; ++i) {
         xterm.x = xterm.cols - 1;
         xterm.write(high + String.fromCharCode(i));
@@ -401,7 +417,7 @@ describe('xterm.js', function() {
       }
     });
     it('2 characters per cell over line end with autowrap', function() {
-      var high = '\uD800';
+      var high = String.fromCharCode(0xD800);
       for (var i=0xDC00; i<=0xDCFF; ++i) {
         xterm.x = xterm.cols - 1;
         xterm.wraparoundMode = true;
@@ -414,7 +430,7 @@ describe('xterm.js', function() {
       }
     });
     it('2 characters per cell over line end without autowrap', function() {
-      var high = '\uD800';
+      var high = String.fromCharCode(0xD800);
       for (var i=0xDC00; i<=0xDCFF; ++i) {
         xterm.x = xterm.cols - 1;
         xterm.wraparoundMode = false;
@@ -426,7 +442,7 @@ describe('xterm.js', function() {
       }
     });
     it('splitted surrogates', function() {
-      var high = '\uD800';
+      var high = String.fromCharCode(0xD800);
       for (var i=0xDC00; i<=0xDCFF; ++i) {
         xterm.write(high);
         xterm.write(String.fromCharCode(i));
