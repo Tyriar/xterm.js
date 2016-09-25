@@ -519,6 +519,9 @@ i=0;for(;i<24;i++){r=8+i*10;out(r,r,r);}function out(r,g,b){colors.push('#'+hex(
 };Terminal.options={};Terminal.focus=null;each(keys(Terminal.defaults),function(key){Terminal[key]=Terminal.defaults[key];Terminal.options[key]=Terminal.defaults[key];});/**
  * Focus the terminal. Delegates focus handling to the terminal's DOM element.
  */Terminal.prototype.focus=function(){return this.textarea.focus();};/**
+ * Retrieves an option's value from the terminal.
+ * @param {string} key The option key.
+ */Terminal.prototype.getOption=function(key,value){if(!(key in Terminal.defaults)){throw new Error('No option with key "'+key+'"');}if(typeof this.options[key]!=='undefined'){return this.options[key];}return this[key];};/**
  * Sets an option on the terminal.
  * @param {string} key The option key.
  * @param {string} value The option value.
@@ -1105,7 +1108,7 @@ if(ch==='\x1b'||ch==='\x07'){if(ch==='\x1b')i++;this.state=normal;}break;}}this.
  * Key Resources:
  *   - https://developer.mozilla.org/en-US/docs/DOM/KeyboardEvent
  * @param {KeyboardEvent} ev The keydown event to be handled.
- */Terminal.prototype.keyDown=function(ev){if(this.customKeydownHandler&&this.customKeydownHandler(ev)===false){return false;}if(!this.compositionHelper.keydown.bind(this.compositionHelper)(ev)){return false;}var self=this;var result=this.evaluateKeyEscapeSequence(ev);if(result.scrollDisp){this.scrollDisp(result.scrollDisp);return this.cancel(ev);}if(isThirdLevelShift(this,ev)){return true;}if(result.cancel){// The event is canceled at the end already, is this necessary?
+ */Terminal.prototype.keyDown=function(ev){if(this.customKeydownHandler&&this.customKeydownHandler(ev)===false){return false;}if(!this.compositionHelper.keydown.bind(this.compositionHelper)(ev)){return false;}var self=this;var result=this.evaluateKeyEscapeSequence(ev);if(result.scrollDisp){this.scrollDisp(result.scrollDisp);return this.cancel(ev,true);}if(isThirdLevelShift(this,ev)){return true;}if(result.cancel){// The event is canceled at the end already, is this necessary?
 this.cancel(ev,true);}if(!result.key){return true;}this.emit('keydown',ev);this.emit('key',result.key,ev);this.showCursor();this.handler(result.key);return this.cancel(ev,true);};/**
  * Returns an object that determines how a KeyboardEvent should be handled. The key of the
  * returned value is the new key code to pass to the PTY.
@@ -1116,34 +1119,34 @@ this.cancel(ev,true);}if(!result.key){return true;}this.emit('keydown',ev);this.
 // canceled at the end of keyDown
 cancel:false,// The new key even to emit
 key:undefined,// The number of characters to scroll, if this is defined it will cancel the event
-scrollDisp:undefined};var modifiers=ev.shiftKey<<0|ev.altKey<<1|ev.ctrlKey<<2|ev.metaKey<<3;switch(ev.keyCode){// backspace
-case 8:if(ev.shiftKey){result.key='\x08';// ^H
+scrollDisp:undefined};var modifiers=ev.shiftKey<<0|ev.altKey<<1|ev.ctrlKey<<2|ev.metaKey<<3;switch(ev.keyCode){case 8:// backspace
+if(ev.shiftKey){result.key='\x08';// ^H
 break;}result.key='\x7f';// ^?
-break;// tab
-case 9:if(ev.shiftKey){result.key='\x1b[Z';break;}result.key='\t';result.cancel=true;break;// return/enter
-case 13:result.key='\r';result.cancel=true;break;// escape
-case 27:result.key='\x1b';result.cancel=true;break;// left-arrow
-case 37:if(modifiers){result.key='\x1b[1;'+(modifiers+1)+'D';// HACK: Make Alt + left-arrow behave like Ctrl + left-arrow: move one word backwards
+break;case 9:// tab
+if(ev.shiftKey){result.key='\x1b[Z';break;}result.key='\t';result.cancel=true;break;case 13:// return/enter
+result.key='\r';result.cancel=true;break;case 27:// escape
+result.key='\x1b';result.cancel=true;break;case 37:// left-arrow
+if(modifiers){result.key='\x1b[1;'+(modifiers+1)+'D';// HACK: Make Alt + left-arrow behave like Ctrl + left-arrow: move one word backwards
 // http://unix.stackexchange.com/a/108106
-if(result.key=='\x1b[1;3D'){result.key='\x1b[1;5D';}}else if(this.applicationCursor){result.key='\x1bOD';}else{result.key='\x1b[D';}break;// right-arrow
-case 39:if(modifiers){result.key='\x1b[1;'+(modifiers+1)+'C';// HACK: Make Alt + right-arrow behave like Ctrl + right-arrow: move one word forward
+if(result.key=='\x1b[1;3D'){result.key='\x1b[1;5D';}}else if(this.applicationCursor){result.key='\x1bOD';}else{result.key='\x1b[D';}break;case 39:// right-arrow
+if(modifiers){result.key='\x1b[1;'+(modifiers+1)+'C';// HACK: Make Alt + right-arrow behave like Ctrl + right-arrow: move one word forward
 // http://unix.stackexchange.com/a/108106
-if(result.key=='\x1b[1;3C'){result.key='\x1b[1;5C';}}else if(this.applicationCursor){result.key='\x1bOC';}else{result.key='\x1b[C';}break;// up-arrow
-case 38:if(modifiers){result.key='\x1b[1;'+(modifiers+1)+'A';// HACK: Make Alt + up-arrow behave like Ctrl + up-arrow
+if(result.key=='\x1b[1;3C'){result.key='\x1b[1;5C';}}else if(this.applicationCursor){result.key='\x1bOC';}else{result.key='\x1b[C';}break;case 38:// up-arrow
+if(modifiers){result.key='\x1b[1;'+(modifiers+1)+'A';// HACK: Make Alt + up-arrow behave like Ctrl + up-arrow
 // http://unix.stackexchange.com/a/108106
-if(result.key=='\x1b[1;3A'){result.key='\x1b[1;5A';}}else if(this.applicationCursor){result.key='\x1bOA';}else{result.key='\x1b[A';}break;// down-arrow
-case 40:if(modifiers){result.key='\x1b[1;'+(modifiers+1)+'B';// HACK: Make Alt + down-arrow behave like Ctrl + down-arrow
+if(result.key=='\x1b[1;3A'){result.key='\x1b[1;5A';}}else if(this.applicationCursor){result.key='\x1bOA';}else{result.key='\x1b[A';}break;case 40:// down-arrow
+if(modifiers){result.key='\x1b[1;'+(modifiers+1)+'B';// HACK: Make Alt + down-arrow behave like Ctrl + down-arrow
 // http://unix.stackexchange.com/a/108106
-if(result.key=='\x1b[1;3B'){result.key='\x1b[1;5B';}}else if(this.applicationCursor){result.key='\x1bOB';}else{result.key='\x1b[B';}break;// insert
-case 45:if(!ev.shiftKey&&!ev.ctrlKey){// <Ctrl> or <Shift> + <Insert> are used to
+if(result.key=='\x1b[1;3B'){result.key='\x1b[1;5B';}}else if(this.applicationCursor){result.key='\x1bOB';}else{result.key='\x1b[B';}break;case 45:// insert
+if(!ev.shiftKey&&!ev.ctrlKey){// <Ctrl> or <Shift> + <Insert> are used to
 // copy-paste on some systems.
-result.key='\x1b[2~';}break;// delete
-case 46:if(modifiers){result.key='\x1b[3;'+(modifiers+1)+'~';}else{result.key='\x1b[3~';}break;// home
-case 36:if(modifiers)result.key='\x1b[1;'+(modifiers+1)+'H';else if(this.applicationCursor)result.key='\x1bOH';else result.key='\x1b[H';break;// end
-case 35:if(modifiers)result.key='\x1b[1;'+(modifiers+1)+'F';else if(this.applicationCursor)result.key='\x1bOF';else result.key='\x1b[F';break;// page up
-case 33:if(ev.shiftKey){result.scrollDisp=-(this.rows-1);}else{result.key='\x1b[5~';}break;// page down
-case 34:if(ev.shiftKey){result.scrollDisp=this.rows-1;}else{result.key='\x1b[6~';}break;// F1-F12
-case 112:if(modifiers){result.key='\x1b[1;'+(modifiers+1)+'P';}else{result.key='\x1bOP';}break;case 113:if(modifiers){result.key='\x1b[1;'+(modifiers+1)+'Q';}else{result.key='\x1bOQ';}break;case 114:if(modifiers){result.key='\x1b[1;'+(modifiers+1)+'R';}else{result.key='\x1bOR';}break;case 115:if(modifiers){result.key='\x1b[1;'+(modifiers+1)+'S';}else{result.key='\x1bOS';}break;case 116:if(modifiers){result.key='\x1b[15;'+(modifiers+1)+'~';}else{result.key='\x1b[15~';}break;case 117:if(modifiers){result.key='\x1b[17;'+(modifiers+1)+'~';}else{result.key='\x1b[17~';}break;case 118:if(modifiers){result.key='\x1b[18;'+(modifiers+1)+'~';}else{result.key='\x1b[18~';}break;case 119:if(modifiers){result.key='\x1b[19;'+(modifiers+1)+'~';}else{result.key='\x1b[19~';}break;case 120:if(modifiers){result.key='\x1b[20;'+(modifiers+1)+'~';}else{result.key='\x1b[20~';}break;case 121:if(modifiers){result.key='\x1b[21;'+(modifiers+1)+'~';}else{result.key='\x1b[21~';}break;case 122:if(modifiers){result.key='\x1b[23;'+(modifiers+1)+'~';}else{result.key='\x1b[23~';}break;case 123:if(modifiers){result.key='\x1b[24;'+(modifiers+1)+'~';}else{result.key='\x1b[24~';}break;default:// a-z and space
+result.key='\x1b[2~';}break;case 46:// delete
+if(modifiers){result.key='\x1b[3;'+(modifiers+1)+'~';}else{result.key='\x1b[3~';}break;case 36:// home
+if(modifiers)result.key='\x1b[1;'+(modifiers+1)+'H';else if(this.applicationCursor)result.key='\x1bOH';else result.key='\x1b[H';break;case 35:// end
+if(modifiers)result.key='\x1b[1;'+(modifiers+1)+'F';else if(this.applicationCursor)result.key='\x1bOF';else result.key='\x1b[F';break;case 33:// page up
+if(ev.shiftKey){result.scrollDisp=-(this.rows-1);}else{result.key='\x1b[5~';}break;case 34:// page down
+if(ev.shiftKey){result.scrollDisp=this.rows-1;}else{result.key='\x1b[6~';}break;case 112:// F1-F12
+if(modifiers){result.key='\x1b[1;'+(modifiers+1)+'P';}else{result.key='\x1bOP';}break;case 113:if(modifiers){result.key='\x1b[1;'+(modifiers+1)+'Q';}else{result.key='\x1bOQ';}break;case 114:if(modifiers){result.key='\x1b[1;'+(modifiers+1)+'R';}else{result.key='\x1bOR';}break;case 115:if(modifiers){result.key='\x1b[1;'+(modifiers+1)+'S';}else{result.key='\x1bOS';}break;case 116:if(modifiers){result.key='\x1b[15;'+(modifiers+1)+'~';}else{result.key='\x1b[15~';}break;case 117:if(modifiers){result.key='\x1b[17;'+(modifiers+1)+'~';}else{result.key='\x1b[17~';}break;case 118:if(modifiers){result.key='\x1b[18;'+(modifiers+1)+'~';}else{result.key='\x1b[18~';}break;case 119:if(modifiers){result.key='\x1b[19;'+(modifiers+1)+'~';}else{result.key='\x1b[19~';}break;case 120:if(modifiers){result.key='\x1b[20;'+(modifiers+1)+'~';}else{result.key='\x1b[20~';}break;case 121:if(modifiers){result.key='\x1b[21;'+(modifiers+1)+'~';}else{result.key='\x1b[21~';}break;case 122:if(modifiers){result.key='\x1b[23;'+(modifiers+1)+'~';}else{result.key='\x1b[23~';}break;case 123:if(modifiers){result.key='\x1b[24;'+(modifiers+1)+'~';}else{result.key='\x1b[24~';}break;default:// a-z and space
 if(ev.ctrlKey&&!ev.shiftKey&&!ev.altKey&&!ev.metaKey){if(ev.keyCode>=65&&ev.keyCode<=90){result.key=String.fromCharCode(ev.keyCode-64);}else if(ev.keyCode===32){// NUL
 result.key=String.fromCharCode(0);}else if(ev.keyCode>=51&&ev.keyCode<=55){// escape, file sep, group sep, record sep, unit sep
 result.key=String.fromCharCode(ev.keyCode-51+27);}else if(ev.keyCode===56){// delete
