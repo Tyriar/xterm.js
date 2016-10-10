@@ -6,7 +6,7 @@ Object.defineProperty(exports, "__esModule", {
 });
 /**
  * xterm.js: xterm, in the browser
- * Copyright (c) 2016, SourceLair Limited <www.sourcelair.com> (MIT License)
+ * Copyright (c) 2014-2016, SourceLair Private Company (www.sourcelair.com (MIT License)
  */
 
 /**
@@ -213,7 +213,8 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 /**
- * EventEmitter
+ * xterm.js: xterm, in the browser
+ * Copyright (c) 2014-2016, SourceLair Private Company (www.sourcelair.com (MIT License)
  */
 
 function EventEmitter() {
@@ -285,7 +286,7 @@ Object.defineProperty(exports, "__esModule", {
 });
 /**
  * xterm.js: xterm, in the browser
- * Copyright (c) 2016, SourceLair Limited <www.sourcelair.com> (MIT License)
+ * Copyright (c) 2014-2016, SourceLair Private Company (www.sourcelair.com (MIT License)
  */
 
 /**
@@ -399,10 +400,141 @@ Viewport.prototype.onWheel = function (ev) {
 exports.Viewport = Viewport;
 
 },{}],4:[function(_dereq_,module,exports){
-(function (__dirname){
+'use strict';
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+/**
+ * xterm.js: xterm, in the browser
+ * Copyright (c) 2016, SourceLair Private Company <www.sourcelair.com> (MIT License)
+ */
+
+/**
+ * Clipboard handler module. This module contains methods for handling all
+ * clipboard-related events appropriately in the terminal.
+ * @module xterm/handlers/Clipboard
+ */
+
+/**
+ * Prepares text copied from terminal selection, to be saved in the clipboard by:
+ *   1. stripping all trailing white spaces
+ *   2. converting all non-breaking spaces to regular spaces
+ * @param {string} text The copied text that needs processing for storing in clipboard
+ * @returns {string}
+ */
+function prepareTextForClipboard(text) {
+  var space = String.fromCharCode(32),
+      nonBreakingSpace = String.fromCharCode(160),
+      allNonBreakingSpaces = new RegExp(nonBreakingSpace, 'g'),
+      processedText = text.split('\n').map(function (line) {
+    // Strip all trailing white spaces and convert all non-breaking spaces
+    // to regular spaces.
+    var processedLine = line.replace(/\s+$/g, '').replace(allNonBreakingSpaces, space);
+
+    return processedLine;
+  }).join('\n');
+
+  return processedText;
+}
+
+/**
+ * Binds copy functionality to the given terminal.
+ * @param {ClipboardEvent} ev The original copy event to be handled
+ */
+function copyHandler(ev) {
+  var copiedText = window.getSelection().toString(),
+      text = prepareTextForClipboard(copiedText);
+
+  ev.clipboardData.setData('text/plain', text);
+  ev.preventDefault(); // Prevent or the original text will be copied.
+}
+
+/**
+ * Redirect the clipboard's data to the terminal's input handler.
+ * @param {ClipboardEvent} ev The original paste event to be handled
+ * @param {Terminal} term The terminal on which to apply the handled paste event
+ */
+function pasteHandler(ev, term) {
+  ev.stopPropagation();
+  if (ev.clipboardData) {
+    var text = ev.clipboardData.getData('text/plain');
+    term.handler(text);
+    term.textarea.value = '';
+    return term.cancel(ev);
+  }
+}
+
+/**
+ * Bind to right-click event and allow right-click copy and paste.
+ *
+ * **Logic**
+ * If text is selected and right-click happens on selected text, then
+ * do nothing to allow seamless copying.
+ * If no text is selected or right-click is outside of the selection
+ * area, then bring the terminal's input below the cursor, in order to
+ * trigger the event on the textarea and allow-right click paste, without
+ * caring about disappearing selection.
+ * @param {ClipboardEvent} ev The original paste event to be handled
+ * @param {Terminal} term The terminal on which to apply the handled paste event
+ */
+function rightClickHandler(ev, term) {
+  var s = document.getSelection(),
+      sText = prepareTextForClipboard(s.toString()),
+      r = s.getRangeAt(0);
+
+  var x = ev.clientX,
+      y = ev.clientY;
+
+  var cr = r.getClientRects(),
+      clickIsOnSelection = false,
+      i,
+      rect;
+
+  for (i = 0; i < cr.length; i++) {
+    rect = cr[i];
+    clickIsOnSelection = x > rect.left && x < rect.right && y > rect.top && y < rect.bottom;
+    // If we clicked on selection and selection is not a single space,
+    // then mark the right click as copy-only. We check for the single
+    // space selection, as this can happen when clicking on an &nbsp;
+    // and there is not much pointing in copying a single space.
+    // Single space is char
+    if (clickIsOnSelection && sText !== ' ') {
+      break;
+    }
+  }
+
+  // Bring textarea at the cursor position
+  if (!clickIsOnSelection) {
+    term.textarea.style.position = 'fixed';
+    term.textarea.style.width = '10px';
+    term.textarea.style.height = '10px';
+    term.textarea.style.left = x + 'px';
+    term.textarea.style.top = y + 'px';
+    term.textarea.style.zIndex = 1000;
+    term.textarea.focus();
+
+    // Reset the terminal textarea's styling
+    setTimeout(function () {
+      term.textarea.style.position = null;
+      term.textarea.style.width = null;
+      term.textarea.style.height = null;
+      term.textarea.style.left = null;
+      term.textarea.style.top = null;
+      term.textarea.style.zIndex = null;
+    }, 1);
+  }
+}
+
+exports.prepareTextForClipboard = prepareTextForClipboard;
+exports.copyHandler = copyHandler;
+exports.pasteHandler = pasteHandler;
+exports.rightClickHandler = rightClickHandler;
+
+},{}],5:[function(_dereq_,module,exports){
 'use strict';var _typeof=typeof Symbol==="function"&&typeof Symbol.iterator==="symbol"?function(obj){return typeof obj;}:function(obj){return obj&&typeof Symbol==="function"&&obj.constructor===Symbol?"symbol":typeof obj;};/**
  * xterm.js: xterm, in the browser
- * Copyright (c) 2014, SourceLair Limited <www.sourcelair.com> (MIT License)
+ * Copyright (c) 2014-2014, SourceLair Private Company <www.sourcelair.com> (MIT License)
  * Copyright (c) 2012-2013, Christopher Jeffrey (MIT License)
  * https://github.com/chjj/term.js
  *
@@ -431,7 +563,7 @@ exports.Viewport = Viewport;
  *   The original design remains. The terminal itself
  *   has been extended to include xterm CSI codes, among
  *   other features.
- */var _CompositionHelper=_dereq_('./CompositionHelper.js');var _EventEmitter=_dereq_('./EventEmitter.js');var _Viewport=_dereq_('./Viewport.js');/**
+ */var _CompositionHelper=_dereq_('./CompositionHelper.js');var _EventEmitter=_dereq_('./EventEmitter.js');var _Viewport=_dereq_('./Viewport.js');var _Clipboard=_dereq_('./handlers/Clipboard.js');/**
  * Terminal Emulation References:
  *   http://vt100.net/
  *   http://invisible-island.net/xterm/ctlseqs/ctlseqs.txt
@@ -516,27 +648,11 @@ i=0;for(;i<24;i++){r=8+i*10;out(r,r,r);}function out(r,g,b){colors.push('#'+hex(
  * @static
  */Terminal.bindBlur=function(term){on(term.textarea,'blur',function(ev){term.refresh(term.y,term.y);if(term.sendFocus){term.send('\x1b[O');}term.element.classList.remove('focus');Terminal.focus=null;term.emit('blur',{terminal:term});});};/**
  * Initialize default behavior
- */Terminal.prototype.initGlobal=function(){Terminal.bindPaste(this);Terminal.bindKeys(this);Terminal.bindCopy(this);Terminal.bindFocus(this);Terminal.bindBlur(this);};/**
- * Bind to paste event and allow both keyboard and right-click pasting, without having the
- * contentEditable value set to true.
- */Terminal.bindPaste=function(term){on([term.textarea,term.element],'paste',function(ev){ev.stopPropagation();if(ev.clipboardData){var text=ev.clipboardData.getData('text/plain');term.handler(text);term.textarea.value='';return term.cancel(ev);}});};/**
- * Prepares text copied from terminal selection, to be saved in the clipboard by:
- *   1. stripping all trailing white spaces
- *   2. converting all non-breaking spaces to regular spaces
- * @param {string} text The copied text that needs processing for storing in clipboard
- * @returns {string}
- * @static
- */Terminal.prepareCopiedTextForClipboard=function(text){var space=String.fromCharCode(32),nonBreakingSpace=String.fromCharCode(160),allNonBreakingSpaces=new RegExp(nonBreakingSpace,'g'),processedText=text.split('\n').map(function(line){/**
-         * Strip all trailing white spaces and convert all non-breaking spaces to regular
-         * spaces.
-         */var processedLine=line.replace(/\s+$/g,'').replace(allNonBreakingSpaces,space);return processedLine;}).join('\n');return processedText;};/**
+ */Terminal.prototype.initGlobal=function(){var term=this;Terminal.bindKeys(this);Terminal.bindFocus(this);Terminal.bindBlur(this);// Bind clipboard functionality
+on(this.element,'copy',_Clipboard.copyHandler);on(this.textarea,'paste',function(ev){_Clipboard.pasteHandler.call(this,ev,term);});on(this.element,'contextmenu',function(ev){_Clipboard.rightClickHandler.call(this,ev,term);});};/**
  * Apply key handling to the terminal
  */Terminal.bindKeys=function(term){on(term.element,'keydown',function(ev){if(document.activeElement!=this){return;}term.keyDown(ev);},true);on(term.element,'keypress',function(ev){if(document.activeElement!=this){return;}term.keyPress(ev);},true);on(term.element,'keyup',term.focus.bind(term));on(term.textarea,'keydown',function(ev){term.keyDown(ev);},true);on(term.textarea,'keypress',function(ev){term.keyPress(ev);// Truncate the textarea's value, since it is not needed
 this.value='';},true);on(term.textarea,'compositionstart',term.compositionHelper.compositionstart.bind(term.compositionHelper));on(term.textarea,'compositionupdate',term.compositionHelper.compositionupdate.bind(term.compositionHelper));on(term.textarea,'compositionend',term.compositionHelper.compositionend.bind(term.compositionHelper));term.on('refresh',term.compositionHelper.updateCompositionElements.bind(term.compositionHelper));};/**
- * Binds copy functionality to the given terminal.
- * @static
- */Terminal.bindCopy=function(term){on(term.element,'copy',function(ev){return;// temporary
-});};/**
  * Insert the given row to the terminal or produce a new one
  * if no row argument is passed. Return the inserted row.
  * @param {HTMLElement} row (optional) The row to append to the terminal.
@@ -568,7 +684,7 @@ if(Terminal.brokenBold==null){Terminal.brokenBold=isBoldBroken(this.document);}t
  * @param {string} addon The name of the addon to load
  * @static
  */Terminal.loadAddon=function(addon,callback){if((typeof exports==='undefined'?'undefined':_typeof(exports))==='object'&&(typeof module==='undefined'?'undefined':_typeof(module))==='object'){// CommonJS
-return _dereq_(__dirname+'/../addons/'+addon);}else if(typeof define=='function'){// RequireJS
+return _dereq_('../addons/'+addon);}else if(typeof define=='function'){// RequireJS
 return _dereq_(['../addons/'+addon+'/'+addon],callback);}else{console.error('Cannot load a module without a CommonJS or RequireJS environment.');return false;}};/**
  * XTerm mouse events
  * http://invisible-island.net/xterm/ctlseqs/ctlseqs.html#Mouse%20Tracking
@@ -710,6 +826,13 @@ this.updateRange(this.scrollTop);this.updateRange(this.scrollBottom);this.emit('
  * to avoid unwanted events being handled by the veiwport when the event was triggered from the
  * viewport originally.
  */Terminal.prototype.scrollDisp=function(disp,suppressScrollEvent){this.ydisp+=disp;if(this.ydisp>this.ybase){this.ydisp=this.ybase;}else if(this.ydisp<0){this.ydisp=0;}if(!suppressScrollEvent){this.emit('scroll',this.ydisp);}this.refresh(0,this.rows-1);};/**
+ * Scroll the display of the terminal by a number of pages.
+ * @param {number} pageCount The number of pages to scroll (negative scrolls up).
+ */Terminal.prototype.scrollPages=function(pageCount){this.scrollDisp(pageCount*(this.rows-1));};/**
+ * Scrolls the display of the terminal to the top.
+ */Terminal.prototype.scrollToTop=function(){this.scrollDisp(-this.ydisp);};/**
+ * Scrolls the display of the terminal to the bottom.
+ */Terminal.prototype.scrollToBottom=function(){this.scrollDisp(this.ybase-this.ydisp);};/**
  * Writes text to the terminal.
  * @param {string} text The text to write to the terminal.
  */Terminal.prototype.write=function(data){var l=data.length,i=0,j,cs,ch,code,low,ch_width,row;this.refreshStart=this.y;this.refreshEnd=this.y;if(this.ybase!==this.ydisp){this.ydisp=this.ybase;this.emit('scroll',this.ydisp);this.maxRange();}// apply leftover surrogate high from last write
@@ -1220,9 +1343,9 @@ return;}this.lines=[this.lines[this.ybase+this.y]];this.ydisp=0;this.ybase=0;thi
  * Evaluate if the current erminal is the given argument.
  * @param {object} term The terminal to evaluate
  */Terminal.prototype.is=function(term){var name=this.termName;return(name+'').indexOf(term)===0;};/**
-     * Emit the 'data' event and populate the given data.
-     * @param {string} data The data to populate in the event.
-     */Terminal.prototype.handler=function(data){this.emit('data',data);};/**
+ * Emit the 'data' event and populate the given data.
+ * @param {string} data The data to populate in the event.
+ */Terminal.prototype.handler=function(data){this.emit('data',data);};/**
  * Emit the 'title' event and populate the given title.
  * @param {string} title The title to populate in the event.
  */Terminal.prototype.handleTitle=function(title){this.emit('title',title);};/**
@@ -1740,8 +1863,8 @@ this.refresh(0,this.rows-1);this.showCursor();}break;}}};/**
  * CSI Ps S  Scroll up Ps lines (default = 1) (SU).
  */Terminal.prototype.scrollUp=function(params){var param=params[0]||1;while(param--){this.lines.splice(this.ybase+this.scrollTop,1);this.lines.splice(this.ybase+this.scrollBottom,0,this.blankLine());}// this.maxRange();
 this.updateRange(this.scrollTop);this.updateRange(this.scrollBottom);};/**
-     * CSI Ps T  Scroll down Ps lines (default = 1) (SD).
-     */Terminal.prototype.scrollDown=function(params){var param=params[0]||1;while(param--){this.lines.splice(this.ybase+this.scrollBottom,1);this.lines.splice(this.ybase+this.scrollTop,0,this.blankLine());}// this.maxRange();
+ * CSI Ps T  Scroll down Ps lines (default = 1) (SD).
+ */Terminal.prototype.scrollDown=function(params){var param=params[0]||1;while(param--){this.lines.splice(this.ybase+this.scrollBottom,1);this.lines.splice(this.ybase+this.scrollTop,0,this.blankLine());}// this.maxRange();
 this.updateRange(this.scrollTop);this.updateRange(this.scrollBottom);};/**
  * CSI Ps ; Ps ; Ps ; Ps ; Ps T
  *   Initiate highlight mouse tracking.  Parameters are
@@ -2013,8 +2136,6 @@ ucs>=0xffe0&&ucs<=0xffe6||ucs>=0x20000&&ucs<=0x2fffd||ucs>=0x30000&&ucs<=0x3fffd
  * @param {function} callback The function to call when the event is triggered.
  */Terminal.on=on;Terminal.off=off;Terminal.cancel=cancel;module.exports=Terminal;
 
-}).call(this,"/src")
-
-},{"./CompositionHelper.js":1,"./EventEmitter.js":2,"./Viewport.js":3}]},{},[4])(4)
+},{"./CompositionHelper.js":1,"./EventEmitter.js":2,"./Viewport.js":3,"./handlers/Clipboard.js":4}]},{},[5])(5)
 });
 //# sourceMappingURL=xterm.js.map
