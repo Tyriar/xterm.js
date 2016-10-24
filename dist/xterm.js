@@ -193,9 +193,14 @@ CompositionHelper.prototype.updateCompositionElements = function (dontRecurse) {
     this.compositionView.style.top = cursorTop + 'px';
     this.compositionView.style.height = cursor.offsetHeight + 'px';
     this.compositionView.style.lineHeight = cursor.offsetHeight + 'px';
+    // Sync the textarea to the exact position of the composition view so the IME knows where the
+    // text is.
     var compositionViewBounds = this.compositionView.getBoundingClientRect();
-    this.textarea.style.left = cursor.offsetLeft + compositionViewBounds.width + 'px';
-    this.textarea.style.top = cursor.cursorTop + 'px';
+    this.textarea.style.left = cursor.offsetLeft + 'px';
+    this.textarea.style.top = cursorTop + 'px';
+    this.textarea.style.width = compositionViewBounds.width + 'px';
+    this.textarea.style.height = compositionViewBounds.height + 'px';
+    this.textarea.style.lineHeight = compositionViewBounds.height + 'px';
   }
   if (!dontRecurse) {
     setTimeout(this.updateCompositionElements.bind(this, true), 0);
@@ -539,7 +544,7 @@ exports.pasteHandler = pasteHandler;
 exports.rightClickHandler = rightClickHandler;
 
 },{}],5:[function(_dereq_,module,exports){
-'use strict';var _typeof=typeof Symbol==="function"&&typeof Symbol.iterator==="symbol"?function(obj){return typeof obj;}:function(obj){return obj&&typeof Symbol==="function"&&obj.constructor===Symbol&&obj!==Symbol.prototype?"symbol":typeof obj;};/**
+'use strict';var _typeof=typeof Symbol==="function"&&typeof Symbol.iterator==="symbol"?function(obj){return typeof obj;}:function(obj){return obj&&typeof Symbol==="function"&&obj.constructor===Symbol?"symbol":typeof obj;};/**
  * xterm.js: xterm, in the browser
  * Copyright (c) 2014-2014, SourceLair Private Company <www.sourcelair.com> (MIT License)
  * Copyright (c) 2012-2013, Christopher Jeffrey (MIT License)
@@ -588,14 +593,16 @@ var document=typeof window!='undefined'?window.document:null;/**
  * Creates a new `Terminal` object.
  *
  * @param {object} options An object containing a set of options, the available options are:
- *   - cursorBlink (boolean): Whether the terminal cursor blinks
+ *   - `cursorBlink` (boolean): Whether the terminal cursor blinks
+ *   - `cols` (number): The number of columns of the terminal (horizontal size)
+ *   - `rows` (number): The number of rows of the terminal (vertical size)
  *
  * @public
  * @class Xterm Xterm
  * @alias module:xterm/src/xterm
  */function Terminal(options){var self=this;if(!(this instanceof Terminal)){return new Terminal(arguments[0],arguments[1],arguments[2]);}self.cancel=Terminal.cancel;_EventEmitter.EventEmitter.call(this);if(typeof options==='number'){options={cols:arguments[0],rows:arguments[1],handler:arguments[2]};}options=options||{};Object.keys(Terminal.defaults).forEach(function(key){if(options[key]==null){options[key]=Terminal.options[key];if(Terminal[key]!==Terminal.defaults[key]){options[key]=Terminal[key];}}self[key]=options[key];});if(options.colors.length===8){options.colors=options.colors.concat(Terminal._colors.slice(8));}else if(options.colors.length===16){options.colors=options.colors.concat(Terminal._colors.slice(16));}else if(options.colors.length===10){options.colors=options.colors.slice(0,-2).concat(Terminal._colors.slice(8,-2),options.colors.slice(-2));}else if(options.colors.length===18){options.colors=options.colors.concat(Terminal._colors.slice(16,-2),options.colors.slice(-2));}this.colors=options.colors;this.options=options;// this.context = options.context || window;
 // this.document = options.document || document;
-this.parent=options.body||options.parent||(document?document.getElementsByTagName('body')[0]:null);this.cols=options.cols||options.geometry[0];this.rows=options.rows||options.geometry[1];if(options.handler){this.on('data',options.handler);}/**
+this.parent=options.body||options.parent||(document?document.getElementsByTagName('body')[0]:null);this.cols=options.cols||options.geometry[0];this.rows=options.rows||options.geometry[1];this.geometry=[this.cols,this.rows];if(options.handler){this.on('data',options.handler);}/**
    * The scroll position of the y cursor, ie. ybase + y = the y position within the entire
    * buffer
    */this.ybase=0;/**
@@ -1303,7 +1310,7 @@ this.lines.push(this.blankLine());}}if(this.children.length<y){this.insertRow();
 while(j-->y){if(this.lines.length>y+this.ybase){if(this.lines.length>this.ybase+this.y+1){// The line is a blank line below the cursor, remove it
 this.lines.pop();}else{// The line is the cursor, scroll down
 this.ybase++;this.ydisp++;}}if(this.children.length>y){el=this.children.shift();if(!el)continue;el.parentNode.removeChild(el);}}}this.rows=y;// Make sure that the cursor stays on screen
-if(this.y>=y){this.y=y-1;}if(addToY){this.y+=addToY;}if(this.x>=x){this.x=x-1;}this.scrollTop=0;this.scrollBottom=y-1;this.refresh(0,this.rows-1);this.normal=null;this.emit('resize',{terminal:this,cols:x,rows:y});};/**
+if(this.y>=y){this.y=y-1;}if(addToY){this.y+=addToY;}if(this.x>=x){this.x=x-1;}this.scrollTop=0;this.scrollBottom=y-1;this.refresh(0,this.rows-1);this.normal=null;this.geometry=[this.cols,this.rows];this.emit('resize',{terminal:this,cols:x,rows:y});};/**
  * Updates the range of rows to refresh
  * @param {number} y The number of rows to refresh next.
  */Terminal.prototype.updateRange=function(y){if(y<this.refreshStart)this.refreshStart=y;if(y>this.refreshEnd)this.refreshEnd=y;// if (y > this.refreshEnd) {
@@ -2070,37 +2077,37 @@ this.updateRange(params[0]);this.updateRange(params[2]);};/**
 // when running vttest however.
 // The table below now uses xterm's output from vttest.
 Terminal.charsets.SCLD={// (0
-'`':'\u25C6',// '◆'
-'a':'\u2592',// '▒'
+'`':'◆',// '◆'
+'a':'▒',// '▒'
 'b':'\t',// '\t'
 'c':'\f',// '\f'
 'd':'\r',// '\r'
 'e':'\n',// '\n'
-'f':'\xB0',// '°'
-'g':'\xB1',// '±'
-'h':'\u2424',// '\u2424' (NL)
-'i':'\x0B',// '\v'
-'j':'\u2518',// '┘'
-'k':'\u2510',// '┐'
-'l':'\u250C',// '┌'
-'m':'\u2514',// '└'
-'n':'\u253C',// '┼'
-'o':'\u23BA',// '⎺'
-'p':'\u23BB',// '⎻'
-'q':'\u2500',// '─'
-'r':'\u23BC',// '⎼'
-'s':'\u23BD',// '⎽'
-'t':'\u251C',// '├'
-'u':'\u2524',// '┤'
-'v':'\u2534',// '┴'
-'w':'\u252C',// '┬'
-'x':'\u2502',// '│'
-'y':'\u2264',// '≤'
-'z':'\u2265',// '≥'
-'{':'\u03C0',// 'π'
-'|':'\u2260',// '≠'
-'}':'\xA3',// '£'
-'~':'\xB7'// '·'
+'f':'°',// '°'
+'g':'±',// '±'
+'h':'␤',// '\u2424' (NL)
+'i':'\u000b',// '\v'
+'j':'┘',// '┘'
+'k':'┐',// '┐'
+'l':'┌',// '┌'
+'m':'└',// '└'
+'n':'┼',// '┼'
+'o':'⎺',// '⎺'
+'p':'⎻',// '⎻'
+'q':'─',// '─'
+'r':'⎼',// '⎼'
+'s':'⎽',// '⎽'
+'t':'├',// '├'
+'u':'┤',// '┤'
+'v':'┴',// '┴'
+'w':'┬',// '┬'
+'x':'│',// '│'
+'y':'≤',// '≤'
+'z':'≥',// '≥'
+'{':'π',// 'π'
+'|':'≠',// '≠'
+'}':'£',// '£'
+'~':'·'// '·'
 };Terminal.charsets.UK=null;// (A
 Terminal.charsets.US=null;// (B (USASCII)
 Terminal.charsets.Dutch=null;// (4
