@@ -5137,6 +5137,7 @@ var wcwidth = (function(opts) {
 
 Terminal.EventEmitter = EventEmitter;
 Terminal.inherits = inherits;
+Terminal._Viewport = Viewport;
 
 /**
  * Adds an event listener to the terminal.
