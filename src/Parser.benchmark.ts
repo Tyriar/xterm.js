@@ -38,6 +38,22 @@ describe('Parser', () => {
     const end = Date.now();
     reportStats(start, end, iterations);
   });
+
+  it('Cursor movement performance', function () {
+    this.timeout(30000);
+    const iterations = 500000;
+    terminal.writeBuffer.push('abc');
+    terminal.writeInProgress = true;
+    terminal.innerWrite();
+    const start = Date.now();
+    for (let i = 0; i < iterations; i++) {
+      terminal.writeBuffer.push('\x1b[1D\x1b[1C');
+      terminal.writeInProgress = true;
+      terminal.innerWrite();
+    }
+    const end = Date.now();
+    reportStats(start, end, iterations);
+  });
 });
 
 function reportStats(start, end, iterations) {
