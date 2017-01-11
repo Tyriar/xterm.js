@@ -14,7 +14,7 @@ describe('Parser', () => {
   });
 
   it('Single character parse performance', function () {
-    this.timeout = 20000;
+    this.timeout(30000);
     const iterations = 500000;
     const start = Date.now();
     for (let i = 0; i < iterations; i++) {
@@ -27,7 +27,7 @@ describe('Parser', () => {
   });
 
   it('Simple character long line parse performance', function () {
-    this.timeout = 30000;
+    this.timeout(30000);
     const iterations = 500000;
     const start = Date.now();
     for (let i = 0; i < iterations; i++) {
