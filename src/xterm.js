@@ -648,7 +648,9 @@ Terminal.loadAddon = function(addon, callback) {
  * character width has been changed.
  */
 Terminal.prototype.updateCharSizeCSS = function() {
-  this.charSizeStyleElement.textContent = '.xterm-wide-char{width:' + (this.charMeasure.width * 2) + 'px;}';
+  this.charSizeStyleElement.textContent =
+      '.xterm-char{width:' + this.charMeasure.width + 'px;}' +
+      '.xterm-wide-char{width:' + (this.charMeasure.width * 2) + 'px;}';
 }
 
 /**
@@ -1235,7 +1237,9 @@ Terminal.prototype.refresh = function(start, end) {
       }
 
       if (ch_width === 2) {
-        out += '<span class="xterm-wide-char">';
+        innerHTML += '<span class="xterm-wide-char">';
+      } else if (ch.charCodeAt() >= 255) {
+        innerHTML += '<span class="xterm-char">';
       }
       switch (ch) {
         case '&':
@@ -1260,8 +1264,8 @@ Terminal.prototype.refresh = function(start, end) {
           }
           break;
       }
-      if (ch_width === 2) {
-        out += '</span>';
+      if (ch_width === 2 || ch.charCodeAt() >= 255) {
+        innerHTML += '</span>';
       }
 
       attr = data;
