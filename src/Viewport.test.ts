@@ -4,11 +4,12 @@ declare var Terminal;
 const Viewport = Terminal._Viewport;
 
 describe('Viewport', () => {
-  var terminal;
-  var viewportElement;
-  var charMeasureElement;
-  var viewport;
-  var scrollAreaElement;
+  let terminal;
+  let viewportElement;
+  let charMeasure;
+  let viewport;
+  let scrollAreaElement;
+  let charMeasureElement;
 
   const CHARACTER_HEIGHT = 10;
 
@@ -28,7 +29,7 @@ describe('Viewport', () => {
     viewportElement = document.createElement('div');
     scrollAreaElement = document.createElement('div');
     charMeasureElement = document.createElement('span');
-      charMeasureElement.style.display = 'inline-block';
+    charMeasureElement.style.display = 'inline-block';
     wrapper.appendChild(viewportElement);
     wrapper.appendChild(scrollAreaElement);
     wrapper.appendChild(charMeasureElement);
@@ -59,7 +60,7 @@ describe('Viewport', () => {
     it('should sync the scroll area', () => {
       terminal.lines.push('');
       terminal.rows = 1;
-      //assert.equal(scrollAreaElement.style.height, 0 * CHARACTER_HEIGHT + 'px');
+      // assert.equal(scrollAreaElement.style.height, 0 * CHARACTER_HEIGHT + 'px');
       viewport.syncScrollArea();
       assert.equal(viewportElement.style.height, 1 * CHARACTER_HEIGHT + 'px');
       assert.equal(scrollAreaElement.style.height, 1 * CHARACTER_HEIGHT + 'px');
