@@ -18,7 +18,9 @@ describe('Parser', () => {
     const iterations = 500000;
     const start = Date.now();
     for (let i = 0; i < iterations; i++) {
-      terminal.write('a');
+      terminal.writeBuffer.push('a');
+      terminal.writeInProgress = true;
+      terminal.innerWrite();
     }
     const end = Date.now();
     reportStats(start, end, iterations);
@@ -29,7 +31,9 @@ describe('Parser', () => {
     const iterations = 500000;
     const start = Date.now();
     for (let i = 0; i < iterations; i++) {
-      terminal.write('abcdefghijklmnopqrstuvwxyz1234567890`,./;\'[]\-=~!@#$%^&*()_+{}|:"<>?');
+      terminal.writeBuffer.push('abcdefghijklmnopqrstuvwxyz1234567890`,./;\'[]\-=~!@#$%^&*()_+{}|:"<>?');
+      terminal.writeInProgress = true;
+      terminal.innerWrite();
     }
     const end = Date.now();
     reportStats(start, end, iterations);
