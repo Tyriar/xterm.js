@@ -38,7 +38,8 @@ export class DomElementObjectPool {
 
   public release(element: HTMLElement) {
     if (!this._inUse[element.getAttribute(DomElementObjectPool.OBJECT_ID_ATTRIBUTE)]) {
-      throw new Error('Could not release an element not yet acquired');
+      //throw new Error('Could not release an element not yet acquired');
+      return;
     }
     delete this._inUse[element.getAttribute(DomElementObjectPool.OBJECT_ID_ATTRIBUTE)];
     this._cleanElement(element);
