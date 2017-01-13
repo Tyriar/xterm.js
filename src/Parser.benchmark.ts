@@ -14,49 +14,48 @@ describe('Parser', () => {
   });
 
   it('Single character parse performance', function () {
-    this.timeout(30000);
-    const iterations = 500000;
-    const start = Date.now();
-    for (let i = 0; i < iterations; i++) {
+    runTest.call(this, terminal, 500000, () => {
       terminal.writeBuffer.push('a');
       terminal.writeInProgress = true;
       terminal.innerWrite();
-    }
-    const end = Date.now();
-    reportStats(start, end, iterations);
+    });
   });
 
   it('Simple character long line parse performance', function () {
-    this.timeout(30000);
-    const iterations = 500000;
-    const start = Date.now();
-    for (let i = 0; i < iterations; i++) {
+    runTest.call(this, terminal, 500000, () => {
       terminal.writeBuffer.push('abcdefghijklmnopqrstuvwxyz1234567890`,./;\'[]\-=~!@#$%^&*()_+{}|:"<>?');
       terminal.writeInProgress = true;
       terminal.innerWrite();
-    }
-    const end = Date.now();
-    reportStats(start, end, iterations);
+    });
   });
 
   it('Cursor movement performance', function () {
-    this.timeout(30000);
-    const iterations = 500000;
-    terminal.writeBuffer.push('abc');
-    terminal.writeInProgress = true;
-    terminal.innerWrite();
-    const start = Date.now();
-    for (let i = 0; i < iterations; i++) {
+    runTest.call(this, terminal, 500000, () => {
       terminal.writeBuffer.push('\x1b[1D\x1b[1C');
       terminal.writeInProgress = true;
       terminal.innerWrite();
-    }
-    const end = Date.now();
-    reportStats(start, end, iterations);
+    }, () => {
+      terminal.writeBuffer.push('abc');
+      terminal.writeInProgress = true;
+      terminal.innerWrite();
+    });
   });
 });
 
-function reportStats(start, end, iterations) {
-  console.log(`${iterations} iterations time: ${end - start}ms`);
-  console.log(`Average iteration time : ${(end - start) / iterations}ms`);
+function reportStats(start: number, end: number, iterationCount: number) {
+  console.log(`${iterationCount} iterations time: ${end - start}ms`);
+  console.log(`Average iteration time : ${(end - start) / iterationCount}ms`);
+}
+
+function runTest(terminal: any, iterationCount: number, iteration: (num: number) => void, setup?: () => void) {
+  this.timeout(30000);
+  if (setup) {
+    setup();
+  }
+  const start = Date.now();
+  for (let i = 0; i < iterationCount; i++) {
+    iteration(i);
+  }
+  const end = Date.now();
+  reportStats(start, end, iterationCount);
 }
