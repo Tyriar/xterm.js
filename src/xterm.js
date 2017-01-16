@@ -10,13 +10,13 @@
  * @license MIT
  */
 
-import { CompositionHelper } from './CompositionHelper.js';
-import { EventEmitter } from './EventEmitter.js';
-import { Viewport } from './Viewport.js';
-import { rightClickHandler, pasteHandler, copyHandler } from './handlers/Clipboard.js';
-import { CircularList } from './utils/CircularList.js';
+import { CompositionHelper } from './CompositionHelper';
+import { EventEmitter } from './EventEmitter';
+import { Viewport } from './Viewport';
+import { rightClickHandler, pasteHandler, copyHandler } from './handlers/Clipboard';
+import { CircularList } from './utils/CircularList';
 import { C0 } from './EscapeSequences';
-import { CharMeasure } from './utils/CharMeasure.js';
+import { CharMeasure } from './utils/CharMeasure';
 import * as Browser from './utils/Browser';
 import * as Keyboard from './utils/Keyboard';
 
@@ -405,8 +405,29 @@ Terminal.prototype.setOption = function(key, value) {
   if (!(key in Terminal.defaults)) {
     throw new Error('No option with key "' + key + '"');
   }
+  switch (key) {
+    case 'scrollback':
+      if (this.options[key] !== value) {
+        if (this.lines.length > value) {
+          const amountToTrim = this.lines.length - value;
+          const needsRefresh = (this.ydisp - amountToTrim < 0);
+          this.lines.trimStart(amountToTrim);
+          this.ybase = Math.max(this.ybase - amountToTrim, 0);
+          this.ydisp = Math.max(this.ydisp - amountToTrim, 0);
+          if (needsRefresh) {
+            this.refresh(0, this.rows - 1);
+          }
+        }
+        this.lines.maxLength = value;
+        this.viewport.syncScrollArea();
+      }
+      break;
+  }
   this[key] = value;
   this.options[key] = value;
+  switch (key) {
+    case 'cursorBlink': this.element.classList.toggle('xterm-cursor-blink', value); break;
+  }
 };
 
 /**
@@ -563,6 +584,7 @@ Terminal.prototype.open = function(parent) {
   this.element.classList.add('terminal');
   this.element.classList.add('xterm');
   this.element.classList.add('xterm-theme-' + this.theme);
+  this.element.classList.toggle('xterm-cursor-blink', this.options.cursorBlink);
 
   this.element.style.height
   this.element.setAttribute('tabindex', 0);
@@ -1175,11 +1197,7 @@ Terminal.prototype.refresh = function(start, end) {
         }
         if (data !== this.defAttr) {
           if (data === -1) {
-            out += '<span class="reverse-video terminal-cursor';
-            if (this.cursorBlink) {
-              out += ' blinking';
-            }
-            out += '">';
+            out += '<span class="reverse-video terminal-cursor">';
           } else {
             var classNames = [];
 
