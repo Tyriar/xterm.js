@@ -446,7 +446,6 @@ export class InputHandler implements IInputHandler {
       this._terminal.lines.splice(j, 1);
     }
 
-    // this.maxRange();
     this._terminal.updateRange(this._terminal.y);
     this._terminal.updateRange(this._terminal.scrollBottom);
   }
@@ -480,7 +479,6 @@ export class InputHandler implements IInputHandler {
       this._terminal.lines.splice(row, 1);
     }
 
-    // this.maxRange();
     this._terminal.updateRange(this._terminal.y);
     this._terminal.updateRange(this._terminal.scrollBottom);
   }
@@ -515,7 +513,6 @@ export class InputHandler implements IInputHandler {
       this._terminal.lines.splice(this._terminal.ybase + this._terminal.scrollTop, 1);
       this._terminal.lines.splice(this._terminal.ybase + this._terminal.scrollBottom, 0, this._terminal.blankLine());
     }
-    // this.maxRange();
     this._terminal.updateRange(this._terminal.scrollTop);
     this._terminal.updateRange(this._terminal.scrollBottom);
   }
@@ -529,7 +526,6 @@ export class InputHandler implements IInputHandler {
       this._terminal.lines.splice(this._terminal.ybase + this._terminal.scrollBottom, 1);
       this._terminal.lines.splice(this._terminal.ybase + this._terminal.scrollTop, 0, this._terminal.blankLine());
     }
-    // this.maxRange();
     this._terminal.updateRange(this._terminal.scrollTop);
     this._terminal.updateRange(this._terminal.scrollBottom);
   }

@@ -1378,7 +1378,6 @@ Terminal.prototype.scroll = function() {
     this.lines.splice(this.ybase + this.scrollTop, 1);
   }
 
-  // this.maxRange();
   this.updateRange(this.scrollTop);
   this.updateRange(this.scrollBottom);
 
@@ -2095,14 +2094,6 @@ Terminal.prototype.updateRange = function(y) {
   //     this.refreshEnd = this.rows - 1;
   //   }
   // }
-};
-
-/**
- * Set the range of refreshing to the maximum value
- */
-Terminal.prototype.maxRange = function() {
-  this.refreshStart = 0;
-  this.refreshEnd = this.rows - 1;
 };
 
 
