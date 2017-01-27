@@ -658,7 +658,8 @@ Terminal.prototype.open = function(parent) {
   this.viewport = new Viewport(this, this.viewportElement, this.viewportScrollArea, this.charMeasure);
 
   // Setup loop that draws to screen
-  this.queueRefresh(0, this.rows - 1);
+  this.updateRange(0, this.rows - 1);
+  this.queueRefresh();
   this.refreshLoop();
 
   // Initialize global actions that
@@ -1083,8 +1084,8 @@ Terminal.flags = {
  * @param {number} start The start row.
  * @param {number} end The end row.
  */
-Terminal.prototype.queueRefresh = function(start, end) {
-  this.refreshRowsQueue.push({ start: start, end: end });
+Terminal.prototype.queueRefresh = function() {
+  this.refreshRowsQueue.push({ start: this.refreshStart, end: this.refreshEnd });
 }
 
 /**
@@ -1328,7 +1329,8 @@ Terminal.prototype.refresh = function(start, end) {
 Terminal.prototype.showCursor = function() {
   if (!this.cursorState) {
     this.cursorState = 1;
-    this.queueRefresh(this.y, this.y);
+    this.updateRange(this.y);
+    this.queueRefresh();
   }
 };
 
@@ -1416,7 +1418,8 @@ Terminal.prototype.scrollDisp = function(disp, suppressScrollEvent) {
     this.emit('scroll', this.ydisp);
   }
 
-  this.queueRefresh(0, this.rows - 1);
+  this.updateRange(0, this.rows - 1);
+  this.queueRefresh();
 };
 
 /**
@@ -1482,13 +1485,18 @@ Terminal.prototype.innerWrite = function() {
       this.xoffSentToCatchUp = false;
     }
 
+    // Set initial update range to be refreshed as the current y position
     this.refreshStart = this.y;
     this.refreshEnd = this.y;
 
+    // Parse and action the data
     this.parser.parse(data);
 
+    // Ensure the new y position will be refreshed
     this.updateRange(this.y);
-    this.queueRefresh(this.refreshStart, this.refreshEnd);
+
+    // Queue a refresh on the given update ranges
+    this.queueRefresh();
   }
   if (this.writeBuffer.length > 0) {
     // Allow renderer to catch up before processing the next batch
@@ -2073,7 +2081,8 @@ Terminal.prototype.resize = function(x, y) {
 
   this.charMeasure.measure();
 
-  this.queueRefresh(0, this.rows - 1);
+  this.updateRange(0, this.rows - 1);
+  this.queueRefresh();
 
   this.normal = null;
 
@@ -2194,7 +2203,8 @@ Terminal.prototype.clear = function() {
   for (var i = 1; i < this.rows; i++) {
     this.lines.push(this.blankLine());
   }
-  this.queueRefresh(0, this.rows - 1);
+  this.updateRange(0, this.rows - 1);
+  this.queueRefresh();
   this.emit('scroll', this.ydisp);
 };
 
@@ -2332,7 +2342,8 @@ Terminal.prototype.reset = function() {
   var customKeydownHandler = this.customKeydownHandler;
   Terminal.call(this, this.options);
   this.customKeydownHandler = customKeydownHandler;
-  this.queueRefresh(0, this.rows - 1);
+  this.updateRange(0, this.rows - 1);
+  this.queueRefresh();
   this.viewport.syncScrollArea();
 };
 
