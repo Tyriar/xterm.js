@@ -1715,6 +1715,10 @@ Terminal.prototype.error = function() {
  * @param {number} y The number of rows to resize to.
  */
 Terminal.prototype.resize = function(x, y) {
+  if (isNaN(x) || isNaN(y)) {
+    return;
+  }
+
   var line
   , el
   , i
