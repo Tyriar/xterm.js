@@ -74,11 +74,11 @@ export class Linkifier {
   /**
    * Registers a link matcher, allowing custom link patterns to be matched and
    * handled.
-   * @param {RegExp} regex The regular expression the search for, specifically
+   * @param {RegExp} regex The regular expression to search for, specifically
    * this searches the textContent of the rows. You will want to use \s to match
    * a space ' ' character for example.
    * @param {LinkHandler} handler The callback when the link is called.
-   * @param {number} matchIndex The index of the link from the regex.match(html)
+   * @param {number} matchIndex The index of the link from the regex.match(text)
    * call. This defaults to 0 (for regular expressions without capture groups).
    * @return {number} The ID of the new matcher, this can be used to deregister.
    */
@@ -117,8 +117,12 @@ export class Linkifier {
    * @param {number} rowIndex The index of the row to linkify.
    */
   private _linkifyRow(rowIndex: number): void {
-    const text = this._rows[rowIndex].textContent;
-    for (let i = 0; i < this._linkMatchers.length; i++) {
+    const row = this._rows[rowIndex];
+    if (!row) {
+      return;
+    }
+    const text = row.textContent;
+    for (let i = this._linkMatchers.length - 1; i >= 0; i--) {
       const matcher = this._linkMatchers[i];
       const uri = this._findLinkMatch(text, matcher.regex, matcher.matchIndex);
       if (uri) {
