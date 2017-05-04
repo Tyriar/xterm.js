@@ -2,6 +2,7 @@
  * @license MIT
  */
 
+import { RowData } from './Types';
 import { LinkMatcherOptions } from './Interfaces';
 import { LinkMatcherHandler, LinkMatcherValidationCallback } from './Types';
 
@@ -23,7 +24,7 @@ export interface ITerminal {
   textarea: HTMLTextAreaElement;
   ybase: number;
   ydisp: number;
-  lines: IWrappableList;
+  lines: IWrappableBuffer;
   rows: number;
   cols: number;
   browser: IBrowser;
@@ -60,7 +61,12 @@ export interface ILinkifier {
   deregisterLinkMatcher(matcherId: number): boolean;
 }
 
-interface ICircularList<T> {
+export interface IWrappableBuffer extends ICircularList<RowData> {
+  wrappedLength: number;
+  getWrapped(index: number): RowData;
+}
+
+export interface ICircularList<T> {
   length: number;
   maxLength: number;
 

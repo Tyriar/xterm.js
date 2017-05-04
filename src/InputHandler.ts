@@ -54,7 +54,7 @@ export class InputHandler implements IInputHandler {
         // autowrap - DECAWM
         if (this._terminal.wraparoundMode) {
           // Mark this row as being wrapped.
-          this._terminal.lines.addWrappedLine(row);
+          // this._terminal.lines.addWrappedLine(row);
           this._terminal.x = 0;
           this._terminal.y++;
           if (this._terminal.y > this._terminal.scrollBottom) {

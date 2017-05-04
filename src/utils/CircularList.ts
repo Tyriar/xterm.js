@@ -4,7 +4,9 @@
  * @module xterm/utils/CircularList
  * @license MIT
  */
-export class CircularList<T> {
+import { ICircularList } from '../Interfaces';
+
+export class CircularList<T> implements ICircularList<T> {
   protected _array: T[];
   protected _startIndex: number;
   protected _length: number;

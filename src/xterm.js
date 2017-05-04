@@ -14,7 +14,7 @@ import { CompositionHelper } from './CompositionHelper';
 import { EventEmitter } from './EventEmitter';
 import { Viewport } from './Viewport';
 import { rightClickHandler, pasteHandler, copyHandler } from './handlers/Clipboard';
-import { WrappableList } from './utils/WrappableList';
+import { WrappableBuffer } from './utils/WrappableBuffer';
 import { C0 } from './EscapeSequences';
 import { InputHandler } from './InputHandler';
 import { Parser } from './Parser';
@@ -243,7 +243,7 @@ function Terminal(options) {
    * An array of all lines in the entire buffer, including the prompt. The lines are array of
    * characters which are 2-length arrays where [0] is an attribute and [1] is the character.
    */
-  this.lines = new WrappableList(this.scrollback);
+  this.lines = new WrappableBuffer(this.scrollback, this.options.geometry[0]);
   var i = this.rows;
   while (i--) {
     this.lines.push(this.blankLine());
@@ -1868,7 +1868,7 @@ Terminal.prototype.resize = function(x, y, force) {
 
   var startTime = Date.now();
 
-  this.lines.reflow(x, this.cols);
+  this.lines.resize(x);
 
   console.log('RESIZE IN', Date.now() - startTime);
 
