@@ -3,7 +3,7 @@
  */
 
 import { LinkMatcherOptions } from './Interfaces';
-import { LinkMatcherHandler, LinkMatcherValidationCallback } from './Types';
+import { LinkMatcherHandler, LinkMatcherValidationCallback, LineData } from './Types';
 
 export interface IBrowser {
   isNode: boolean;
@@ -17,15 +17,24 @@ export interface IBrowser {
   isMSWindows: boolean;
 }
 
+export interface IBuffer {
+  lines: ICircularList<any>;
+  blankLine(cur?: boolean): LineData;
+}
+
 export interface ITerminal {
   element: HTMLElement;
   rowContainer: HTMLElement;
   selectionContainer: HTMLElement;
   charMeasure: ICharMeasure;
   textarea: HTMLTextAreaElement;
+  selectionManager: ISelectionManager;
+  viewport: any;
   ybase: number;
   ydisp: number;
-  lines: ICircularList<string>;
+  buffer: IBuffer;
+  // TODO: Figure out where normal should live (in Buffer?)
+  normal: any;
   rows: number;
   cols: number;
   browser: IBrowser;
@@ -36,6 +45,33 @@ export interface ITerminal {
   x: number;
   y: number;
   defAttr: number;
+  scrollTop: number;
+  scrollBottom: number;
+  wraparoundMode: boolean;
+  charset: any;
+  insertMode: boolean;
+  curAttr: number;
+  popOnBell: boolean;
+  visualBell: boolean;
+  convertEol: boolean;
+  applicationCursor: boolean;
+  applicationKeypad: boolean;
+  originMode: boolean;
+  x10Mouse: boolean;
+  vt200Mouse: boolean;
+  normalMouse: boolean;
+  mouseEvents: boolean;
+  sendFocus: boolean;
+  utfMouse: boolean;
+  sgrMouse: boolean;
+  urxvtMouse: boolean;
+  prefix: any;
+  tabs: any;
+  savedCols: number;
+  glevel: number;
+  charsets: any[];
+  savedX: number;
+  savedY: number;
 
   /**
    * Emit the 'data' event and populate the given data.
@@ -47,10 +83,34 @@ export interface ITerminal {
   cancel(ev: Event, force?: boolean);
   log(text: string): void;
   emit(event: string, data: any);
+  eraseAttr(): number;
+  scroll(): void;
+  updateRange(y: number): void;
+  nextStop(): number;
+  prevStop(): number;
+  setgLevel(g: number);
+  setgCharset(g: number, charset: any): void;
+  focus();
+  eraseRight(x: number, y: number);
+  eraseLine(y: number);
+  eraseLeft(x: number, y: number);
+  send(data: string): void;
+  is(term: string): boolean;
+  resize(cols: number, rows: number);
+  reset(): void;
+  showCursor(): void;
+  refresh(start: number, end: number): void;
+  matchColor(r1, g1, b1): any;
+  error(...args: any[]): void;
+  setOption(option: string, value: any);
 }
 
 export interface ISelectionManager {
   selectionText: string;
+
+  disable(): void;
+  enable(): void;
+  setBuffer(bufferLines: ICircularList<LineData>);
 }
 
 export interface ICharMeasure {

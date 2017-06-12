@@ -8,7 +8,7 @@ describe('InputHandler', () => {
       let terminal = {
         setOption: (option, value) => options[option] = value
       };
-      let inputHandler = new InputHandler(terminal);
+      let inputHandler = new InputHandler(<any>terminal);
 
       inputHandler.setCursorStyle([0]);
       assert.equal(options['cursorStyle'], 'block');

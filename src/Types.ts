@@ -2,6 +2,14 @@
  * @license MIT
  */
 
+/**
+ * The type for individual character data within the buffer, in the format:
+ * [char_attr, char_string, char_width]
+ */
+export type CharData = [number, string, number];
+
+export type LineData = CharData[];
+
 export type LinkMatcher = {
   id: number,
   regex: RegExp,

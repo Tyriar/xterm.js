@@ -18,6 +18,7 @@ import { CircularList } from './utils/CircularList';
 import { C0 } from './EscapeSequences';
 import { InputHandler } from './InputHandler';
 import { Parser } from './Parser';
+import { Buffer } from './Buffer';
 import { Renderer } from './Renderer';
 import { Linkifier } from './Linkifier';
 import { SelectionManager } from './SelectionManager';
@@ -246,14 +247,10 @@ function Terminal(options) {
    * An array of all lines in the entire buffer, including the prompt. The lines are array of
    * characters which are 2-length arrays where [0] is an attribute and [1] is the character.
    */
-  this.lines = new CircularList(this.scrollback);
-  var i = this.rows;
-  while (i--) {
-    this.lines.push(this.blankLine());
-  }
+  this.buffer = new Buffer(this, this.scrollback);
   // Ensure the selection manager has the correct buffer
   if (this.selectionManager) {
-    this.selectionManager.setBuffer(this.lines);
+    this.selectionManager.setBuffer(this.buffer.lines);
   }
 
   this.tabs;
@@ -420,17 +417,17 @@ Terminal.prototype.setOption = function(key, value) {
   switch (key) {
     case 'scrollback':
       if (this.options[key] !== value) {
-        if (this.lines.length > value) {
-          const amountToTrim = this.lines.length - value;
+        if (this.buffer.lines.length > value) {
+          const amountToTrim = this.buffer.lines.length - value;
           const needsRefresh = (this.ydisp - amountToTrim < 0);
-          this.lines.trimStart(amountToTrim);
+          this.buffer.lines.trimStart(amountToTrim);
           this.ybase = Math.max(this.ybase - amountToTrim, 0);
           this.ydisp = Math.max(this.ydisp - amountToTrim, 0);
           if (needsRefresh) {
             this.refresh(0, this.rows - 1);
           }
         }
-        this.lines.maxLength = value;
+        this.buffer.lines.maxLength = value;
         this.viewport.syncScrollArea();
       }
       break;
@@ -702,7 +699,7 @@ Terminal.prototype.open = function(parent, focus) {
 
   this.viewport = new Viewport(this, this.viewportElement, this.viewportScrollArea, this.charMeasure);
   this.renderer = new Renderer(this);
-  this.selectionManager = new SelectionManager(this, this.lines, this.rowContainer, this.charMeasure);
+  this.selectionManager = new SelectionManager(this, this.buffer.lines, this.rowContainer, this.charMeasure);
   this.selectionManager.on('refresh', data => this.renderer.refreshSelection(data.start, data.end));
   this.on('scroll', () => this.selectionManager.refresh());
   this.viewportElement.addEventListener('scroll', () => this.selectionManager.refresh());
@@ -1121,8 +1118,8 @@ Terminal.prototype.scroll = function() {
   var row;
 
   // Make room for the new row in lines
-  if (this.lines.length === this.lines.maxLength) {
-    this.lines.trimStart(1);
+  if (this.buffer.lines.length === this.buffer.lines.maxLength) {
+    this.buffer.lines.trimStart(1);
     this.ybase--;
     if (this.ydisp !== 0) {
       this.ydisp--;
@@ -1142,12 +1139,12 @@ Terminal.prototype.scroll = function() {
   // subtract the bottom scroll region
   row -= this.rows - 1 - this.scrollBottom;
 
-  if (row === this.lines.length) {
+  if (row === this.buffer.lines.length) {
     // Optimization: pushing is faster than splicing when they amount to the same behavior
-    this.lines.push(this.blankLine());
+    this.buffer.lines.push(this.buffer.blankLine());
   } else {
     // add our new line
-    this.lines.splice(row, 0, this.blankLine());
+    this.buffer.lines.splice(row, 0, this.buffer.blankLine());
   }
 
   if (this.scrollTop !== 0) {
@@ -1882,10 +1879,10 @@ Terminal.prototype.resize = function(x, y) {
   j = this.cols;
   if (j < x) {
     ch = [this.defAttr, ' ', 1]; // does xterm use the default attr?
-    i = this.lines.length;
+    i = this.buffer.lines.length;
     while (i--) {
-      while (this.lines.get(i).length < x) {
-        this.lines.get(i).push(ch);
+      while (this.buffer.lines.get(i).length < x) {
+        this.buffer.lines.get(i).push(ch);
       }
     }
   }
@@ -1900,8 +1897,8 @@ Terminal.prototype.resize = function(x, y) {
     el = this.element;
     while (j++ < y) {
       // y is rows, not this.y
-      if (this.lines.length < y + this.ybase) {
-        if (this.ybase > 0 && this.lines.length <= this.ybase + this.y + addToY + 1) {
+      if (this.buffer.lines.length < y + this.ybase) {
+        if (this.ybase > 0 && this.buffer.lines.length <= this.ybase + this.y + addToY + 1) {
           // There is room above the buffer and there are no empty elements below the line,
           // scroll up
           this.ybase--;
@@ -1913,7 +1910,7 @@ Terminal.prototype.resize = function(x, y) {
         } else {
           // Add a blank line if there is no buffer left at the top to scroll to, or if there
           // are blank lines after the cursor
-          this.lines.push(this.blankLine());
+          this.buffer.lines.push(this.buffer.blankLine());
         }
       }
       if (this.children.length < y) {
@@ -1922,10 +1919,10 @@ Terminal.prototype.resize = function(x, y) {
     }
   } else { // (j > y)
     while (j-- > y) {
-      if (this.lines.length > y + this.ybase) {
-        if (this.lines.length > this.ybase + this.y + 1) {
+      if (this.buffer.lines.length > y + this.ybase) {
+        if (this.buffer.lines.length > this.ybase + this.y + 1) {
           // The line is a blank line below the cursor, remove it
-          this.lines.pop();
+          this.buffer.lines.pop();
         } else {
           // The line is the cursor, scroll down
           this.ybase++;
@@ -2043,7 +2040,7 @@ Terminal.prototype.nextStop = function(x) {
  * @param {number} y The line in which to operate.
  */
 Terminal.prototype.eraseRight = function(x, y) {
-  var line = this.lines.get(this.ybase + y);
+  var line = this.buffer.lines.get(this.ybase + y);
   if (!line) {
     return;
   }
@@ -2062,7 +2059,7 @@ Terminal.prototype.eraseRight = function(x, y) {
  * @param {number} y The line in which to operate.
  */
 Terminal.prototype.eraseLeft = function(x, y) {
-  var line = this.lines.get(this.ybase + y);
+  var line = this.buffer.lines.get(this.ybase + y);
   if (!line) {
     return;
   }
@@ -2082,13 +2079,13 @@ Terminal.prototype.clear = function() {
     // Don't clear if it's already clear
     return;
   }
-  this.lines.set(0, this.lines.get(this.ybase + this.y));
-  this.lines.length = 1;
+  this.buffer.lines.set(0, this.buffer.lines.get(this.ybase + this.y));
+  this.buffer.lines.length = 1;
   this.ydisp = 0;
   this.ybase = 0;
   this.y = 0;
   for (var i = 1; i < this.rows; i++) {
-    this.lines.push(this.blankLine());
+    this.buffer.lines.push(this.buffer.blankLine());
   }
   this.refresh(0, this.rows - 1);
   this.emit('scroll', this.ydisp);
@@ -2100,38 +2097,6 @@ Terminal.prototype.clear = function() {
  */
 Terminal.prototype.eraseLine = function(y) {
   this.eraseRight(0, y);
-};
-
-
-/**
- * Return the data array of a blank line
- * @param {number} cur First bunch of data for each "blank" character.
- */
-Terminal.prototype.blankLine = function(cur) {
-  var attr = cur
-  ? this.eraseAttr()
-  : this.defAttr;
-
-  var ch = [attr, ' ', 1]  // width defaults to 1 halfwidth character
-  , line = []
-  , i = 0;
-
-  for (; i < this.cols; i++) {
-    line[i] = ch;
-  }
-
-  return line;
-};
-
-
-/**
- * If cur return the back color xterm feature attribute. Else return defAttr.
- * @param {object} cur
- */
-Terminal.prototype.ch = function(cur) {
-  return cur
-    ? [this.eraseAttr(), ' ', 1]
-  : [this.defAttr, ' ', 1];
 };
 
 
@@ -2209,8 +2174,8 @@ Terminal.prototype.reverseIndex = function() {
     // possibly move the code below to term.reverseScroll();
     // test: echo -ne '\e[1;1H\e[44m\eM\e[0m'
     // blankLine(true) is xterm/linux behavior
-    this.lines.shiftElements(this.y + this.ybase, this.rows - 1, 1);
-    this.lines.set(this.y + this.ybase, this.blankLine(true));
+    this.buffer.lines.shiftElements(this.y + this.ybase, this.rows - 1, 1);
+    this.buffer.lines.set(this.y + this.ybase, this.buffer.blankLine(true));
     this.updateRange(this.scrollTop);
     this.updateRange(this.scrollBottom);
   } else {
