@@ -13,7 +13,7 @@
 import { CompositionHelper } from './CompositionHelper';
 import { EventEmitter } from './EventEmitter';
 import { Viewport } from './Viewport';
-import { moveTextAreaUnderMouseCursor, pasteHandler, copyHandler } from './handlers/Clipboard';
+import { rightClickHandler, moveTextAreaUnderMouseCursor, pasteHandler, copyHandler } from './handlers/Clipboard';
 import { CircularList } from './utils/CircularList';
 import { C0 } from './EscapeSequences';
 import { InputHandler } from './InputHandler';
@@ -543,12 +543,12 @@ Terminal.prototype.initGlobal = function() {
   if (term.browser.isFirefox) {
     on(this.element, 'mousedown', event => {
       if (ev.button == 2) {
-        moveTextAreaUnderMouseCursor(event, this.textarea, this.selectionManager);
+        rightClickHandler(event, this.textarea, this.selectionManager);
       }
     });
   } else {
     on(this.element, 'contextmenu', event => {
-      moveTextAreaUnderMouseCursor(event, this.textarea, this.selectionManager);
+      rightClickHandler(event, this.textarea, this.selectionManager);
     });
   }
 
@@ -558,7 +558,7 @@ Terminal.prototype.initGlobal = function() {
   if (term.browser.isLinux) {
     // Use auxclick event over mousedown the latter doesn't seem to work. Note
     // that the regular click event doesn't fire for the middle mouse button.
-    on(this.element, 'click', event => {
+    on(this.element, 'auxclick', event => {
       if (event.button === 1) {
         moveTextAreaUnderMouseCursor(event, this.textarea, this.selectionManager);
       }
