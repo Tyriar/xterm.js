@@ -211,6 +211,7 @@ function Terminal(options) {
 
   this.defAttr = (0 << 18) | (257 << 9) | (256 << 0);
   this.curAttr = this.defAttr;
+  this.curTrueColor = null;
 
   this.params = [];
   this.currentParam = 0;

@@ -76,21 +76,21 @@ export class InputHandler implements IInputHandler {
           if (removed[2] === 0
               && this._terminal.lines.get(row)[this._terminal.cols - 2]
               && this._terminal.lines.get(row)[this._terminal.cols - 2][2] === 2) {
-            this._terminal.lines.get(row)[this._terminal.cols - 2] = [this._terminal.curAttr, ' ', 1];
+            this._terminal.lines.get(row)[this._terminal.cols - 2] = [this._terminal.curAttr, ' ', 1, this._terminal.curTrueColor];
           }
 
           // insert empty cell at cursor
-          this._terminal.lines.get(row).splice(this._terminal.x, 0, [this._terminal.curAttr, ' ', 1]);
+          this._terminal.lines.get(row).splice(this._terminal.x, 0, [this._terminal.curAttr, ' ', 1, this._terminal.curTrueColor]);
         }
       }
 
-      this._terminal.lines.get(row)[this._terminal.x] = [this._terminal.curAttr, char, ch_width];
+      this._terminal.lines.get(row)[this._terminal.x] = [this._terminal.curAttr, char, ch_width, this._terminal.curTrueColor];
       this._terminal.x++;
       this._terminal.updateRange(this._terminal.y);
 
       // fullwidth char - set next cell width to zero and advance cursor
       if (ch_width === 2) {
-        this._terminal.lines.get(row)[this._terminal.x] = [this._terminal.curAttr, '', 0];
+        this._terminal.lines.get(row)[this._terminal.x] = [this._terminal.curAttr, '', 0, this._terminal.curTrueColor];
         this._terminal.x++;
       }
     }
@@ -1222,6 +1222,7 @@ export class InputHandler implements IInputHandler {
     , fg = (this._terminal.curAttr >> 9) & 0x1ff
     , bg = this._terminal.curAttr & 0x1ff
     , p;
+    let trueColor: number;
 
     for (; i < l; i++) {
       p = params[i];
@@ -1288,6 +1289,10 @@ export class InputHandler implements IInputHandler {
         // fg color 256
         if (params[i + 1] === 2) {
           i += 2;
+          trueColor = this._getTrueColorCode(
+              params[i] & 0xff,
+              params[i + 1] & 0xff,
+              params[i + 2] & 0xff, true);
           fg = this._terminal.matchColor(
             params[i] & 0xff,
             params[i + 1] & 0xff,
@@ -1303,6 +1308,11 @@ export class InputHandler implements IInputHandler {
         // bg color 256
         if (params[i + 1] === 2) {
           i += 2;
+          trueColor = this._getTrueColorCode(
+              params[i] & 0xff,
+              params[i + 1] & 0xff,
+              params[i + 2] & 0xff, false);
+              console.log('getTrueColorCode: ', trueColor.toString(16));
           bg = this._terminal.matchColor(
             params[i] & 0xff,
             params[i + 1] & 0xff,
@@ -1324,6 +1334,13 @@ export class InputHandler implements IInputHandler {
     }
 
     this._terminal.curAttr = (flags << 18) | (fg << 9) | bg;
+    this._terminal.curTrueColor = trueColor;
+    console.log('this._terminal.curTrueColor', this._terminal.curTrueColor);
+  }
+
+  private _getTrueColorCode(r: number, g: number, b: number, fg: boolean): number {
+    // In format: 0x1RRGGBB for foreground, 0x0RRGGBB for background
+    return (fg ? 1 << 24 : 0) + (r << 16) + (g << 8) + b;
   }
 
   /**

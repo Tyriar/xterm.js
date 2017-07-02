@@ -25,7 +25,7 @@ export interface ITerminal {
   textarea: HTMLTextAreaElement;
   ybase: number;
   ydisp: number;
-  lines: ICircularList<string>;
+  lines: ICircularList<any>;
   rows: number;
   cols: number;
   browser: IBrowser;

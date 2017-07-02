@@ -153,6 +153,7 @@ export class Renderer {
       }
 
       let attr = this._terminal.defAttr;
+      let lastTrueColor = undefined;
 
       const documentFragment = document.createDocumentFragment();
       let innerHTML = '';
@@ -170,6 +171,7 @@ export class Renderer {
         let data: any = line[i][0];
         const ch = line[i][1];
         const ch_width: any = line[i][2];
+        const trueColor: number = line[i][3];
         if (!ch_width) {
           continue;
         }
@@ -178,8 +180,8 @@ export class Renderer {
           data = -1;
         }
 
-        if (data !== attr) {
-          if (attr !== this._terminal.defAttr) {
+        if (data !== attr || (i > 1 && lastTrueColor !== trueColor)) {
+          if (attr !== this._terminal.defAttr || lastTrueColor !== undefined || (i > 1 && lastTrueColor !== trueColor)) {
             if (innerHTML) {
               currentElement.innerHTML = innerHTML;
               innerHTML = '';
@@ -187,7 +189,7 @@ export class Renderer {
             documentFragment.appendChild(currentElement);
             currentElement = null;
           }
-          if (data !== this._terminal.defAttr) {
+          if (data !== this._terminal.defAttr || lastTrueColor !== trueColor) {
             if (innerHTML && !currentElement) {
               currentElement = this._spanElementObjectPool.acquire();
             }
@@ -239,28 +241,42 @@ export class Renderer {
                 currentElement.classList.add('xterm-hidden');
               }
 
-              /**
-               * Weird situation: Invert flag used black foreground and white background results
-               * in invalid background color, positioned at the 256 index of the 256 terminal
-               * color map. Pin the colors manually in such a case.
-               *
-               * Source: https://github.com/sourcelair/xterm.js/issues/57
-               */
-              if (flags & FLAGS.INVERSE) {
-                if (bg === 257) {
-                  bg = 15;
+              if (trueColor) {
+                const fg = trueColor & 0x1000000;
+                let rgb = (trueColor & 0x0FFFFFF).toString(16);
+                while (rgb.length < 6) {
+                  rgb = '0' + rgb;
                 }
-                if (fg === 256) {
-                  fg = 0;
+
+                if (fg) {
+                  currentElement.style.color = `#${rgb}`;
+                } else {
+                  currentElement.style.backgroundColor = `#${rgb}`;
                 }
-              }
+              } else {
+                /**
+                 * Weird situation: Invert flag used black foreground and white background results
+                 * in invalid background color, positioned at the 256 index of the 256 terminal
+                 * color map. Pin the colors manually in such a case.
+                 *
+                 * Source: https://github.com/sourcelair/xterm.js/issues/57
+                 */
+                if (flags & FLAGS.INVERSE) {
+                  if (bg === 257) {
+                    bg = 15;
+                  }
+                  if (fg === 256) {
+                    fg = 0;
+                  }
+                }
 
-              if (bg < 256) {
-                currentElement.classList.add(`xterm-bg-color-${bg}`);
-              }
+                if (bg < 256) {
+                  currentElement.classList.add(`xterm-bg-color-${bg}`);
+                }
 
-              if (fg < 256) {
-                currentElement.classList.add(`xterm-color-${fg}`);
+                if (fg < 256) {
+                  currentElement.classList.add(`xterm-color-${fg}`);
+                }
               }
             }
           }
@@ -295,6 +311,7 @@ export class Renderer {
         }
 
         attr = data;
+        lastTrueColor = trueColor;
       }
 
       if (innerHTML && !currentElement) {
