@@ -11,7 +11,7 @@
  */
 
 import { CompositionHelper } from './CompositionHelper';
-import { EventEmitter } from './EventEmitter';
+import { EventEmitter } from 'events';
 import { Viewport } from './Viewport';
 import { rightClickHandler, moveTextAreaUnderMouseCursor, pasteHandler, copyHandler } from './handlers/Clipboard';
 import { CircularList } from './utils/CircularList';

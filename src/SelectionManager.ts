@@ -6,7 +6,7 @@ import * as Mouse from './utils/Mouse';
 import * as Browser from './utils/Browser';
 import { CharMeasure } from './utils/CharMeasure';
 import { CircularList } from './utils/CircularList';
-import { EventEmitter } from './EventEmitter';
+import { EventEmitter } from 'events';
 import { ITerminal } from './Interfaces';
 import { SelectionModel } from './SelectionModel';
 
@@ -155,7 +155,7 @@ export class SelectionManager extends EventEmitter {
    */
   public disable() {
     this.clearSelection();
-    this._buffer.off('trim', this._bufferTrimListener);
+    this._buffer.removeListener('trim', this._bufferTrimListener);
     this._rowContainer.removeEventListener('mousedown', this._mouseDownListener);
   }
 

@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { EventEmitter } from '../EventEmitter.js';
+import { EventEmitter } from 'events';
 
 /**
  * Utility class that measures the size of a character.

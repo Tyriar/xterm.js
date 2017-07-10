@@ -4,7 +4,7 @@
  * @module xterm/utils/CircularList
  * @license MIT
  */
-import { EventEmitter } from '../EventEmitter';
+import { EventEmitter } from 'events';
 
 export class CircularList<T> extends EventEmitter {
   private _array: T[];
