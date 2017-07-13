@@ -21,12 +21,12 @@ import { Parser } from './Parser';
 import { Renderer } from './Renderer';
 import { Linkifier } from './Linkifier';
 import { SelectionManager } from './SelectionManager';
-import { SearchHelper } from './SearchHelper';
 import { CharMeasure } from './utils/CharMeasure';
 import * as Browser from './utils/Browser';
 import * as Mouse from './utils/Mouse';
 import { CHARSETS } from './Charsets';
 import { getRawByteCoords } from './utils/Mouse';
+import { translateBufferLineToString } from './utils/BufferLine';
 
 /**
  * Terminal Emulation References:
@@ -224,7 +224,6 @@ function Terminal(options) {
   this.renderer = this.renderer || null;
   this.selectionManager = this.selectionManager || null;
   this.linkifier = this.linkifier || new Linkifier();
-  this.searchHelper = this.searchHelper || null;
 
   // user input states
   this.writeBuffer = [];
@@ -740,7 +739,6 @@ Terminal.prototype.open = function(parent, focus) {
   });
   this.on('scroll', () => this.selectionManager.refresh());
   this.viewportElement.addEventListener('scroll', () => this.selectionManager.refresh());
-  this.searchHelper = new SearchHelper(this);;
 
   // Setup loop that draws to screen
   this.refresh(0, this.rows - 1);
@@ -1463,26 +1461,6 @@ Terminal.prototype.clearSelection = function() {
 Terminal.prototype.selectAll = function() {
   this.selectionManager.selectAll();
 };
-
-/**
- * Find the next instance of the term, then scroll to and select it. If it
- * doesn't exist, do nothing.
- * @param term The term to search for.
- * @return Whether a result was found.
- */
-Terminal.prototype.findNext = function(term) {
-  return this.searchHelper.findNext(term);
-}
-
-/**
- * Find the previous instance of the term, then scroll to and select it. If it
- * doesn't exist, do nothing.
- * @param term The term to search for.
- * @return Whether a result was found.
- */
-Terminal.prototype.findPrevious = function(term) {
-  return this.searchHelper.findPrevious(term);
-}
 
 /**
  * Handle a keydown event
@@ -2476,6 +2454,7 @@ function keys(obj) {
  * Expose
  */
 
+Terminal.translateBufferLineToString = translateBufferLineToString;
 Terminal.EventEmitter = EventEmitter;
 Terminal.inherits = inherits;
 

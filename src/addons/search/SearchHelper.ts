@@ -2,8 +2,8 @@
  * @license MIT
  */
 
-import { ITerminal } from './Interfaces';
-import { translateBufferLineToString } from './utils/BufferLine';
+// import { ITerminal } from '../../Interfaces';
+// import { translateBufferLineToString } from '../../utils/BufferLine';
 
 interface ISearchResult {
   term: string;
@@ -11,8 +11,11 @@ interface ISearchResult {
   row: number;
 }
 
+/**
+ * A class that knows how to search the terminal and how to display the results.
+ */
 export class SearchHelper {
-  constructor(private _terminal: ITerminal) {
+  constructor(private _terminal: any, private _translateBufferLineToString: any) {
     // TODO: Search for multiple instances on 1 line
     // TODO: Don't use the actual selection, instead use a "find selection" so multiple instances can be highlighted
     // TODO: Highlight other instances in the viewport
@@ -22,7 +25,7 @@ export class SearchHelper {
   /**
    * Find the next instance of the term, then scroll to and select it. If it
    * doesn't exist, do nothing.
-   * @param term The term to search for.
+   * @param term Tne search term.
    * @return Whether a result was found.
    */
   public findNext(term: string): boolean {
@@ -63,7 +66,7 @@ export class SearchHelper {
   /**
    * Find the previous instance of the term, then scroll to and select it. If it
    * doesn't exist, do nothing.
-   * @param term The term to search for.
+   * @param term Tne search term.
    * @return Whether a result was found.
    */
   public findPrevious(term: string): boolean {
@@ -101,9 +104,15 @@ export class SearchHelper {
     return this._selectResult(result);
   }
 
+  /**
+   * Searches a line for a search term.
+   * @param term Tne search term.
+   * @param y The line to search.
+   * @return The search result if it was found.
+   */
   private _findInLine(term: string, y: number): ISearchResult {
     const bufferLine = this._terminal.lines.get(y);
-    const lowerStringLine = translateBufferLineToString(bufferLine, true).toLowerCase();
+    const lowerStringLine = this._translateBufferLineToString(bufferLine, true).toLowerCase();
     const lowerTerm = term.toLowerCase();
     const searchIndex = lowerStringLine.indexOf(lowerTerm);
     if (searchIndex >= 0) {
@@ -115,6 +124,11 @@ export class SearchHelper {
     }
   }
 
+  /**
+   * Selects and scrolls to a result.
+   * @param result The result to select.
+   * @return Whethera result was selected.
+   */
   private _selectResult(result: ISearchResult): boolean {
     if (!result) {
       return false;
