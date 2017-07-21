@@ -7,7 +7,7 @@ import * as Browser from './utils/Browser';
 import { CharMeasure } from './utils/CharMeasure';
 import { CircularList } from './utils/CircularList';
 import { EventEmitter } from './EventEmitter';
-import { ITerminal } from './Interfaces';
+import { ITerminal, ICircularList } from './Interfaces';
 import { SelectionModel } from './SelectionModel';
 import { translateBufferLineToString } from './utils/BufferLine';
 
@@ -26,18 +26,6 @@ const DRAG_SCROLL_MAX_SPEED = 15;
  * The number of milliseconds between drag scroll updates.
  */
 const DRAG_SCROLL_INTERVAL = 50;
-
-/**
- * The amount of time before mousedown events are no longer stacked to create
- * double/triple click events.
- */
-const CLEAR_MOUSE_DOWN_TIME = 400;
-
-/**
- * The number of pixels in each direction that the mouse must move before
- * mousedown events are no longer stacked to create double/triple click events.
- */
-const CLEAR_MOUSE_DISTANCE = 10;
 
 /**
  * A string containing all characters that are considered word separated by the
@@ -110,7 +98,7 @@ export class SelectionManager extends EventEmitter {
 
   constructor(
     private _terminal: ITerminal,
-    private _buffer: CircularList<any>,
+    private _buffer: ICircularList<[number, string, number][]>,
     private _rowContainer: HTMLElement,
     private _charMeasure: CharMeasure
   ) {
@@ -159,7 +147,7 @@ export class SelectionManager extends EventEmitter {
    * switched in or out.
    * @param buffer The active buffer.
    */
-  public setBuffer(buffer: CircularList<any>): void {
+  public setBuffer(buffer: ICircularList<[number, string, number][]>): void {
     this._buffer = buffer;
     this.clearSelection();
   }
@@ -198,7 +186,7 @@ export class SelectionManager extends EventEmitter {
     for (let i = start[1] + 1; i <= end[1] - 1; i++) {
       const bufferLine = this._buffer.get(i);
       const lineText = translateBufferLineToString(bufferLine, true);
-      if (bufferLine.isWrapped) {
+      if ((<any>bufferLine).isWrapped) {
         result[result.length - 1] += lineText;
       } else {
         result.push(lineText);
@@ -209,7 +197,7 @@ export class SelectionManager extends EventEmitter {
     if (start[1] !== end[1]) {
       const bufferLine = this._buffer.get(end[1]);
       const lineText = translateBufferLineToString(bufferLine, true, 0, end[0]);
-      if (bufferLine.isWrapped) {
+      if ((<any>bufferLine).isWrapped) {
         result[result.length - 1] += lineText;
       } else {
         result.push(lineText);
@@ -293,7 +281,7 @@ export class SelectionManager extends EventEmitter {
     coords[0]--;
     coords[1]--;
     // Convert viewport coords to buffer coords
-    coords[1] += this._terminal.ydisp;
+    coords[1] += this._terminal.buffer.ydisp;
     return coords;
   }
 
@@ -488,9 +476,9 @@ export class SelectionManager extends EventEmitter {
       this._terminal.scrollDisp(this._dragScrollAmount, false);
       // Re-evaluate selection
       if (this._dragScrollAmount > 0) {
-        this._model.selectionEnd = [this._terminal.cols - 1, this._terminal.ydisp + this._terminal.rows];
+        this._model.selectionEnd = [this._terminal.cols - 1, this._terminal.buffer.ydisp + this._terminal.rows];
       } else {
-        this._model.selectionEnd = [0, this._terminal.ydisp];
+        this._model.selectionEnd = [0, this._terminal.buffer.ydisp];
       }
       this.refresh();
     }
@@ -534,6 +522,10 @@ export class SelectionManager extends EventEmitter {
    */
   private _getWordAt(coords: [number, number]): IWordPosition {
     const bufferLine = this._buffer.get(coords[1]);
+    if (!bufferLine) {
+      return null;
+    }
+
     const line = translateBufferLineToString(bufferLine, false);
 
     // Get actual index, taking into consideration wide characters
@@ -602,8 +594,10 @@ export class SelectionManager extends EventEmitter {
    */
   protected _selectWordAt(coords: [number, number]): void {
     const wordPosition = this._getWordAt(coords);
-    this._model.selectionStart = [wordPosition.start, coords[1]];
-    this._model.selectionStartLength = wordPosition.length;
+    if (wordPosition) {
+      this._model.selectionStart = [wordPosition.start, coords[1]];
+      this._model.selectionStartLength = wordPosition.length;
+    }
   }
 
   /**
@@ -612,7 +606,9 @@ export class SelectionManager extends EventEmitter {
    */
   private _selectToWordAt(coords: [number, number]): void {
     const wordPosition = this._getWordAt(coords);
-    this._model.selectionEnd = [this._model.areSelectionValuesReversed() ? wordPosition.start : (wordPosition.start + wordPosition.length), coords[1]];
+    if (wordPosition) {
+      this._model.selectionEnd = [this._model.areSelectionValuesReversed() ? wordPosition.start : (wordPosition.start + wordPosition.length), coords[1]];
+    }
   }
 
   /**
