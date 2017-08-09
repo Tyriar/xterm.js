@@ -81,21 +81,21 @@ export class InputHandler implements IInputHandler {
           if (removed[CHAR_DATA_WIDTH_INDEX] === 0
               && this._terminal.buffer.lines.get(row)[this._terminal.cols - 2]
               && this._terminal.buffer.lines.get(row)[this._terminal.cols - 2][CHAR_DATA_WIDTH_INDEX] === 2) {
-            this._terminal.buffer.lines.get(row)[this._terminal.cols - 2] = [this._terminal.curAttr, ' ', 1];
+            this._terminal.buffer.lines.get(row)[this._terminal.cols - 2] = [' ', 1, this._terminal.curAttr];
           }
 
           // insert empty cell at cursor
-          this._terminal.buffer.lines.get(row).splice(this._terminal.buffer.x, 0, [this._terminal.curAttr, ' ', 1]);
+          this._terminal.buffer.lines.get(row).splice(this._terminal.buffer.x, 0, [' ', 1, this._terminal.curAttr]);
         }
       }
 
-      this._terminal.buffer.lines.get(row)[this._terminal.buffer.x] = [this._terminal.curAttr, char, ch_width];
+      this._terminal.buffer.lines.get(row)[this._terminal.buffer.x] = [char, ch_width, this._terminal.curAttr];
       this._terminal.buffer.x++;
       this._terminal.updateRange(this._terminal.buffer.y);
 
       // fullwidth char - set next cell width to zero and advance cursor
       if (ch_width === 2) {
-        this._terminal.buffer.lines.get(row)[this._terminal.buffer.x] = [this._terminal.curAttr, '', 0];
+        this._terminal.buffer.lines.get(row)[this._terminal.buffer.x] = ['', 0, this._terminal.curAttr];
         this._terminal.buffer.x++;
       }
     }
@@ -195,7 +195,7 @@ export class InputHandler implements IInputHandler {
 
     const row = this._terminal.buffer.y + this._terminal.buffer.ybase;
     let j = this._terminal.buffer.x;
-    const ch: CharData = [this._terminal.eraseAttr(), ' ', 1]; // xterm
+    const ch: CharData = [' ', 1, this._terminal.eraseAttr()]; // xterm
 
     while (param-- && j < this._terminal.cols) {
       this._terminal.buffer.lines.get(row).splice(j++, 0, ch);
@@ -511,7 +511,7 @@ export class InputHandler implements IInputHandler {
     }
 
     const row = this._terminal.buffer.y + this._terminal.buffer.ybase;
-    const ch: CharData = [this._terminal.eraseAttr(), ' ', 1]; // xterm
+    const ch: CharData = [' ', 1, this._terminal.eraseAttr()]; // xterm
 
     while (param--) {
       this._terminal.buffer.lines.get(row).splice(this._terminal.buffer.x, 1);
@@ -559,7 +559,7 @@ export class InputHandler implements IInputHandler {
 
     const row = this._terminal.buffer.y + this._terminal.buffer.ybase;
     let j = this._terminal.buffer.x;
-    const ch: CharData = [this._terminal.eraseAttr(), ' ', 1]; // xterm
+    const ch: CharData = [' ', 1, this._terminal.eraseAttr()]; // xterm
 
     while (param-- && j < this._terminal.cols) {
       this._terminal.buffer.lines.get(row)[j++] = ch;
@@ -613,7 +613,7 @@ export class InputHandler implements IInputHandler {
   public repeatPrecedingCharacter(params: number[]): void {
     let param = params[0] || 1;
     const line = this._terminal.buffer.lines.get(this._terminal.buffer.ybase + this._terminal.buffer.y);
-    const ch = line[this._terminal.buffer.x - 1] || [this._terminal.defAttr, ' ', 1];
+    const ch = line[this._terminal.buffer.x - 1] || [' ', 1, this._terminal.defAttr];
 
     while (param--) {
       line[this._terminal.buffer.x++] = ch;

@@ -62,7 +62,7 @@ describe('SelectionManager', () => {
   function stringToRow(text: string): LineData {
     let result: LineData = [];
     for (let i = 0; i < text.length; i++) {
-      result.push([0, text.charAt(i), 1]);
+      result.push([text.charAt(i), 1, 0]);
     }
     return result;
   }
@@ -101,21 +101,21 @@ describe('SelectionManager', () => {
     it('should expand selection for wide characters', () => {
       // Wide characters use a special format
       buffer.lines.set(0, [
-        [null, '中', 2],
-        [null, '', 0],
-        [null, '文', 2],
-        [null, '', 0],
-        [null, ' ', 1],
-        [null, 'a', 1],
-        [null, '中', 2],
-        [null, '', 0],
-        [null, '文', 2],
-        [null, '', 0],
-        [null, 'b', 1],
-        [null, ' ', 1],
-        [null, 'f', 1],
-        [null, 'o', 1],
-        [null, 'o', 1]
+        ['中', 2, 0],
+        ['', 0, 0],
+        ['文', 2, 0],
+        ['', 0, 0],
+        [' ', 1, 0],
+        ['a', 1, 0],
+        ['中', 2, 0],
+        ['', 0, 0],
+        ['文', 2, 0],
+        ['', 0, 0],
+        ['b', 1, 0],
+        [' ', 1, 0],
+        ['f', 1, 0],
+        ['o', 1, 0],
+        ['o', 1, 0]
       ]);
       // Ensure wide characters take up 2 columns
       selectionManager.selectWordAt([0, 0]);

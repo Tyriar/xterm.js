@@ -4,7 +4,7 @@
 
 import { ITerminal } from './Interfaces';
 import { DomElementObjectPool } from './utils/DomElementObjectPool';
-import { CHAR_DATA_WIDTH_INDEX, CHAR_DATA_CHAR_INDEX } from './Buffer';
+import { CHAR_DATA_WIDTH_INDEX, CHAR_DATA_CHAR_INDEX, CHAR_DATA_ATTR_INDEX } from './Buffer';
 
 /**
  * The maximum number of refresh frames to skip when the write buffer is non-
@@ -168,7 +168,7 @@ export class Renderer {
 
       for (let i = 0; i < width; i++) {
         // TODO: Could data be a more specific type?
-        let data: any = line[i][0];
+        let data: any = line[i][CHAR_DATA_ATTR_INDEX];
         const ch = line[i][CHAR_DATA_CHAR_INDEX];
         const ch_width: any = line[i][CHAR_DATA_WIDTH_INDEX];
         const isCursor: boolean = i === x;

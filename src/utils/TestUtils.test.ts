@@ -55,7 +55,7 @@ export class MockTerminal implements ITerminal {
   blankLine(cur?: boolean, isWrapped?: boolean): LineData {
     const line: LineData = [];
     for (let i = 0; i < this.cols; i++) {
-      line.push([0, ' ', 1]);
+      line.push([' ', 1, 0]);
     }
     return line;
   }
@@ -120,7 +120,7 @@ export class MockInputHandlingTerminal implements IInputHandlingTerminal {
   eraseLeft(x: number, y: number): void {
     throw new Error('Method not implemented.');
   }
-  blankLine(cur?: boolean, isWrapped?: boolean): [number, string, number][] {
+  blankLine(cur?: boolean, isWrapped?: boolean): LineData {
     throw new Error('Method not implemented.');
   }
   prevStop(x?: number): number {
@@ -171,7 +171,7 @@ export class MockInputHandlingTerminal implements IInputHandlingTerminal {
 }
 
 export class MockBuffer implements IBuffer {
-  lines: ICircularList<[number, string, number][]>;
+  lines: ICircularList<LineData>;
   ydisp: number;
   ybase: number;
   y: number;

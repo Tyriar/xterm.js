@@ -2036,7 +2036,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     if (!line) {
       return;
     }
-    const ch: CharData = [this.eraseAttr(), ' ', 1]; // xterm
+    const ch: CharData = [' ', 1, this.eraseAttr()]; // xterm
     for (; x < this.cols; x++) {
       line[x] = ch;
     }
@@ -2053,7 +2053,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     if (!line) {
       return;
     }
-    const ch: CharData = [this.eraseAttr(), ' ', 1]; // xterm
+    const ch: CharData = [' ', 1, this.eraseAttr()]; // xterm
     x++;
     while (x--) {
       line[x] = ch;
@@ -2097,7 +2097,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
   public blankLine(cur?: boolean, isWrapped?: boolean): LineData {
     const attr = cur ? this.eraseAttr() : this.defAttr;
 
-    const ch: CharData = [attr, ' ', 1]; // width defaults to 1 halfwidth character
+    const ch: CharData = [' ', 1, attr]; // width defaults to 1 halfwidth character
     const line: LineData = [];
 
     // TODO: It is not ideal that this is a property on an array, a buffer line
@@ -2118,7 +2118,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
    * @param cur
    */
   public ch(cur?: boolean): CharData {
-    return cur ? [this.eraseAttr(), ' ', 1] : [this.defAttr, ' ', 1];
+    return cur ? [' ', 1, this.eraseAttr()] : [' ', 1, this.defAttr];
   }
 
   /**

@@ -6,8 +6,9 @@ import { ITerminal, IBuffer } from './Interfaces';
 import { CircularList } from './utils/CircularList';
 import { LineData, CharData } from './Types';
 
-export const CHAR_DATA_CHAR_INDEX = 1;
-export const CHAR_DATA_WIDTH_INDEX = 2;
+export const CHAR_DATA_CHAR_INDEX = 0;
+export const CHAR_DATA_WIDTH_INDEX = 1;
+export const CHAR_DATA_ATTR_INDEX = 2;
 
 /**
  * This class represents a terminal buffer (an internal state of the terminal), where the
@@ -87,7 +88,7 @@ export class Buffer implements IBuffer {
 
     // Deal with columns increasing (we don't do anything when columns reduce)
     if (this._terminal.cols < newCols) {
-      const ch: CharData = [this._terminal.defAttr, ' ', 1]; // does xterm use the default attr?
+      const ch: CharData = [' ', 1, this._terminal.defAttr]; // does xterm use the default attr?
       for (let i = 0; i < this._lines.length; i++) {
         if (this._lines.get(i) === undefined) {
           this._lines.set(i, this._terminal.blankLine());
