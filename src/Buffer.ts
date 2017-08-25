@@ -46,6 +46,10 @@ export class Buffer implements IBuffer {
     return this._lines;
   }
 
+  public get hasScrollback(): boolean {
+    return this._hasScrollback && this.lines.maxLength > this._terminal.rows;
+  }
+
   /**
    * Gets the correct buffer length based on the rows provided, the terminal's
    * scrollback and whether this buffer is flagged to have scrollback or not.
@@ -78,10 +82,9 @@ export class Buffer implements IBuffer {
     this.ybase = 0;
     this.y = 0;
     this.x = 0;
-    this.scrollBottom = 0;
-    this.scrollTop = 0;
     this.tabs = {};
     this._lines = new CircularList<LineData>(this._getCorrectBufferLength(this._terminal.rows));
+    this.scrollTop = 0;
     this.scrollBottom = this._terminal.rows - 1;
   }
 
