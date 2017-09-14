@@ -25,12 +25,13 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     container: HTMLElement,
     id: string,
     zIndex: number,
+    private alpha: boolean,
     protected colors: IColorSet
   ) {
     this._canvas = document.createElement('canvas');
     this._canvas.id = `xterm-${id}-layer`;
     this._canvas.style.zIndex = zIndex.toString();
-    this._ctx = this._canvas.getContext('2d');
+    this._ctx = this._canvas.getContext('2d', {alpha});
     this._ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
     container.appendChild(this._canvas);
   }
@@ -153,7 +154,12 @@ export abstract class BaseRenderLayer implements IRenderLayer {
    * Clears the entire canvas.
    */
   protected clearAll(): void {
-    this._ctx.clearRect(0, 0, this._canvas.width, this._canvas.height);
+    if (this.alpha) {
+      this._ctx.clearRect(0, 0, this._canvas.width, this._canvas.height);
+    } else {
+      this._ctx.fillStyle = this.colors.background;
+      this._ctx.fillRect(0, 0, this._canvas.width, this._canvas.height);
+    }
   }
 
   /**
@@ -165,11 +171,20 @@ export abstract class BaseRenderLayer implements IRenderLayer {
    */
   protected clearCells(x: number, y: number, width: number, height: number): void {
     const cellLeft = this._getCellLeft(x);
-    this._ctx.clearRect(
-        cellLeft,
-        y * this.scaledLineHeight,
-        this._getCellLeft(x + width) - cellLeft,
-        height * this.scaledLineHeight);
+    if (this.alpha) {
+      this._ctx.clearRect(
+          cellLeft,
+          y * this.scaledLineHeight,
+          this._getCellLeft(x + width) - cellLeft,
+          height * this.scaledLineHeight);
+    } else {
+      this._ctx.fillStyle = this.colors.background;
+      this._ctx.fillRect(
+          cellLeft,
+          y * this.scaledLineHeight,
+          this._getCellLeft(x + width) - cellLeft,
+          height * this.scaledLineHeight);
+    }
   }
 
   /**
@@ -206,9 +221,11 @@ export abstract class BaseRenderLayer implements IRenderLayer {
    * @param x The column to draw at.
    * @param y The row to draw at.
    * @param fg The foreground color, in the format stored within the attributes.
+   * @param bg The background color, in the format stored within the attributes.
+   * This is used to validate whether a cached image can be used.
    * @param bold Whether the text is bold.
    */
-  protected drawChar(terminal: ITerminal, char: string, code: number, width: number, x: number, y: number, fg: number, bold: boolean): void {
+  protected drawChar(terminal: ITerminal, char: string, code: number, width: number, x: number, y: number, fg: number, bg: number, bold: boolean): void {
     // Clear the cell next to this character if it's wide
     if (width === 2) {
       this.clearCells(x + 1, y, 1, 1);
@@ -226,7 +243,8 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     const isAscii = code < 256;
     const isBasicColor = (colorIndex > 1 && fg < 16);
     const isDefaultColor = fg >= 256;
-    if (isAscii && (isBasicColor || isDefaultColor)) {
+    const isDefaultBackground = bg >= 256;
+    if (isAscii && (isBasicColor || isDefaultColor) && isDefaultBackground) {
       // ImageBitmap's draw about twice as fast as from a canvas
       const charAtlasCellWidth = this.scaledCharWidth + CHAR_ATLAS_CELL_SPACING;
       const charAtlasCellHeight = this.scaledCharHeight + CHAR_ATLAS_CELL_SPACING;
@@ -234,7 +252,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
           code * charAtlasCellWidth, colorIndex * charAtlasCellHeight, this.scaledCharWidth, this.scaledCharHeight,
           x * this.scaledCharWidth, y * this.scaledLineHeight + this.scaledLineDrawY, this.scaledCharWidth, this.scaledCharHeight);
     } else {
-      this._drawUncachedChar(terminal, char, width, fg, x, y);
+      this._drawUncachedChar(terminal, char, width, fg, x, y, bold);
     }
     // This draws the atlas (for debugging purposes)
     // this._ctx.clearRect(0, 0, this._canvas.width, this._canvas.height);
@@ -252,9 +270,12 @@ export abstract class BaseRenderLayer implements IRenderLayer {
    * @param x The column to draw at.
    * @param y The row to draw at.
    */
-  private _drawUncachedChar(terminal: ITerminal, char: string, width: number, fg: number, x: number, y: number): void {
+  private _drawUncachedChar(terminal: ITerminal, char: string, width: number, fg: number, x: number, y: number, bold: boolean): void {
     this._ctx.save();
     this._ctx.font = `${terminal.options.fontSize * window.devicePixelRatio}px ${terminal.options.fontFamily}`;
+    if (bold) {
+      this._ctx.font = `bold ${this._ctx.font}`;
+    }
     this._ctx.textBaseline = 'top';
 
     if (fg === INVERTED_DEFAULT_COLOR) {

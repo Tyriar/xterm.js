@@ -121,7 +121,7 @@ class CharAtlasGenerator {
 
   constructor(private _document: Document) {
     this._canvas = this._document.createElement('canvas');
-    this._ctx = this._canvas.getContext('2d');
+    this._ctx = this._canvas.getContext('2d', {alpha: false});
     this._ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
   }
 

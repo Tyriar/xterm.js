@@ -5,8 +5,7 @@
 
 import { ITerminal, ITheme } from '../Interfaces';
 import { CHAR_DATA_WIDTH_INDEX, CHAR_DATA_CHAR_INDEX } from '../Buffer';
-import { BackgroundRenderLayer } from './BackgroundRenderLayer';
-import { ForegroundRenderLayer } from './ForegroundRenderLayer';
+import { TextRenderLayer } from './TextRenderLayer';
 import { SelectionRenderLayer } from './SelectionRenderLayer';
 import { CursorRenderLayer } from './CursorRenderLayer';
 import { ColorManager } from './ColorManager';
@@ -30,11 +29,10 @@ export class Renderer extends EventEmitter implements IRenderer {
     super();
     this._colorManager = new ColorManager();
     this._renderLayers = [
-      new BackgroundRenderLayer(this._terminal.element, 0, this._colorManager.colors),
+      new TextRenderLayer(this._terminal.element, 0, this._colorManager.colors),
       new SelectionRenderLayer(this._terminal.element, 1, this._colorManager.colors),
-      new ForegroundRenderLayer(this._terminal.element, 2, this._colorManager.colors),
-      new LinkRenderLayer(this._terminal.element, 3, this._colorManager.colors, this._terminal),
-      new CursorRenderLayer(this._terminal.element, 4, this._colorManager.colors)
+      new LinkRenderLayer(this._terminal.element, 2, this._colorManager.colors, this._terminal),
+      new CursorRenderLayer(this._terminal.element, 3, this._colorManager.colors)
     ];
     this.dimensions = {
       scaledCharWidth: null,
@@ -77,13 +75,11 @@ export class Renderer extends EventEmitter implements IRenderer {
       return;
     }
 
-    // Calculate the scaled character width. Width is kept as a decimal to
-    // provide better letter spacing, otherwise the text can look odd.
-    // Characters drawn using this decimal number do have the potential to
-    // overlap, but only by a single pixel. As such, it's not a big deal when
-    // they do as that pixel is always cleared as necessary before drawing the
-    // character.
-    this.dimensions.scaledCharWidth = this._terminal.charMeasure.width * window.devicePixelRatio;
+    // Calculate the scaled character width. Width is floored as it must be
+    // drawn to an integer grid in order for the CharAtlas "stamps" to not be
+    // blurry. When text is drawn to the grid not using the CharAtlas, it is
+    // clipped to ensure there is no overlap with the next cell.
+    this.dimensions.scaledCharWidth = Math.floor(this._terminal.charMeasure.width * window.devicePixelRatio);
 
     // Calculate the scaled character height. Height is ceiled in case
     // devicePixelRatio is a floating point number in order to ensure there is
