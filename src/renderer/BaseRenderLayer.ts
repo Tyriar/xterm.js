@@ -33,6 +33,10 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     this._canvas.style.zIndex = zIndex.toString();
     this._ctx = this._canvas.getContext('2d', {alpha});
     this._ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+    // Draw the background if this is an opaque layer
+    if (!alpha) {
+      this.clearAll();
+    }
     container.appendChild(this._canvas);
   }
 
@@ -71,6 +75,11 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     this._canvas.height = dim.scaledCanvasHeight;
     this._canvas.style.width = `${dim.canvasWidth}px`;
     this._canvas.style.height = `${dim.canvasHeight}px`;
+
+    // Draw the background if this is an opaque layer
+    if (!this.alpha) {
+      this.clearAll();
+    }
 
     if (charSizeChanged) {
       this._refreshCharAtlas(terminal, this.colors);
