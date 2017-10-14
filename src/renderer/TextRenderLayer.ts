@@ -59,11 +59,44 @@ export class TextRenderLayer extends BaseRenderLayer {
       const row = y + terminal.buffer.ydisp;
       const line = terminal.buffer.lines.get(row);
 
-      this.clearCells(0, y, terminal.cols, 1);
+      // this.clearCells(0, y, terminal.cols, 1);
       // for (let x = 0; x < terminal.cols; x++) {
       //   this._state.cache[x][y] = null;
       // }
+      // TODO: Do an initial pass to check for dirty words
+      // Render background
+      for (let x = 0; x < terminal.cols; x++) {
+        const charData = line[x];
+        // const code: number = <number>charData[CHAR_DATA_CODE_INDEX];
+        // const char: string = charData[CHAR_DATA_CHAR_INDEX];
+        const attr: number = charData[CHAR_DATA_ATTR_INDEX];
+        let width: number = charData[CHAR_DATA_WIDTH_INDEX];
 
+        const flags = attr >> 18;
+        let bg = attr & 0x1ff;
+
+        const isInverted = flags & FLAGS.INVERSE;
+
+        // If inverse flag is on, the foreground should become the background.
+        if (isInverted) {
+          bg = (attr >> 9) & 0x1ff;
+          if (bg === 257) {
+            bg = INVERTED_DEFAULT_COLOR;
+          }
+        }
+
+        // Draw background
+        if (bg < 256) {
+          this._ctx.save();
+          this._ctx.fillStyle = (bg === INVERTED_DEFAULT_COLOR ? this._colors.foreground : this._colors.ansi[bg]);
+          this.fillCells(x, y, width, 1);
+          this._ctx.restore();
+        } else {
+          this.clearCells(x, y, width, 1);
+        }
+      }
+
+      // Render foreground
       for (let x = 0; x < terminal.cols; x++) {
         const charData = line[x];
         const code: number = <number>charData[CHAR_DATA_CODE_INDEX];
@@ -106,13 +139,10 @@ export class TextRenderLayer extends BaseRenderLayer {
         // this._state.cache[x][y] = charData;
 
         const flags = attr >> 18;
-        let bg = attr & 0x1ff;
 
         // Skip rendering if the character is invisible
-        const isDefaultBackground = bg >= 256;
         const isInvisible = flags & FLAGS.INVISIBLE;
-        const isInverted = flags & FLAGS.INVERSE;
-        if (!code || (code === 32 /*' '*/ && isDefaultBackground && !isInverted) || isInvisible) {
+        if (!code || code === 32 /*' '*/ || isInvisible) {
           continue;
         }
 
@@ -136,33 +166,30 @@ export class TextRenderLayer extends BaseRenderLayer {
           }
         }
 
+        const bg = attr & 0x1ff;
         let fg = (attr >> 9) & 0x1ff;
 
         // If inverse flag is on, the foreground should become the background.
+        const isInverted = flags & FLAGS.INVERSE;
         if (isInverted) {
-          const temp = bg;
-          bg = fg;
-          fg = temp;
+          fg = bg;
           if (fg === 256) {
             fg = INVERTED_DEFAULT_COLOR;
-          }
-          if (bg === 257) {
-            bg = INVERTED_DEFAULT_COLOR;
           }
         }
 
         // Clear the cell next to this character if it's wide
-        if (width === 2) {
-          // this.clearCells(x + 1, y, 1, 1);
-        }
+        // if (width === 2) {
+        //   this.clearCells(x + 1, y, 1, 1);
+        // }
 
         // Draw background
-        if (bg < 256) {
-          this._ctx.save();
-          this._ctx.fillStyle = (bg === INVERTED_DEFAULT_COLOR ? this._colors.foreground : this._colors.ansi[bg]);
-          this.fillCells(x, y, width, 1);
-          this._ctx.restore();
-        }
+        // if (bg < 256) {
+        //   this._ctx.save();
+        //   this._ctx.fillStyle = (bg === INVERTED_DEFAULT_COLOR ? this._colors.foreground : this._colors.ansi[bg]);
+        //   this.fillCells(x, y, width, 1);
+        //   this._ctx.restore();
+        // }
 
         this._ctx.save();
         if (flags & FLAGS.BOLD) {
