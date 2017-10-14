@@ -60,167 +60,252 @@ export class TextRenderLayer extends BaseRenderLayer {
       const line = terminal.buffer.lines.get(row);
 
       // TODO: Do an initial pass to check for dirty words
-
-      // Render background
-      let currentStart = 0;
-      let currentBg: number = null;
+      const dirtyWords: [number, number][] = [];
+      let currentWordStart: number = 0;
+      let isCurrentWordDirty = false;
       for (let x = 0; x < terminal.cols; x++) {
         const charData = line[x];
+        const code: number = charData[CHAR_DATA_CODE_INDEX];
         const attr: number = charData[CHAR_DATA_ATTR_INDEX];
-        let width: number = charData[CHAR_DATA_WIDTH_INDEX];
-
         const flags = attr >> 18;
-        let bg = attr & 0x1ff;
 
-        const isInverted = flags & FLAGS.INVERSE;
-
-        // If inverse flag is on, the foreground should become the background.
-        if (isInverted) {
-          bg = (attr >> 9) & 0x1ff;
-          if (bg === 257) {
-            bg = INVERTED_DEFAULT_COLOR;
+        // Is this character a word boundary?
+        const state = this._state.cache[x][y];
+        const isFgInvisible = this._isFgInvisible(code, flags);
+        const isOldFgInvisible = !state || this._isFgInvisible(state[CHAR_DATA_CODE_INDEX], state[CHAR_DATA_ATTR_INDEX] >> 18);
+        const doBgsDiffer = !state || this._doBgsDiffer(attr, state[CHAR_DATA_ATTR_INDEX]);
+        // A null state means that the character must be redrawn
+        if (state && isFgInvisible && isOldFgInvisible && !doBgsDiffer) {
+          // Record dirty word
+          if (isCurrentWordDirty) {
+            dirtyWords.push([currentWordStart, x + 1]);
           }
-        }
-
-        if (currentBg === null) {
-          currentBg = bg;
+          currentWordStart = x + 1;
+          isCurrentWordDirty = false;
+          // if (y === 1)
+          // console.log('Word boundary at:', x);
         } else {
-          // Draw the background if it has changed or if this is the last column
-          if (currentBg !== bg) {
-            this._drawBackgroundRange(currentStart, y, x - currentStart, currentBg);
-            // Reset the state at x
-            currentStart = x;
-            currentBg = bg;
+          isCurrentWordDirty = isCurrentWordDirty || !state || this._doesCharDataDiffer(charData, state);
+        }
+
+        // TODO: last column is not being cleared correctly
+
+        // TODO: Support overlapping chars properly
+
+        // const charData = line[x];
+        // const code: number = charData[CHAR_DATA_CODE_INDEX];
+        // const char: string = charData[CHAR_DATA_CHAR_INDEX];
+        // const attr: number = charData[CHAR_DATA_ATTR_INDEX];
+        // let width: number = charData[CHAR_DATA_WIDTH_INDEX];
+
+        // // If the character is an overlapping char and the character to the right is a
+        // // space, take ownership of the cell to the right.
+        // if (width !== 0 && this._isOverlapping(charData)) {
+        //   // If the character is overlapping, we want to force a re-render on every
+        //   // frame. This is specifically to work around the case where two
+        //   // overlaping chars `a` and `b` are adjacent, the cursor is moved to b and a
+        //   // space is added. Without this, the first half of `b` would never
+        //   // get removed, and `a` would not re-render because it thinks it's
+        //   // already in the correct state.
+        //   // this._state.cache[x][y] = OVERLAP_OWNED_CHAR_DATA;
+        //   if (x < line.length - 1 && line[x + 1][CHAR_DATA_CODE_INDEX] === 32 /*' '*/) {
+        //     width = 2;
+        //     // this._clearChar(x + 1, y);
+        //     // The overlapping char's char data will force a clear and render when the
+        //     // overlapping char is no longer to the left of the character and also when
+        //     // the space changes to another character.
+        //     // this._state.cache[x + 1][y] = OVERLAP_OWNED_CHAR_DATA;
+        //   }
+        // }
+
+
+      }
+      // Add the last dirty word if necessary
+      if (isCurrentWordDirty) {
+        dirtyWords.push([currentWordStart, terminal.cols]);
+      }
+
+      // if (y === 1) {
+      //   console.log('dirtyWords', dirtyWords);
+      // }
+
+      dirtyWords.forEach(dirtyWord => {
+        // Render background
+        let currentStart = dirtyWord[0];
+        let currentBg: number = null;
+        for (let x = dirtyWord[0]; x < dirtyWord[1]; x++) {
+          const charData = line[x];
+          const attr: number = charData[CHAR_DATA_ATTR_INDEX];
+          let width: number = charData[CHAR_DATA_WIDTH_INDEX];
+
+          const flags = attr >> 18;
+          let bg = attr & 0x1ff;
+
+          const isInverted = flags & FLAGS.INVERSE;
+
+          // If inverse flag is on, the foreground should become the background.
+          if (isInverted) {
+            bg = (attr >> 9) & 0x1ff;
+            if (bg === 257) {
+              bg = INVERTED_DEFAULT_COLOR;
+            }
           }
-        }
-      }
 
-      // Draw the up to the last column
-      if (currentStart < terminal.cols - 1) {
-        this._drawBackgroundRange(currentStart, y, terminal.cols - currentStart, currentBg);
-      }
-
-      // Render foreground
-      for (let x = 0; x < terminal.cols; x++) {
-        const charData = line[x];
-        const code: number = <number>charData[CHAR_DATA_CODE_INDEX];
-        const char: string = charData[CHAR_DATA_CHAR_INDEX];
-        const attr: number = charData[CHAR_DATA_ATTR_INDEX];
-        let width: number = charData[CHAR_DATA_WIDTH_INDEX];
-
-        // The character to the left is a wide character, drawing is owned by
-        // the char at x-1
-        if (width === 0) {
-          // this._state.cache[x][y] = null;
-          continue;
-        }
-
-        // If the character is a space and the character to the left is an
-        // overlapping character, skip the character and allow the overlapping
-        // char to take full control over this character's cell.
-        if (code === 32 /*' '*/) {
-          if (x > 0) {
-            const previousChar: CharData = line[x - 1];
-            if (this._isOverlapping(previousChar)) {
-              continue;
+          if (currentBg === null) {
+            currentBg = bg;
+          } else {
+            // Draw the background if it has changed or if this is the last column
+            if (currentBg !== bg) {
+              this._drawBackgroundRange(currentStart, y, x - currentStart, currentBg);
+              // Reset the state at x
+              currentStart = x;
+              currentBg = bg;
             }
           }
         }
-
-        // Skip rendering if the character is identical
-        // const state = this._state.cache[x][y];
-        // if (state && state[CHAR_DATA_CHAR_INDEX] === char && state[CHAR_DATA_ATTR_INDEX] === attr) {
-        //   // Skip render, contents are identical
-        //   this._state.cache[x][y] = charData;
-        //   continue;
-        // }
-
-        // Clear the old character was not a space with the default background
-        // const wasInverted = !!(state && state[CHAR_DATA_ATTR_INDEX] && state[CHAR_DATA_ATTR_INDEX] >> 18 & FLAGS.INVERSE);
-        // if (state && !(state[CHAR_DATA_CODE_INDEX] === 32 /*' '*/ && (state[CHAR_DATA_ATTR_INDEX] & 0x1ff) >= 256 && !wasInverted)) {
-        //   this._clearChar(x, y);
-        // }
-        // this._state.cache[x][y] = charData;
-
-        const flags = attr >> 18;
-
-        // Skip rendering if the character is invisible
-        const isInvisible = flags & FLAGS.INVISIBLE;
-        if (!code || code === 32 /*' '*/ || isInvisible) {
-          continue;
+        // Draw the up to the last column
+        if (currentStart < dirtyWord[1] - 1) {
+          this._drawBackgroundRange(currentStart, y, dirtyWord[1] - currentStart, currentBg);
         }
+        // TODO: Draw the next half of the following cell
 
-        // If the character is an overlapping char and the character to the right is a
-        // space, take ownership of the cell to the right.
-        if (width !== 0 && this._isOverlapping(charData)) {
-          // If the character is overlapping, we want to force a re-render on every
-          // frame. This is specifically to work around the case where two
-          // overlaping chars `a` and `b` are adjacent, the cursor is moved to b and a
-          // space is added. Without this, the first half of `b` would never
-          // get removed, and `a` would not re-render because it thinks it's
-          // already in the correct state.
-          // this._state.cache[x][y] = OVERLAP_OWNED_CHAR_DATA;
-          if (x < line.length - 1 && line[x + 1][CHAR_DATA_CODE_INDEX] === 32 /*' '*/) {
-            width = 2;
-            // this._clearChar(x + 1, y);
-            // The overlapping char's char data will force a clear and render when the
-            // overlapping char is no longer to the left of the character and also when
-            // the space changes to another character.
-            // this._state.cache[x + 1][y] = OVERLAP_OWNED_CHAR_DATA;
+        // Render foreground
+        for (let x = dirtyWord[0]; x < dirtyWord[1]; x++) {
+          const charData = line[x];
+          const code: number = charData[CHAR_DATA_CODE_INDEX];
+          const char: string = charData[CHAR_DATA_CHAR_INDEX];
+          const attr: number = charData[CHAR_DATA_ATTR_INDEX];
+          let width: number = charData[CHAR_DATA_WIDTH_INDEX];
+
+          // The character to the left is a wide character, drawing is owned by
+          // the char at x-1
+          if (width === 0) {
+            this._state.cache[x][y] = null;
+            continue;
           }
-        }
 
-        const bg = attr & 0x1ff;
-        let fg = (attr >> 9) & 0x1ff;
-
-        // If inverse flag is on, the foreground should become the background.
-        const isInverted = flags & FLAGS.INVERSE;
-        if (isInverted) {
-          fg = bg;
-          if (fg === 256) {
-            fg = INVERTED_DEFAULT_COLOR;
+          // If the character is a space and the character to the left is an
+          // overlapping character, skip the character and allow the overlapping
+          // char to take full control over this character's cell.
+          if (code === 32 /*' '*/) {
+            if (x > 0) {
+              const previousChar: CharData = line[x - 1];
+              if (this._isOverlapping(previousChar)) {
+                continue;
+              }
+            }
           }
-        }
 
-        // Clear the cell next to this character if it's wide
-        // if (width === 2) {
-        //   this.clearCells(x + 1, y, 1, 1);
-        // }
+          // Skip rendering if the character is identical
+          // const state = this._state.cache[x][y];
+          // if (state && state[CHAR_DATA_CHAR_INDEX] === char && state[CHAR_DATA_ATTR_INDEX] === attr) {
+          //   // Skip render, contents are identical
+          //   this._state.cache[x][y] = charData;
+          //   continue;
+          // }
 
-        // Draw background
-        // if (bg < 256) {
-        //   this._ctx.save();
-        //   this._ctx.fillStyle = (bg === INVERTED_DEFAULT_COLOR ? this._colors.foreground : this._colors.ansi[bg]);
-        //   this.fillCells(x, y, width, 1);
-        //   this._ctx.restore();
-        // }
+          // Clear the old character was not a space with the default background
+          // const wasInverted = !!(state && state[CHAR_DATA_ATTR_INDEX] && state[CHAR_DATA_ATTR_INDEX] >> 18 & FLAGS.INVERSE);
+          // if (state && !(state[CHAR_DATA_CODE_INDEX] === 32 /*' '*/ && (state[CHAR_DATA_ATTR_INDEX] & 0x1ff) >= 256 && !wasInverted)) {
+          //   this._clearChar(x, y);
+          // }
+          this._state.cache[x][y] = charData;
 
-        this._ctx.save();
-        if (flags & FLAGS.BOLD) {
-          this._ctx.font = `bold ${this._ctx.font}`;
-          // Convert the FG color to the bold variant
-          if (fg < 8) {
-            fg += 8;
+          const flags = attr >> 18;
+
+          // Skip rendering if the character is invisible
+          if (this._isFgInvisible(code, flags)) {
+            continue;
           }
-        }
 
-        if (flags & FLAGS.UNDERLINE) {
-          if (fg === INVERTED_DEFAULT_COLOR) {
-            this._ctx.fillStyle = this._colors.background;
-          } else if (fg < 256) {
-            // 256 color support
-            this._ctx.fillStyle = this._colors.ansi[fg];
-          } else {
-            this._ctx.fillStyle = this._colors.foreground;
+          // If the character is an overlapping char and the character to the right is a
+          // space, take ownership of the cell to the right.
+          if (width !== 0 && this._isOverlapping(charData)) {
+            // If the character is overlapping, we want to force a re-render on every
+            // frame. This is specifically to work around the case where two
+            // overlaping chars `a` and `b` are adjacent, the cursor is moved to b and a
+            // space is added. Without this, the first half of `b` would never
+            // get removed, and `a` would not re-render because it thinks it's
+            // already in the correct state.
+            // this._state.cache[x][y] = OVERLAP_OWNED_CHAR_DATA;
+            if (x < line.length - 1 && line[x + 1][CHAR_DATA_CODE_INDEX] === 32 /*' '*/) {
+              width = 2;
+              // this._clearChar(x + 1, y);
+              // The overlapping char's char data will force a clear and render when the
+              // overlapping char is no longer to the left of the character and also when
+              // the space changes to another character.
+              // this._state.cache[x + 1][y] = OVERLAP_OWNED_CHAR_DATA;
+            }
           }
-          this.fillBottomLineAtCells(x, y);
+
+          const bg = attr & 0x1ff;
+          let fg = (attr >> 9) & 0x1ff;
+
+          // If inverse flag is on, the foreground should become the background.
+          const isInverted = flags & FLAGS.INVERSE;
+          if (isInverted) {
+            fg = bg;
+            if (fg === 256) {
+              fg = INVERTED_DEFAULT_COLOR;
+            }
+          }
+
+          // Clear the cell next to this character if it's wide
+          // if (width === 2) {
+          //   this.clearCells(x + 1, y, 1, 1);
+          // }
+
+          // Draw background
+          // if (bg < 256) {
+          //   this._ctx.save();
+          //   this._ctx.fillStyle = (bg === INVERTED_DEFAULT_COLOR ? this._colors.foreground : this._colors.ansi[bg]);
+          //   this.fillCells(x, y, width, 1);
+          //   this._ctx.restore();
+          // }
+
+          this._ctx.save();
+          if (flags & FLAGS.BOLD) {
+            this._ctx.font = `bold ${this._ctx.font}`;
+            // Convert the FG color to the bold variant
+            if (fg < 8) {
+              fg += 8;
+            }
+          }
+
+          if (flags & FLAGS.UNDERLINE) {
+            if (fg === INVERTED_DEFAULT_COLOR) {
+              this._ctx.fillStyle = this._colors.background;
+            } else if (fg < 256) {
+              // 256 color support
+              this._ctx.fillStyle = this._colors.ansi[fg];
+            } else {
+              this._ctx.fillStyle = this._colors.foreground;
+            }
+            this.fillBottomLineAtCells(x, y);
+          }
+
+          this.drawChar(terminal, char, code, width, x, y, fg, bg, !!(flags & FLAGS.BOLD), !!(flags & FLAGS.DIM));
+
+          this._ctx.restore();
         }
-
-        this.drawChar(terminal, char, code, width, x, y, fg, bg, !!(flags & FLAGS.BOLD), !!(flags & FLAGS.DIM));
-
-        this._ctx.restore();
-      }
+      });
     }
+  }
+
+  private _doesCharDataDiffer(a: CharData, b: CharData): boolean {
+    // TODO: Does this need to be more specific? Is width needed?
+    return a[CHAR_DATA_CODE_INDEX] !== b[CHAR_DATA_CODE_INDEX] ||
+        a[CHAR_DATA_ATTR_INDEX] !== b[CHAR_DATA_ATTR_INDEX] ||
+        a[CHAR_DATA_WIDTH_INDEX] !== b[CHAR_DATA_WIDTH_INDEX];
+  }
+
+  private _isFgInvisible(code: number, flags: number): boolean {
+    return !code || code === 32 /*' '*/ || !!(flags & FLAGS.INVISIBLE);
+  }
+
+  private _doBgsDiffer(aAttr: number, bAttr: number): boolean {
+    return (aAttr & 0x1ff) !== (bAttr & 0x1ff) ||
+        ((aAttr >> 18) & FLAGS.INVERSE) !== ((bAttr >> 18) & FLAGS.INVERSE);
   }
 
   private _drawBackgroundRange(x: number, y: number, width: number, bg: number): void {
