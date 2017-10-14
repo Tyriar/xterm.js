@@ -59,16 +59,13 @@ export class TextRenderLayer extends BaseRenderLayer {
       const row = y + terminal.buffer.ydisp;
       const line = terminal.buffer.lines.get(row);
 
-      // this.clearCells(0, y, terminal.cols, 1);
-      // for (let x = 0; x < terminal.cols; x++) {
-      //   this._state.cache[x][y] = null;
-      // }
       // TODO: Do an initial pass to check for dirty words
+
       // Render background
+      let currentStart = 0;
+      let currentBg: number = null;
       for (let x = 0; x < terminal.cols; x++) {
         const charData = line[x];
-        // const code: number = <number>charData[CHAR_DATA_CODE_INDEX];
-        // const char: string = charData[CHAR_DATA_CHAR_INDEX];
         const attr: number = charData[CHAR_DATA_ATTR_INDEX];
         let width: number = charData[CHAR_DATA_WIDTH_INDEX];
 
@@ -85,15 +82,22 @@ export class TextRenderLayer extends BaseRenderLayer {
           }
         }
 
-        // Draw background
-        if (bg < 256) {
-          this._ctx.save();
-          this._ctx.fillStyle = (bg === INVERTED_DEFAULT_COLOR ? this._colors.foreground : this._colors.ansi[bg]);
-          this.fillCells(x, y, width, 1);
-          this._ctx.restore();
+        if (currentBg === null) {
+          currentBg = bg;
         } else {
-          this.clearCells(x, y, width, 1);
+          // Draw the background if it has changed or if this is the last column
+          if (currentBg !== bg) {
+            this._drawBackgroundRange(currentStart, y, x - currentStart, currentBg);
+            // Reset the state at x
+            currentStart = x;
+            currentBg = bg;
+          }
         }
+      }
+
+      // Draw the up to the last column
+      if (currentStart < terminal.cols - 1) {
+        this._drawBackgroundRange(currentStart, y, terminal.cols - currentStart, currentBg);
       }
 
       // Render foreground
@@ -216,6 +220,17 @@ export class TextRenderLayer extends BaseRenderLayer {
 
         this._ctx.restore();
       }
+    }
+  }
+
+  private _drawBackgroundRange(x: number, y: number, width: number, bg: number): void {
+    if (bg < 256) {
+      this._ctx.save();
+      this._ctx.fillStyle = (bg === INVERTED_DEFAULT_COLOR ? this._colors.foreground : this._colors.ansi[bg]);
+      this.fillCells(x, y, width, 1);
+      this._ctx.restore();
+    } else {
+      this.clearCells(x, y, width, 1);
     }
   }
 
