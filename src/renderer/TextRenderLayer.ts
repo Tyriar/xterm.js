@@ -82,8 +82,6 @@ export class TextRenderLayer extends BaseRenderLayer {
           }
           currentWordStart = x + 1;
           isCurrentWordDirty = false;
-          // if (y === 1)
-          // console.log('Word boundary at:', x);
         } else {
           isCurrentWordDirty = isCurrentWordDirty || !state || this._doesCharDataDiffer(charData, state);
         }
@@ -304,8 +302,20 @@ export class TextRenderLayer extends BaseRenderLayer {
   }
 
   private _doBgsDiffer(aAttr: number, bAttr: number): boolean {
-    return (aAttr & 0x1ff) !== (bAttr & 0x1ff) ||
-        ((aAttr >> 18) & FLAGS.INVERSE) !== ((bAttr >> 18) & FLAGS.INVERSE);
+    // 0x200000: Inverse flag (x << 18 & 0x8)
+    const aInverse = aAttr & 0x200000;
+    const bInverse = bAttr & 0x200000;
+    if (aInverse !== bInverse) {
+      // Don't bother trying to match up backgrounds with differing inverse
+      // flags, this is a small edge case that's not worth optimizing for.
+      return true;
+    }
+    if (aInverse) {
+      // 0x3fe00: Foreground (x << 9 & 0x1ff)
+      return (aAttr & 0x3fe00) !== (bAttr & 0x3fe00);
+    }
+    // 0x1ff: Background
+    return (aAttr & 0x1ff) !== (bAttr & 0x1ff);
   }
 
   private _drawBackgroundRange(x: number, y: number, width: number, bg: number): void {
