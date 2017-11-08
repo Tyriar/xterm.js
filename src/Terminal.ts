@@ -46,6 +46,7 @@ import { IMouseZoneManager } from './input/Interfaces';
 import { MouseZoneManager } from './input/MouseZoneManager';
 import { initialize as initializeCharAtlas } from './renderer/CharAtlas';
 import { IRenderer } from './renderer/Interfaces';
+import { DomRenderer } from './renderer/dom/DomRenderer';
 
 // Declares required for loadAddon
 declare var exports: any;
@@ -628,7 +629,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
 
     this.charMeasure = new CharMeasure(document, this.helperContainer);
 
-    this.renderer = new Renderer(this, this.options.theme);
+    this.renderer = new DomRenderer(this, this.options.theme);
     this.options.theme = null;
     this.viewport = new Viewport(this, this.viewportElement, this.viewportScrollArea, this.charMeasure);
     this.viewport.onThemeChanged(this.renderer.colorManager.colors);
