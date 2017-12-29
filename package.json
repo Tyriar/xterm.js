@@ -1,7 +1,7 @@
 {
   "name": "vscode-xterm",
   "description": "Full xterm terminal, in your browser",
-  "version": "3.0.0-beta1",
+  "version": "3.0.0-beta2",
   "ignore": [
     "demo",
     "test",
