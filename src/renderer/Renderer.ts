@@ -13,6 +13,7 @@ import { BaseRenderLayer } from './BaseRenderLayer';
 import { IRenderLayer, IColorSet, IRenderer, IRenderDimensions } from './Interfaces';
 import { LinkRenderLayer } from './LinkRenderLayer';
 import { EventEmitter } from '../EventEmitter';
+import { ScreenDprMonitor } from '../utils/ScreenDprMonitor';
 
 export class Renderer extends EventEmitter implements IRenderer {
   /** A queue of the rows to be refreshed */
@@ -23,6 +24,7 @@ export class Renderer extends EventEmitter implements IRenderer {
   private _devicePixelRatio: number;
   private _isPaused: boolean = false;
   private _needsFullRefresh: boolean = false;
+  private _screenDprMonitor: ScreenDprMonitor;
 
   public colorManager: ColorManager;
   public dimensions: IRenderDimensions;
@@ -55,6 +57,9 @@ export class Renderer extends EventEmitter implements IRenderer {
     };
     this._devicePixelRatio = window.devicePixelRatio;
     this._updateDimensions();
+
+    this._screenDprMonitor = new ScreenDprMonitor();
+    this._screenDprMonitor.setListener(() => this.onWindowResize(window.devicePixelRatio));
 
     // Detect whether IntersectionObserver is detected and enable renderer pause
     // and resume based on terminal visibility if so
