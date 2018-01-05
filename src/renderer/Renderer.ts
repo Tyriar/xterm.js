@@ -22,9 +22,9 @@ export class Renderer extends EventEmitter implements IRenderer {
 
   private _renderLayers: IRenderLayer[];
   private _devicePixelRatio: number;
+  private _screenDprMonitor: ScreenDprMonitor;
   private _isPaused: boolean = false;
   private _needsFullRefresh: boolean = false;
-  private _screenDprMonitor: ScreenDprMonitor;
 
   public colorManager: ColorManager;
   public dimensions: IRenderDimensions;

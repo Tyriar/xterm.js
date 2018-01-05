@@ -9,7 +9,7 @@
   ],
   "main": "lib/Terminal.js",
   "types": "typings/xterm.d.ts",
-  "repository": "https://github.com/sourcelair/xterm.js",
+  "repository": "https://github.com/xtermjs/xterm.js",
   "license": "MIT",
   "files": [
     "*.js",
@@ -35,7 +35,8 @@
     "src/*.ts",
     "src/**/*.js",
     "src/**/*.js.map",
-    "src/**/*.ts"
+    "src/**/*.ts",
+    "typings/*.d.ts"
   ],
   "devDependencies": {
     "@types/chai": "^3.4.34",
