@@ -9,6 +9,8 @@ import { isFirefox } from '../utils/Browser';
 
 export const CHAR_ATLAS_CELL_SPACING = 1;
 
+declare const Promise: any;
+
 interface ICharAtlasConfig {
   fontSize: number;
   fontFamily: string;
@@ -127,6 +129,32 @@ class CharAtlasGenerator {
   }
 
   public generate(scaledCharWidth: number, scaledCharHeight: number, fontSize: number, fontFamily: string, background: string, foreground: string, ansiColors: string[]): HTMLCanvasElement | Promise<ImageBitmap> {
+    const promise = new Promise((resolve) => {
+      const worker = new Worker('lib/workers/CharAtlasWorker.js');
+
+      worker.addEventListener('message', function(e) {
+        console.log('received message from worker', e);
+        if (e.data.bitmap) {
+          resolve(e.data.bitmap);
+        }
+      }, false);
+
+      worker.postMessage({
+        scaledCharWidth,
+        scaledCharHeight,
+        fontSize,
+        fontFamily,
+        background,
+        foreground,
+        ansiColors,
+        devicePixelRatio: window.devicePixelRatio
+      });
+    });
+
+    return promise;
+  }
+
+  public generate2(scaledCharWidth: number, scaledCharHeight: number, fontSize: number, fontFamily: string, background: string, foreground: string, ansiColors: string[]): HTMLCanvasElement | Promise<ImageBitmap> {
     const cellWidth = scaledCharWidth + CHAR_ATLAS_CELL_SPACING;
     const cellHeight = scaledCharHeight + CHAR_ATLAS_CELL_SPACING;
     this._canvas.width = 255 * cellWidth;

@@ -25,6 +25,8 @@ app.get('/dist/bundle.js.map', function(req, res){
   res.sendFile(__dirname + '/dist/bundle.js.map');
 });
 
+app.use('/lib', express.static(__dirname + '/../lib'));
+
 app.post('/terminals', function (req, res) {
   var cols = parseInt(req.query.cols),
       rows = parseInt(req.query.rows),
