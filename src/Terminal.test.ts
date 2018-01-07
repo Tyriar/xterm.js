@@ -3,8 +3,9 @@
  * @license MIT
  */
 
- import { assert, expect } from 'chai';
+import { assert, expect } from 'chai';
 import { Terminal } from './Terminal';
+import * as attach from './addons/attach/attach';
 import { MockViewport, MockCompositionHelper, MockRenderer } from './utils/TestUtils.test';
 import { CHAR_DATA_CHAR_INDEX, CHAR_DATA_WIDTH_INDEX } from './Buffer';
 
@@ -12,7 +13,7 @@ const INIT_COLS = 80;
 const INIT_ROWS = 24;
 
 class TestTerminal extends Terminal {
-  public evaluateKeyEscapeSequence(ev: any): {cancel: boolean, key: string, scrollDisp: number} { return this._evaluateKeyEscapeSequence(<KeyboardEvent>ev); }
+  public evaluateKeyEscapeSequence(ev: any): {cancel: boolean, key: string, scrollLines: number} { return this._evaluateKeyEscapeSequence(<KeyboardEvent>ev); }
   public keyDown(ev: any): boolean { return this._keyDown(ev); }
   public keyPress(ev: any): boolean { return this._keyPress(ev); }
 }
@@ -42,9 +43,9 @@ describe('term.js addons', () => {
     };
   });
 
-  it('should load addons with Terminal.loadAddon', () => {
-    Terminal.loadAddon('attach');
-    // Test that addon was loaded successfully, adding attach to Terminal's
+  it('should apply addons with Terminal.applyAddon', () => {
+    Terminal.applyAddon(attach);
+    // Test that addon was applied successfully, adding attach to Terminal's
     // prototype.
     assert.equal(typeof (<any>Terminal).prototype.attach, 'function');
   });
@@ -164,7 +165,7 @@ describe('term.js addons', () => {
   });
 
   describe('scroll', () => {
-    describe('scrollDisp', () => {
+    describe('scrollLines', () => {
       let startYDisp;
       beforeEach(() => {
         for (let i = 0; i < term.rows * 2; i++) {
@@ -174,27 +175,27 @@ describe('term.js addons', () => {
       });
       it('should scroll a single line', () => {
         assert.equal(term.buffer.ydisp, startYDisp);
-        term.scrollDisp(-1);
+        term.scrollLines(-1);
         assert.equal(term.buffer.ydisp, startYDisp - 1);
-        term.scrollDisp(1);
+        term.scrollLines(1);
         assert.equal(term.buffer.ydisp, startYDisp);
       });
       it('should scroll multiple lines', () => {
         assert.equal(term.buffer.ydisp, startYDisp);
-        term.scrollDisp(-5);
+        term.scrollLines(-5);
         assert.equal(term.buffer.ydisp, startYDisp - 5);
-        term.scrollDisp(5);
+        term.scrollLines(5);
         assert.equal(term.buffer.ydisp, startYDisp);
       });
       it('should not scroll beyond the bounds of the buffer', () => {
         assert.equal(term.buffer.ydisp, startYDisp);
-        term.scrollDisp(1);
+        term.scrollLines(1);
         assert.equal(term.buffer.ydisp, startYDisp);
         for (let i = 0; i < startYDisp; i++) {
-          term.scrollDisp(-1);
+          term.scrollLines(-1);
         }
         assert.equal(term.buffer.ydisp, 0);
-        term.scrollDisp(-1);
+        term.scrollLines(-1);
         assert.equal(term.buffer.ydisp, 0);
       });
     });
@@ -245,7 +246,7 @@ describe('term.js addons', () => {
         startYDisp = (term.rows * 2) + 1;
       });
       it('should scroll to the bottom', () => {
-        term.scrollDisp(-1);
+        term.scrollLines(-1);
         term.scrollToBottom();
         assert.equal(term.buffer.ydisp, startYDisp);
         term.scrollPages(-1);
@@ -289,7 +290,7 @@ describe('term.js addons', () => {
         });
 
         assert.equal(term.buffer.ydisp, startYDisp);
-        term.scrollDisp(-1);
+        term.scrollLines(-1);
         assert.equal(term.buffer.ydisp, startYDisp - 1);
         term.keyDown(<KeyboardEvent>{ keyCode: 0 });
         assert.equal(term.buffer.ydisp, startYDisp - 1);

@@ -48,13 +48,14 @@ export interface ITerminal extends ILinkifierAccessor, IBufferAccessor, IElement
   buffers: IBufferSet;
   isFocused: boolean;
   mouseHelper: IMouseHelper;
+  bracketedPasteMode: boolean;
 
   /**
    * Emit the 'data' event and populate the given data.
    * @param data The data to populate in the event.
    */
   handler(data: string): void;
-  scrollDisp(disp: number, suppressScrollEvent?: boolean): void;
+  scrollLines(disp: number, suppressScrollEvent?: boolean): void;
   cancel(ev: Event, force?: boolean): boolean | void;
   log(text: string): void;
   reset(): void;
@@ -82,6 +83,7 @@ export interface IInputHandlingTerminal extends IEventEmitter {
   originMode: boolean;
   insertMode: boolean;
   wraparoundMode: boolean;
+  bracketedPasteMode: boolean;
   defAttr: number;
   curAttr: number;
   prefix: string;
@@ -135,10 +137,11 @@ export interface ITerminalOptions {
   cursorStyle?: string;
   debug?: boolean;
   disableStdin?: boolean;
+  enableBold?: boolean;
   fontSize?: number;
   fontFamily?: string;
-  geometry?: [number, number];
   handler?: (data: string) => void;
+  letterSpacing?: number;
   lineHeight?: number;
   rows?: number;
   screenKeys?: boolean;

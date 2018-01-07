@@ -36,11 +36,12 @@ namespace properties {
 
 namespace static_methods {
   {
-    Terminal.loadAddon('attach');
-    Terminal.loadAddon('fit');
-    Terminal.loadAddon('fullscreen');
-    Terminal.loadAddon('search');
-    Terminal.loadAddon('terminado');
+    Terminal.applyAddon({});
+    Terminal.applyAddon({});
+    Terminal.applyAddon({});
+    Terminal.applyAddon({});
+    Terminal.applyAddon({});
+    Terminal.applyAddon({});
   }
 }
 
@@ -62,7 +63,8 @@ namespace methods_core {
     // no arg
     t.on('blur', () => {});
     t.on('focus', () => {});
-    t.on('lineFeed', () => {});
+    t.on('linefeed', () => {});
+    t.on('selection', () => {});
     // args
     t.on('data', () => {});
     t.on('data', (data: string) => console.log(data));
@@ -87,7 +89,8 @@ namespace methods_core {
     // no arg
     t.off('blur', () => {});
     t.off('focus', () => {});
-    t.off('lineFeed', () => {});
+    t.off('linefeed', () => {});
+    t.off('selection', () => {});
     // args
     t.off('data', () => {});
     t.off('data', (data: string) => console.log(data));
@@ -136,10 +139,11 @@ namespace methods_core {
       const r14: number = t.getOption('rows');
       const r15: number = t.getOption('tabStopWidth');
       const r16: number = t.getOption('scrollback');
-      const r17: [number, number] = t.getOption('geometry');
       const r18: (data: string) => void = t.getOption('handler');
       const r19: string = t.getOption('bellSound');
       const r20: string = t.getOption('bellStyle');
+      const r21: boolean = t.getOption('enableBold');
+      const r22: number = t.getOption('letterSpacing');
     }
     {
       const t: Terminal = new Terminal();
@@ -152,22 +156,23 @@ namespace methods_core {
       t.setOption('cursorBlink', true);
       t.setOption('debug', true);
       t.setOption('disableStdin', true);
+      t.setOption('enableBold', true);
       t.setOption('popOnBell', true);
       t.setOption('screenKeys', true);
       t.setOption('useFlowControl', true);
       t.setOption('visualBell', true);
       t.setOption('colors', ['a', 'b']);
+      t.setOption('letterSpacing', 1);
       t.setOption('cols', 1);
       t.setOption('rows', 1);
       t.setOption('tabStopWidth', 1);
       t.setOption('scrollback', 1);
-      t.setOption('geometry', [1, 1]);
       t.setOption('handler', (data: string) => console.log(data));
       t.setOption('bellSound', 'foo');
       t.setOption('bellStyle', 'none');
-      t.setOption('bellStyle', 'visual');
+      // t.setOption('bellStyle', 'visual');
       t.setOption('bellStyle', 'sound');
-      t.setOption('bellStyle', 'both');
+      // t.setOption('bellStyle', 'both');
       t.setOption('fontSize', 1);
       t.setOption('lineHeight', 1);
       t.setOption('fontFamily', 'foo');
@@ -177,10 +182,10 @@ namespace methods_core {
   namespace scrolling {
     {
       const t: Terminal = new Terminal();
-      t.scrollDisp(-1);
-      t.scrollDisp(1);
-      t.scrollDisp(-1);
-      t.scrollDisp(1);
+      t.scrollLines(-1);
+      t.scrollLines(1);
+      t.scrollLines(-1);
+      t.scrollLines(1);
       t.scrollToTop();
       t.scrollToBottom();
     }

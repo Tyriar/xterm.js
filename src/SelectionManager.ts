@@ -255,6 +255,7 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
   public selectAll(): void {
     this._model.isSelectAllActive = true;
     this.refresh();
+    this._terminal.emit('selection');
   }
 
   /**
@@ -308,6 +309,15 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
   }
 
   /**
+   * Returns whether the selection manager should force selection, regardless of
+   * whether the terminal is in mouse events mode.
+   * @param event The mouse event.
+   */
+  public shouldForceSelection(event: MouseEvent): boolean {
+    return Browser.isMac ? event.altKey : event.shiftKey;
+  }
+
+  /**
    * Handles te mousedown event, setting up for a new selection.
    * @param event The mousedown event.
    */
@@ -325,9 +335,7 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
 
     // Allow selection when using a specific modifier key, even when disabled
     if (!this._enabled) {
-      const shouldForceSelection = Browser.isMac ? event.altKey : event.shiftKey;
-
-      if (!shouldForceSelection) {
+      if (!this.shouldForceSelection(event)) {
         return;
       }
 
@@ -488,7 +496,7 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
     // If the cursor was above or below the viewport, make sure it's at the
     // start or end of the viewport respectively.
     if (this._dragScrollAmount > 0) {
-      this._model.selectionEnd[0] = this._terminal.cols - 1;
+      this._model.selectionEnd[0] = this._terminal.cols;
     } else if (this._dragScrollAmount < 0) {
       this._model.selectionEnd[0] = 0;
     }
@@ -517,10 +525,10 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
    */
   private _dragScroll(): void {
     if (this._dragScrollAmount) {
-      this._terminal.scrollDisp(this._dragScrollAmount, false);
+      this._terminal.scrollLines(this._dragScrollAmount, false);
       // Re-evaluate selection
       if (this._dragScrollAmount > 0) {
-        this._model.selectionEnd = [this._terminal.cols - 1, this._terminal.buffer.ydisp + this._terminal.rows];
+        this._model.selectionEnd = [this._terminal.cols - 1, Math.min(this._terminal.buffer.ydisp + this._terminal.rows, this._terminal.buffer.lines.length - 1)];
       } else {
         this._model.selectionEnd = [0, this._terminal.buffer.ydisp];
       }
@@ -534,6 +542,9 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
    */
   private _onMouseUp(event: MouseEvent): void {
     this._removeMouseDownListeners();
+
+    if (this.hasSelection)
+      this._terminal.emit('selection');
   }
 
   /**

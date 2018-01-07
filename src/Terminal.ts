@@ -22,7 +22,7 @@
  */
 
 import { BufferSet } from './BufferSet';
-import { Buffer } from './Buffer';
+import { Buffer, MAX_BUFFER_SIZE } from './Buffer';
 import { CompositionHelper } from './CompositionHelper';
 import { EventEmitter } from './EventEmitter';
 import { Viewport } from './Viewport';
@@ -47,12 +47,6 @@ import { MouseZoneManager } from './input/MouseZoneManager';
 import { initialize as initializeCharAtlas } from './renderer/CharAtlas';
 import { IRenderer } from './renderer/Interfaces';
 
-// Declares required for loadAddon
-declare var exports: any;
-declare var module: any;
-declare var define: any;
-declare var require: any;
-
 // Let it work inside Node.js for automated testing purposes.
 const document = (typeof window !== 'undefined') ? window.document : null;
 
@@ -70,16 +64,19 @@ const WRITE_BUFFER_PAUSE_THRESHOLD = 5;
 const WRITE_BATCH_SIZE = 300;
 
 const DEFAULT_OPTIONS: ITerminalOptions = {
+  cols: 80,
+  rows: 24,
   convertEol: false,
   termName: 'xterm',
-  geometry: [80, 24],
   cursorBlink: false,
   cursorStyle: 'block',
   bellSound: BellSound,
   bellStyle: 'none',
+  enableBold: true,
   fontFamily: 'courier-new, courier, monospace',
   fontSize: 15,
   lineHeight: 1.0,
+  letterSpacing: 0,
   scrollback: 1000,
   screenKeys: false,
   debug: false,
@@ -130,6 +127,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
   public originMode: boolean;
   public insertMode: boolean;
   public wraparoundMode: boolean; // defaults: xterm - true, vt100 - false
+  public bracketedPasteMode: boolean;
 
   // charset
   // The current charset
@@ -203,7 +201,6 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
 
   public cols: number;
   public rows: number;
-  public geometry: [/*cols*/number, /*rows*/number];
 
   /**
    * Creates a new `Terminal` object.
@@ -239,9 +236,8 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     // TODO: WHy not document.body?
     this.parent = document ? document.body : null;
 
-    this.cols = this.options.cols || this.options.geometry[0];
-    this.rows = this.options.rows || this.options.geometry[1];
-    this.geometry = [this.cols, this.rows];
+    this.cols = this.options.cols;
+    this.rows = this.options.rows;
 
     if (this.options.handler) {
       this.on('data', this.options.handler);
@@ -258,6 +254,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     this.originMode = false;
     this.insertMode = false;
     this.wraparoundMode = true; // defaults: xterm - true, vt100 - false
+    this.bracketedPasteMode = false;
 
     // charset
     this.charset = null;
@@ -319,7 +316,9 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
    * Focus the terminal. Delegates focus handling to the terminal's DOM element.
    */
   public focus(): void {
-    this.textarea.focus();
+    if (this.textarea) {
+      this.textarea.focus();
+    }
   }
 
   public get isFocused(): boolean {
@@ -382,6 +381,8 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
         }
         break;
       case 'scrollback':
+        value = Math.min(value, MAX_BUFFER_SIZE);
+
         if (value < 0) {
           console.warn(`${key} cannot be less than 0, value: ${value}`);
           return;
@@ -410,6 +411,8 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
         this.renderer.clear();
         this.charMeasure.measure(this.options);
         break;
+      case 'enableBold':
+      case 'letterSpacing':
       case 'lineHeight':
         // When the font changes the size of the cells may change which requires a renderer clear
         this.renderer.clear();
@@ -577,18 +580,18 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     this.element = this.document.createElement('div');
     this.element.classList.add('terminal');
     this.element.classList.add('xterm');
-
     this.element.setAttribute('tabindex', '0');
+    this.parent.appendChild(this.element);
 
+    // Performance: Use a document fragment to build the terminal
+    // viewport and helper elements detached from the DOM
+    const fragment = document.createDocumentFragment();
     this.viewportElement = document.createElement('div');
     this.viewportElement.classList.add('xterm-viewport');
-    this.element.appendChild(this.viewportElement);
+    fragment.appendChild(this.viewportElement);
     this.viewportScrollArea = document.createElement('div');
     this.viewportScrollArea.classList.add('xterm-scroll-area');
     this.viewportElement.appendChild(this.viewportScrollArea);
-
-    // preload audio
-    this.syncBellSound();
 
     this._mouseZoneManager = new MouseZoneManager(this);
     this.on('scroll', () => this._mouseZoneManager.clearAll());
@@ -598,8 +601,8 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     // capturing DOM Events. Then produce the helpers.
     this.helperContainer = document.createElement('div');
     this.helperContainer.classList.add('xterm-helpers');
-    // TODO: This should probably be inserted once it's filled to prevent an additional layout
-    this.element.appendChild(this.helperContainer);
+    fragment.appendChild(this.helperContainer);
+
     this.textarea = document.createElement('textarea');
     this.textarea.classList.add('xterm-helper-textarea');
     this.textarea.setAttribute('autocorrect', 'off');
@@ -617,10 +620,13 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
 
     this.charSizeStyleElement = document.createElement('style');
     this.helperContainer.appendChild(this.charSizeStyleElement);
-
-    this.parent.appendChild(this.element);
-
     this.charMeasure = new CharMeasure(document, this.helperContainer);
+
+    // Preload audio, this relied on helperContainer
+    this.syncBellSound();
+
+    // Performance: Add viewport and helper elements from the fragment
+    this.element.appendChild(fragment);
 
     this.renderer = new Renderer(this, this.options.theme);
     this.options.theme = null;
@@ -631,7 +637,6 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     this.on('resize', () => this.renderer.onResize(this.cols, this.rows, false));
     this.on('blur', () => this.renderer.onBlur());
     this.on('focus', () => this.renderer.onFocus());
-    window.addEventListener('resize', () => this.renderer.onWindowResize(window.devicePixelRatio));
     this.charMeasure.on('charsizechanged', () => this.renderer.onResize(this.cols, this.rows, true));
     this.renderer.on('resize', (dimensions) => this.viewport.syncScrollArea());
 
@@ -666,6 +671,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     // Listen for mouse events and translate
     // them into terminal mouse protocols.
     this.bindMouse();
+
   }
 
   /**
@@ -680,22 +686,11 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
   }
 
   /**
-   * Attempts to load an add-on using CommonJS or RequireJS (whichever is available).
-   * @param {string} addon The name of the addon to load
-   * @static
+   * Apply the provided addon on the `Terminal` class.
+   * @param addon The addon to apply.
    */
-  public static loadAddon(addon: string, callback?: Function): boolean | any {
-    // TODO: Improve return type and documentation
-    if (typeof exports === 'object' && typeof module === 'object') {
-      // CommonJS
-      return require('./addons/' + addon + '/' + addon);
-    } else if (typeof define === 'function') {
-      // RequireJS
-      return (<any>require)(['./addons/' + addon + '/' + addon], callback);
-    } else {
-      console.error('Cannot load a module without a CommonJS or RequireJS environment.');
-      return false;
-    }
+  public static applyAddon(addon: any): void {
+    addon.apply(Terminal);
   }
 
   /**
@@ -939,7 +934,12 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
       ev.preventDefault();
       this.focus();
 
-      if (!this.mouseEvents) return;
+      // Don't send the mouse button to the pty if mouse events are disabled or
+      // if the selection manager is having selection forced (ie. a modifier is
+      // held).
+      if (!this.mouseEvents || this.selectionManager.shouldForceSelection(ev)) {
+        return;
+      }
 
       // send the button
       sendButton(ev);
@@ -1115,11 +1115,11 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
   /**
    * Scroll the display of the terminal
    * @param {number} disp The number of lines to scroll down (negative scroll up).
-   * @param {boolean} suppressScrollEvent Don't emit the scroll event as scrollDisp. This is used
+   * @param {boolean} suppressScrollEvent Don't emit the scroll event as scrollLines. This is used
    * to avoid unwanted events being handled by the viewport when the event was triggered from the
    * viewport originally.
    */
-  public scrollDisp(disp: number, suppressScrollEvent?: boolean): void {
+  public scrollLines(disp: number, suppressScrollEvent?: boolean): void {
     if (disp < 0) {
       if (this.buffer.ydisp === 0) {
         return;
@@ -1149,21 +1149,21 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
    * @param {number} pageCount The number of pages to scroll (negative scrolls up).
    */
   public scrollPages(pageCount: number): void {
-    this.scrollDisp(pageCount * (this.rows - 1));
+    this.scrollLines(pageCount * (this.rows - 1));
   }
 
   /**
    * Scrolls the display of the terminal to the top.
    */
   public scrollToTop(): void {
-    this.scrollDisp(-this.buffer.ydisp);
+    this.scrollLines(-this.buffer.ydisp);
   }
 
   /**
    * Scrolls the display of the terminal to the bottom.
    */
   public scrollToBottom(): void {
-    this.scrollDisp(this.buffer.ybase - this.buffer.ydisp);
+    this.scrollLines(this.buffer.ybase - this.buffer.ydisp);
   }
 
   /**
@@ -1368,8 +1368,8 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
       this.writeStopped = false;
     }
 
-    if (result.scrollDisp) {
-      this.scrollDisp(result.scrollDisp);
+    if (result.scrollLines) {
+      this.scrollLines(result.scrollLines);
       return this.cancel(ev, true);
     }
 
@@ -1401,22 +1401,55 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
    * Reference: http://invisible-island.net/xterm/ctlseqs/ctlseqs.html
    * @param ev The keyboard event to be translated to key escape sequence.
    */
-  protected _evaluateKeyEscapeSequence(ev: KeyboardEvent): {cancel: boolean, key: string, scrollDisp: number} {
-    const result: {cancel: boolean, key: string, scrollDisp: number} = {
+  protected _evaluateKeyEscapeSequence(ev: KeyboardEvent): {cancel: boolean, key: string, scrollLines: number} {
+    const result: {cancel: boolean, key: string, scrollLines: number} = {
       // Whether to cancel event propogation (NOTE: this may not be needed since the event is
       // canceled at the end of keyDown
       cancel: false,
       // The new key even to emit
       key: undefined,
       // The number of characters to scroll, if this is defined it will cancel the event
-      scrollDisp: undefined
+      scrollLines: undefined
     };
     const modifiers = (ev.shiftKey ? 1 : 0) | (ev.altKey ? 2 : 0) | (ev.ctrlKey ? 4 : 0) | (ev.metaKey ? 8 : 0);
     switch (ev.keyCode) {
+      case 0:
+        if (ev.key === 'UIKeyInputUpArrow') {
+          if (this.applicationCursor) {
+            result.key = C0.ESC + 'OA';
+          } else {
+            result.key = C0.ESC + '[A';
+          }
+        }
+        else if (ev.key === 'UIKeyInputLeftArrow') {
+          if (this.applicationCursor) {
+            result.key = C0.ESC + 'OD';
+          } else {
+            result.key = C0.ESC + '[D';
+          }
+        }
+        else if (ev.key === 'UIKeyInputRightArrow') {
+          if (this.applicationCursor) {
+            result.key = C0.ESC + 'OC';
+          } else {
+            result.key = C0.ESC + '[C';
+          }
+        }
+        else if (ev.key === 'UIKeyInputDownArrow') {
+          if (this.applicationCursor) {
+            result.key = C0.ESC + 'OB';
+          } else {
+            result.key = C0.ESC + '[B';
+          }
+        }
+        break;
       case 8:
         // backspace
         if (ev.shiftKey) {
           result.key = C0.BS; // ^H
+          break;
+        } else if (ev.altKey) {
+          result.key = C0.ESC + C0.DEL; // \e ^?
           break;
         }
         result.key = C0.DEL; // ^?
@@ -1539,7 +1572,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
       case 33:
         // page up
         if (ev.shiftKey) {
-          result.scrollDisp = -(this.rows - 1);
+          result.scrollLines = -(this.rows - 1);
         } else {
           result.key = C0.ESC + '[5~';
         }
@@ -1547,7 +1580,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
       case 34:
         // page down
         if (ev.shiftKey) {
-          result.scrollDisp = this.rows - 1;
+          result.scrollLines = this.rows - 1;
         } else {
           result.key = C0.ESC + '[6~';
         }
@@ -1824,8 +1857,6 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     this.charMeasure.measure(this.options);
 
     this.refresh(0, this.rows - 1);
-
-    this.geometry = [this.cols, this.rows];
     this.emit('resize', {cols: x, rows: y});
   }
 
@@ -2087,6 +2118,11 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
   }
 
   private syncBellSound(): void {
+    // Don't update anything if the terminal has not been opened yet
+    if (!this.element) {
+      return;
+    }
+
     if (this.soundBell() && this.bellAudioElement) {
       this.bellAudioElement.setAttribute('src', this.options.bellSound);
     } else if (this.soundBell()) {
