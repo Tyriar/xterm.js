@@ -199,6 +199,11 @@ gulp.task('webpack', ['build'], function() {
     .pipe(webpack(require('./webpack.config.js')))
     .pipe(gulp.dest('demo/dist/'));
 });
+gulp.task('webpack-workers', ['build'], function() {
+  return gulp.src('lib/workers/CharAtlasWorker.js')
+    .pipe(webpack(require('./webpack-workers.config.js')))
+    .pipe(gulp.dest('demo/dist/workers'));
+});
 
 /**
  * Submit coverage results to coveralls.io

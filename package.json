@@ -72,10 +72,11 @@
     "vinyl-source-stream": "^1.1.0",
     "webpack": "^3.10.0",
     "webpack-stream": "^4.0.0",
+    "worker-loader": "^1.1.0",
     "zmodem.js": "^0.1.5"
   },
   "scripts": {
-    "prestart": "gulp webpack",
+    "prestart": "gulp webpack webpack-workers",
     "start": "node demo/app",
     "prestart-zmodem": "npm run build",
     "start-zmodem": "node build/addons/zmodem/demo/app",

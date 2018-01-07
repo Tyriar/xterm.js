@@ -10,6 +10,8 @@ import { generateCharAtlas, ICharAtlasRequest } from '../shared/CharAtlasGenerat
 
 export const CHAR_ATLAS_CELL_SPACING = 1;
 
+declare const Promise: any;
+
 interface ICharAtlasConfig {
   fontSize: number;
   fontFamily: string;
@@ -82,13 +84,38 @@ export function acquireCharAtlas(terminal: ITerminal, colors: IColorSet, scaledC
     devicePixelRatio: window.devicePixelRatio
   };
 
+  let bitmap: HTMLCanvasElement | Promise<ImageBitmap>;
+  if (canUseWebWorker()) {
+    bitmap = generateWithWorker(charAtlasConfig);
+  } else {
+    bitmap = generateCharAtlas(window, canvasFactory, charAtlasConfig);
+  }
+
   const newEntry: ICharAtlasCacheEntry = {
-    bitmap: generateCharAtlas(window, canvasFactory, charAtlasConfig),
+    bitmap,
     config: newConfig,
     ownedBy: [terminal]
   };
   charAtlasCache.push(newEntry);
   return newEntry.bitmap;
+}
+
+function canUseWebWorker(): boolean {
+  return true;
+}
+
+function generateWithWorker(request: ICharAtlasRequest): HTMLCanvasElement | Promise<ImageBitmap> {
+  const promise = new Promise((resolve) => {
+    const worker = new Worker('dist/workers/bundle.js');
+    worker.addEventListener('message', function(e) {
+      console.log('received message from worker', e);
+      if (e.data.bitmap) {
+        resolve(e.data.bitmap);
+      }
+    }, false);
+    worker.postMessage(request);
+  });
+  return promise;
 }
 
 function generateConfig(scaledCharWidth: number, scaledCharHeight: number, terminal: ITerminal, colors: IColorSet): ICharAtlasConfig {

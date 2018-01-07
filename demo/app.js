@@ -25,6 +25,14 @@ app.get('/dist/bundle.js.map', function(req, res){
   res.sendFile(__dirname + '/dist/bundle.js.map');
 });
 
+app.get('/dist/workers/bundle.js', function(req, res){
+  res.sendFile(__dirname + '/dist/workers/bundle.js');
+});
+
+app.get('/dist/workers/bundle.js.map', function(req, res){
+  res.sendFile(__dirname + '/dist/workers/bundle.js.map');
+});
+
 app.post('/terminals', function (req, res) {
   var cols = parseInt(req.query.cols),
       rows = parseInt(req.query.rows),
