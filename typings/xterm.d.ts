@@ -73,6 +73,13 @@ declare module 'xterm' {
     rows?: number;
 
     /**
+     * Whether screen reader support is enabled. When on this will expose
+     * supporting elements in the DOM to support NVDA on Windows and VoiceOver
+     * on macOS.
+     */
+    screenReaderMode?: boolean;
+
+    /**
      * The amount of scrollback in the terminal. Scrollback is the amount of rows
      * that are retained when lines are scrolled beyond the initial viewport.
      */
@@ -324,6 +331,12 @@ declare module 'xterm' {
      * @param matcherId The link matcher's ID (returned after register)
      */
     deregisterLinkMatcher(matcherId: number): void;
+
+    /**
+     * Enters screen reader navigation mode. This will only work when
+     * the screenReaderMode option is true.
+     */
+    enterNavigationMode(): void;
 
     /**
      * Gets whether the terminal has an active selection.

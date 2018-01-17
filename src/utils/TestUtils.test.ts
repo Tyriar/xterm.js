@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { ITerminal, IBuffer, IBufferSet, IBrowser, ICharMeasure, ISelectionManager, ITerminalOptions, IListenerType, IInputHandlingTerminal, IViewport, ICircularList, ICompositionHelper, ITheme, ILinkifier, IMouseHelper } from '../Interfaces';
+import { ITerminal, IBuffer, IBufferSet, IBrowser, ICharMeasure, ISelectionManager, ITerminalOptions, IListenerType, IInputHandlingTerminal, IViewport, ICircularList, ICompositionHelper, ITheme, ILinkifier, IMouseHelper, IDisposable } from '../Interfaces';
 import { LineData } from '../Types';
 import { Buffer } from '../Buffer';
 import * as Browser from './Browser';
@@ -42,7 +42,13 @@ export class MockTerminal implements ITerminal {
   off(type: string, listener: IListenerType): void {
     throw new Error('Method not implemented.');
   }
+  addDisposableListener(type: string, handler: IListenerType): IDisposable {
+    throw new Error('Method not implemented.');
+  }
   scrollLines(disp: number, suppressScrollEvent: boolean): void {
+    throw new Error('Method not implemented.');
+  }
+  scrollToRow(absoluteRow: number): number {
     throw new Error('Method not implemented.');
   }
   cancel(ev: Event, force?: boolean): void {
@@ -193,6 +199,9 @@ export class MockInputHandlingTerminal implements IInputHandlingTerminal {
   emit(type: string, data?: any): void {
     throw new Error('Method not implemented.');
   }
+  addDisposableListener(type: string, handler: IListenerType): IDisposable {
+    throw new Error('Method not implemented.');
+  }
 }
 
 export class MockBuffer implements IBuffer {
@@ -229,6 +238,9 @@ export class MockRenderer implements IRenderer {
   emit(type: string, data?: any): void {
     throw new Error('Method not implemented.');
   }
+  addDisposableListener(type: string, handler: IListenerType): IDisposable {
+    throw new Error('Method not implemented.');
+  }
   dimensions: IRenderDimensions;
   setTheme(theme: ITheme): IColorSet { return <IColorSet>{}; }
   onResize(cols: number, rows: number, didCharSizeChange: boolean): void {}
@@ -240,7 +252,7 @@ export class MockRenderer implements IRenderer {
   onOptionsChanged(): void {}
   onWindowResize(devicePixelRatio: number): void {}
   clear(): void {}
-  queueRefresh(start: number, end: number): void {}
+  refreshRows(start: number, end: number): void {}
 }
 
 export class MockViewport implements IViewport {

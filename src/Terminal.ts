@@ -46,6 +46,8 @@ import { IMouseZoneManager } from './input/Interfaces';
 import { MouseZoneManager } from './input/MouseZoneManager';
 import { initialize as initializeCharAtlas } from './renderer/CharAtlas';
 import { IRenderer } from './renderer/Interfaces';
+import { AccessibilityManager } from './AccessibilityManager';
+import { ScreenDprMonitor } from './utils/ScreenDprMonitor';
 
 // Let it work inside Node.js for automated testing purposes.
 const document = (typeof window !== 'undefined') ? window.document : null;
@@ -79,6 +81,7 @@ const DEFAULT_OPTIONS: ITerminalOptions = {
   letterSpacing: 0,
   scrollback: 1000,
   screenKeys: false,
+  screenReaderMode: false,
   debug: false,
   cancelEvents: false,
   disableStdin: false,
@@ -198,6 +201,8 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
   public charMeasure: CharMeasure;
   private _mouseZoneManager: IMouseZoneManager;
   public mouseHelper: MouseHelper;
+  private _accessibilityManager: AccessibilityManager;
+  private _screenDprMonitor: ScreenDprMonitor;
 
   public cols: number;
   public rows: number;
@@ -423,6 +428,18 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
         this.buffers.resize(this.cols, this.rows);
         this.viewport.syncScrollArea();
         break;
+      case 'screenReaderMode':
+        if (value) {
+          if (!this._accessibilityManager) {
+            this._accessibilityManager = new AccessibilityManager(this);
+          }
+        } else {
+          if (this._accessibilityManager) {
+            this._accessibilityManager.dispose();
+            this._accessibilityManager = null;
+          }
+        }
+        break;
       case 'tabStopWidth': this.buffers.setupTabStops(); break;
       case 'bellSound':
       case 'bellStyle': this.syncBellSound(); break;
@@ -457,6 +474,9 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
    * Binds the desired blur behavior on a given terminal object.
    */
   private _onTextAreaBlur(): void {
+    // Text can safely be removed on blur. Doing it earlier could interfere with
+    // screen readers reading it out.
+    this.textarea.value = '';
     this.refresh(this.buffer.y, this.buffer.y);
     if (this.sendFocus) {
       this.send(C0.ESC + '[O');
@@ -537,16 +557,8 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
       }
     }, true);
 
-    on(this.textarea, 'keydown', (ev: KeyboardEvent) => {
-      this._keyDown(ev);
-    }, true);
-
-    on(this.textarea, 'keypress', (ev: KeyboardEvent) => {
-      this._keyPress(ev);
-      // Truncate the textarea's value, since it is not needed
-      this.textarea.value = '';
-    }, true);
-
+    on(this.textarea, 'keydown', (ev: KeyboardEvent) => this._keyDown(ev), true);
+    on(this.textarea, 'keypress', (ev: KeyboardEvent) => this._keyPress(ev), true);
     on(this.textarea, 'compositionstart', () => this.compositionHelper.compositionstart());
     on(this.textarea, 'compositionupdate', (e: CompositionEvent) => this.compositionHelper.compositionupdate(e));
     on(this.textarea, 'compositionend', () => this.compositionHelper.compositionend());
@@ -575,6 +587,9 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     this.body = <HTMLBodyElement>this.document.body;
 
     initializeCharAtlas(this.document);
+
+    this._screenDprMonitor = new ScreenDprMonitor();
+    this._screenDprMonitor.setListener(() => this.emit('dprchange', window.devicePixelRatio));
 
     // Create main element container
     this.element = this.document.createElement('div');
@@ -637,6 +652,10 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     this.on('resize', () => this.renderer.onResize(this.cols, this.rows, false));
     this.on('blur', () => this.renderer.onBlur());
     this.on('focus', () => this.renderer.onFocus());
+    this.on('dprchange', () => this.renderer.onWindowResize(window.devicePixelRatio));
+    // dprchange should handle this case, we need this as well for browsers that don't support the
+    // matchMedia query.
+    window.addEventListener('resize', () => this.renderer.onWindowResize(window.devicePixelRatio));
     this.charMeasure.on('charsizechanged', () => this.renderer.onResize(this.cols, this.rows, true));
     this.renderer.on('resize', (dimensions) => this.viewport.syncScrollArea());
 
@@ -658,6 +677,12 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     this.viewportElement.addEventListener('scroll', () => this.selectionManager.refresh());
 
     this.mouseHelper = new MouseHelper(this.renderer);
+
+    if (this.options.screenReaderMode) {
+      // Note that this must be done *after* the renderer is created in order to
+      // ensure the correct order of the dprchange event
+      this._accessibilityManager = new AccessibilityManager(this);
+    }
 
     // Measure the character size
     this.charMeasure.measure(this.options);
@@ -1026,7 +1051,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
    */
   public refresh(start: number, end: number): void {
     if (this.renderer) {
-      this.renderer.queueRefresh(start, end);
+      this.renderer.refreshRows(start, end);
     }
   }
 
@@ -1142,6 +1167,28 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     }
 
     this.refresh(0, this.rows - 1);
+  }
+
+  /**
+   * Scroll the viewport to an absolute row in the buffer.
+   * @param absoluteRow The absolute row in the buffer to scroll to.
+   * @returns The actual absolute row that was scrolled to (including boundary checked).
+   */
+  public scrollToRow(absoluteRow: number): number {
+    // Ensure value is valid
+    absoluteRow = Math.max(Math.min(absoluteRow, this.buffer.lines.length - 1), 0);
+
+    // Move viewport as necessary
+    const relativeRow = absoluteRow - this.buffer.ydisp;
+    let scrollAmount = 0;
+    if (relativeRow < 0) {
+      scrollAmount = relativeRow;
+    } else if (relativeRow >= this.rows) {
+      scrollAmount = relativeRow - this.rows + 1;
+    }
+    this.scrollLines(scrollAmount);
+
+    return absoluteRow;
   }
 
   /**
@@ -1309,6 +1356,12 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     }
   }
 
+  public enterNavigationMode(): void {
+    if (this._accessibilityManager) {
+      this._accessibilityManager.enterNavigationMode();
+    }
+  }
+
   /**
    * Gets whether the terminal has an active selection.
    */
@@ -1349,6 +1402,10 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
    * @param {KeyboardEvent} ev The keydown event to be handled.
    */
   protected _keyDown(ev: KeyboardEvent): boolean {
+    if (this._accessibilityManager && this._accessibilityManager.isNavigationModeActive) {
+      return;
+    }
+
     if (this.customKeyEventHandler && this.customKeyEventHandler(ev) === false) {
       return false;
     }

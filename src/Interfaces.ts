@@ -56,6 +56,7 @@ export interface ITerminal extends ILinkifierAccessor, IBufferAccessor, IElement
    */
   handler(data: string): void;
   scrollLines(disp: number, suppressScrollEvent?: boolean): void;
+  scrollToRow(row: number): number;
   cancel(ev: Event, force?: boolean): boolean | void;
   log(text: string): void;
   reset(): void;
@@ -145,6 +146,7 @@ export interface ITerminalOptions {
   lineHeight?: number;
   rows?: number;
   screenKeys?: boolean;
+  screenReaderMode?: boolean;
   scrollback?: number;
   tabStopWidth?: number;
   termName?: string;
@@ -243,6 +245,7 @@ export interface IEventEmitter {
   on(type: string, listener: IListenerType): void;
   off(type: string, listener: IListenerType): void;
   emit(type: string, data?: any): void;
+  addDisposableListener(type: string, handler: IListenerType): IDisposable;
 }
 
 export interface IListenerType {
@@ -351,4 +354,8 @@ export interface ITheme {
   brightMagenta?: string;
   brightCyan?: string;
   brightWhite?: string;
+}
+
+export interface IDisposable {
+  dispose(): void;
 }
