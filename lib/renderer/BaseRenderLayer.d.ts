@@ -1,0 +1,38 @@
+import { IRenderLayer, IColorSet, IRenderDimensions } from './Interfaces';
+import { ITerminal } from '../Interfaces';
+import { CharData } from '../Types';
+export declare const INVERTED_DEFAULT_COLOR = -1;
+export declare abstract class BaseRenderLayer implements IRenderLayer {
+    private _alpha;
+    protected _colors: IColorSet;
+    private _canvas;
+    protected _ctx: CanvasRenderingContext2D;
+    private _scaledCharWidth;
+    private _scaledCharHeight;
+    private _scaledCellWidth;
+    private _scaledCellHeight;
+    private _scaledCharLeft;
+    private _scaledCharTop;
+    private _charAtlas;
+    constructor(container: HTMLElement, id: string, zIndex: number, _alpha: boolean, _colors: IColorSet);
+    onOptionsChanged(terminal: ITerminal): void;
+    onBlur(terminal: ITerminal): void;
+    onFocus(terminal: ITerminal): void;
+    onCursorMove(terminal: ITerminal): void;
+    onGridChanged(terminal: ITerminal, startRow: number, endRow: number): void;
+    onSelectionChanged(terminal: ITerminal, start: [number, number], end: [number, number]): void;
+    onThemeChanged(terminal: ITerminal, colorSet: IColorSet): void;
+    private _refreshCharAtlas(terminal, colorSet);
+    resize(terminal: ITerminal, dim: IRenderDimensions, charSizeChanged: boolean): void;
+    abstract reset(terminal: ITerminal): void;
+    protected fillCells(x: number, y: number, width: number, height: number): void;
+    protected fillBottomLineAtCells(x: number, y: number, width?: number): void;
+    protected fillLeftLineAtCell(x: number, y: number): void;
+    protected strokeRectAtCell(x: number, y: number, width: number, height: number): void;
+    protected clearAll(): void;
+    protected clearCells(x: number, y: number, width: number, height: number): void;
+    protected fillCharTrueColor(terminal: ITerminal, charData: CharData, x: number, y: number): void;
+    protected drawChar(terminal: ITerminal, char: string, code: number, width: number, x: number, y: number, fg: number, bg: number, bold: boolean, dim: boolean): void;
+    private _drawUncachedChar(terminal, char, width, fg, x, y, bold, dim);
+    private _clipRow(terminal, y);
+}

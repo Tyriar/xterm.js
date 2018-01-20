@@ -1,0 +1,34 @@
+import { ITerminal, IBuffer } from './Interfaces';
+import { CircularList } from './utils/CircularList';
+import { LineData } from './Types';
+export declare const CHAR_DATA_ATTR_INDEX = 0;
+export declare const CHAR_DATA_CHAR_INDEX = 1;
+export declare const CHAR_DATA_WIDTH_INDEX = 2;
+export declare const CHAR_DATA_CODE_INDEX = 3;
+export declare const MAX_BUFFER_SIZE = 4294967295;
+export declare class Buffer implements IBuffer {
+    private _terminal;
+    private _hasScrollback;
+    private _lines;
+    ydisp: number;
+    ybase: number;
+    y: number;
+    x: number;
+    scrollBottom: number;
+    scrollTop: number;
+    tabs: any;
+    savedY: number;
+    savedX: number;
+    constructor(_terminal: ITerminal, _hasScrollback: boolean);
+    readonly lines: CircularList<LineData>;
+    readonly hasScrollback: boolean;
+    readonly isCursorInViewport: boolean;
+    private _getCorrectBufferLength(rows);
+    fillViewportRows(): void;
+    clear(): void;
+    resize(newCols: number, newRows: number): void;
+    translateBufferLineToString(lineIndex: number, trimRight: boolean, startCol?: number, endCol?: number): string;
+    setupTabStops(i?: number): void;
+    prevStop(x?: number): number;
+    nextStop(x?: number): number;
+}
