@@ -35,4 +35,5 @@ export declare abstract class BaseRenderLayer implements IRenderLayer {
     protected drawChar(terminal: ITerminal, char: string, code: number, width: number, x: number, y: number, fg: number, bg: number, bold: boolean, dim: boolean): void;
     private _drawUncachedChar(terminal, char, width, fg, x, y, bold, dim);
     private _clipRow(terminal, y);
+    protected _getFont(terminal: ITerminal, isBold: boolean): string;
 }
