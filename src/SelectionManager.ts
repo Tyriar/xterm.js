@@ -742,4 +742,10 @@ export class SelectionManager extends EventEmitter implements ISelectionManager 
     this._model.selectionStart = [0, line];
     this._model.selectionStartLength = this._terminal.cols;
   }
+
+  public selectLines(lineStart: number, lineEnd: number): void {
+    this._activeSelectionMode = SelectionMode.LINE;
+    this._selectLineAt(lineStart);
+    this._model.selectionEnd = [this._terminal.cols, lineEnd];
+  }
 }

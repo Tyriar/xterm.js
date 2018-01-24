@@ -1181,6 +1181,14 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     this.scrollLines(this.buffer.ybase - this.buffer.ydisp);
   }
 
+  public selectToMarker(): void {
+    const y1 = this.buffer.markers[this.buffer.markers.length - 1];
+    const y2 = this.buffer.ybase + this.buffer.y - 1;
+    console.log(y1, y2);
+    this.selectionManager.selectLines(y1, y2);
+    this.selectionManager.refresh();
+  }
+
   /**
    * Writes text to the terminal.
    * @param {string} data The text to write to the terminal.
@@ -1494,6 +1502,10 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
       case 13:
         // return/enter
         result.key = C0.CR;
+        if (this.buffer.x > 1) {
+          console.log('enter pressed at ', this.buffer.ybase + this.buffer.y);
+          this.buffer.addMarker(this.buffer.y);
+        }
         result.cancel = true;
         break;
       case 27:
@@ -1799,6 +1811,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     }
 
     key = String.fromCharCode(key);
+    console.log('key is ', key);
 
     this.emit('keypress', key, ev);
     this.emit('key', key, ev);

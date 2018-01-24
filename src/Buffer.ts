@@ -33,6 +33,8 @@ export class Buffer implements IBuffer {
   public savedY: number;
   public savedX: number;
 
+  public markers: number[];
+
   /**
    * Create a new Buffer.
    * @param _terminal The terminal the Buffer will belong to.
@@ -44,6 +46,8 @@ export class Buffer implements IBuffer {
     private _hasScrollback: boolean
   ) {
     this.clear();
+
+    this.markers = [];
   }
 
   public get lines(): CircularList<LineData> {
@@ -303,5 +307,9 @@ export class Buffer implements IBuffer {
     }
     while (!this.tabs[++x] && x < this._terminal.cols);
     return x >= this._terminal.cols ? this._terminal.cols - 1 : x < 0 ? 0 : x;
+  }
+
+  public addMarker(y: number): void {
+    this.markers.push(this.ybase + y);
   }
 }

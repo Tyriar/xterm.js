@@ -14,6 +14,7 @@ import { IRenderLayer, IColorSet, IRenderer, IRenderDimensions } from './Interfa
 import { LinkRenderLayer } from './LinkRenderLayer';
 import { EventEmitter } from '../EventEmitter';
 import { ScreenDprMonitor } from '../utils/ScreenDprMonitor';
+import { MarkerRenderLayer } from './MarkerRenderLayer';
 
 export class Renderer extends EventEmitter implements IRenderer {
   /** A queue of the rows to be refreshed */
@@ -39,7 +40,8 @@ export class Renderer extends EventEmitter implements IRenderer {
       new TextRenderLayer(this._terminal.element, 0, this.colorManager.colors),
       new SelectionRenderLayer(this._terminal.element, 1, this.colorManager.colors),
       new LinkRenderLayer(this._terminal.element, 2, this.colorManager.colors, this._terminal),
-      new CursorRenderLayer(this._terminal.element, 3, this.colorManager.colors)
+      new CursorRenderLayer(this._terminal.element, 3, this.colorManager.colors),
+      new MarkerRenderLayer(this._terminal.element, 4, this.colorManager.colors)
     ];
     this.dimensions = {
       scaledCharWidth: null,

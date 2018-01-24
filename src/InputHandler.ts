@@ -75,6 +75,7 @@ export class InputHandler implements IInputHandler {
         }
       }
       row = this._terminal.buffer.y + this._terminal.buffer.ybase;
+      // console.log('addChar', char);
 
       // insert mode: move characters to right
       if (this._terminal.insertMode) {
