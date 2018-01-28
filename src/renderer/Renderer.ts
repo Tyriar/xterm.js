@@ -3,18 +3,19 @@
  * @license MIT
  */
 
-import { ITerminal, ITheme } from '../Interfaces';
 import { CHAR_DATA_WIDTH_INDEX, CHAR_DATA_CHAR_INDEX } from '../Buffer';
 import { TextRenderLayer } from './TextRenderLayer';
 import { SelectionRenderLayer } from './SelectionRenderLayer';
 import { CursorRenderLayer } from './CursorRenderLayer';
 import { ColorManager } from './ColorManager';
 import { BaseRenderLayer } from './BaseRenderLayer';
-import { IRenderLayer, IColorSet, IRenderer, IRenderDimensions } from './Interfaces';
+import { IRenderLayer, IColorSet, IRenderer, IRenderDimensions } from './Types';
+import { ITerminal } from '../Types';
 import { LinkRenderLayer } from './LinkRenderLayer';
 import { EventEmitter } from '../EventEmitter';
 import { RenderDebouncer } from '../utils/RenderDebouncer';
 import { ScreenDprMonitor } from '../utils/ScreenDprMonitor';
+import { ITheme } from 'xterm';
 
 export class Renderer extends EventEmitter implements IRenderer {
   private _renderDebouncer: RenderDebouncer;
@@ -241,7 +242,5 @@ export class Renderer extends EventEmitter implements IRenderer {
     // differ.
     this.dimensions.actualCellHeight = this.dimensions.canvasHeight / this._terminal.rows;
     this.dimensions.actualCellWidth = this.dimensions.canvasWidth / this._terminal.cols;
-
   }
-
 }

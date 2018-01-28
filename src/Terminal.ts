@@ -21,6 +21,9 @@
  *   http://linux.die.net/man/7/urxvt
  */
 
+import { ICharset, IInputHandlingTerminal, IViewport, ICompositionHelper, ITerminalOptions, ITerminal, IBrowser, ILinkifier, ILinkMatcherOptions, CustomKeyEventHandler, LinkMatcherHandler, LinkMatcherValidationCallback, CharData, LineData } from './Types';
+import { IMouseZoneManager } from './input/Types';
+import { IRenderer } from './renderer/Types';
 import { BufferSet } from './BufferSet';
 import { Buffer, MAX_BUFFER_SIZE } from './Buffer';
 import { CompositionHelper } from './CompositionHelper';
@@ -35,19 +38,16 @@ import { Renderer } from './renderer/Renderer';
 import { Linkifier } from './Linkifier';
 import { SelectionManager } from './SelectionManager';
 import { CharMeasure } from './utils/CharMeasure';
-import * as Browser from './utils/Browser';
+import * as Browser from './shared/utils/Browser';
+import * as Strings from './Strings';
 import { MouseHelper } from './utils/MouseHelper';
 import { CHARSETS } from './Charsets';
-import { CustomKeyEventHandler, LinkMatcherHandler, LinkMatcherValidationCallback, CharData, LineData } from './Types';
-import { ITerminal, IBrowser, ICharset, ITerminalOptions, IInputHandlingTerminal, ILinkMatcherOptions, IViewport, ICompositionHelper, ITheme, ILinkifier } from './Interfaces';
 import { BELL_SOUND } from './utils/Sounds';
 import { DEFAULT_ANSI_COLORS } from './renderer/ColorManager';
-import { IMouseZoneManager } from './input/Interfaces';
 import { MouseZoneManager } from './input/MouseZoneManager';
-import { initialize as initializeCharAtlas } from './renderer/CharAtlas';
-import { IRenderer } from './renderer/Interfaces';
 import { AccessibilityManager } from './AccessibilityManager';
 import { ScreenDprMonitor } from './utils/ScreenDprMonitor';
+import { ITheme } from 'xterm';
 
 // Let it work inside Node.js for automated testing purposes.
 const document = (typeof window !== 'undefined') ? window.document : null;
@@ -74,6 +74,7 @@ const DEFAULT_OPTIONS: ITerminalOptions = {
   cursorStyle: 'block',
   bellSound: BELL_SOUND,
   bellStyle: 'none',
+  enableBold: true,
   fontFamily: 'courier-new, courier, monospace',
   fontSize: 15,
   fontWeight: 'normal',
@@ -429,11 +430,12 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
         this.renderer.clear();
         this.charMeasure.measure(this.options);
         break;
+      case 'enableBold':
       case 'letterSpacing':
       case 'lineHeight':
       case 'fontWeight':
       case 'fontWeightBold':
-        const didCharSizeChange = (key === 'fontWeight' || key === 'fontWeightBold');
+        const didCharSizeChange = (key === 'fontWeight' || key === 'fontWeightBold' || key === 'enableBold');
 
         // When the font changes the size of the cells may change which requires a renderer clear
         this.renderer.clear();
@@ -601,8 +603,6 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     this.document = this.parent.ownerDocument;
     this.body = <HTMLBodyElement>this.document.body;
 
-    initializeCharAtlas(this.document);
-
     this._screenDprMonitor = new ScreenDprMonitor();
     this._screenDprMonitor.setListener(() => this.emit('dprchange', window.devicePixelRatio));
 
@@ -636,7 +636,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     this.textarea = document.createElement('textarea');
     this.textarea.classList.add('xterm-helper-textarea');
     // TODO: New API to set title? This could say "Terminal bash input", etc.
-    this.textarea.setAttribute('aria-label', 'Terminal input');
+    this.textarea.setAttribute('aria-label', Strings.promptLabel);
     this.textarea.setAttribute('aria-multiline', 'false');
     this.textarea.setAttribute('autocorrect', 'off');
     this.textarea.setAttribute('autocapitalize', 'off');
@@ -1188,28 +1188,6 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
   }
 
   /**
-   * Scroll the viewport to an absolute row in the buffer.
-   * @param absoluteRow The absolute row in the buffer to scroll to.
-   * @returns The actual absolute row that was scrolled to (including boundary checked).
-   */
-  public scrollToRow(absoluteRow: number): number {
-    // Ensure value is valid
-    absoluteRow = Math.max(Math.min(absoluteRow, this.buffer.lines.length - 1), 0);
-
-    // Move viewport as necessary
-    const relativeRow = absoluteRow - this.buffer.ydisp;
-    let scrollAmount = 0;
-    if (relativeRow < 0) {
-      scrollAmount = relativeRow;
-    } else if (relativeRow >= this.rows) {
-      scrollAmount = relativeRow - this.rows + 1;
-    }
-    this.scrollLines(scrollAmount);
-
-    return absoluteRow;
-  }
-
-  /**
    * Scroll the display of the terminal by a number of pages.
    * @param {number} pageCount The number of pages to scroll (negative scrolls up).
    */
@@ -1374,12 +1352,6 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     }
   }
 
-  public enterNavigationMode(): void {
-    if (this._accessibilityManager) {
-      this._accessibilityManager.enterNavigationMode();
-    }
-  }
-
   /**
    * Gets whether the terminal has an active selection.
    */
@@ -1420,10 +1392,6 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
    * @param {KeyboardEvent} ev The keydown event to be handled.
    */
   protected _keyDown(ev: KeyboardEvent): boolean {
-    if (this._accessibilityManager && this._accessibilityManager.isNavigationModeActive) {
-      return;
-    }
-
     if (this.customKeyEventHandler && this.customKeyEventHandler(ev) === false) {
       return false;
     }
@@ -2194,13 +2162,15 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
   }
 
   private visualBell(): boolean {
-    return this.options.bellStyle === 'visual' ||
-        this.options.bellStyle === 'both';
+    return false;
+    // return this.options.bellStyle === 'visual' ||
+    //     this.options.bellStyle === 'both';
   }
 
   private soundBell(): boolean {
-    return this.options.bellStyle === 'sound' ||
-        this.options.bellStyle === 'both';
+    return this.options.bellStyle === 'sound';
+    // return this.options.bellStyle === 'sound' ||
+    //     this.options.bellStyle === 'both';
   }
 
   private syncBellSound(): void {

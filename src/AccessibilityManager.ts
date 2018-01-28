@@ -3,13 +3,20 @@
  * @license MIT
  */
 
-import { ITerminal, IBuffer, IDisposable } from './Interfaces';
-import { isMac } from './utils/Browser';
+import * as Strings from './Strings';
+import { ITerminal, IBuffer } from './Types';
+import { isMac } from './shared/utils/Browser';
 import { RenderDebouncer } from './utils/RenderDebouncer';
 import { addDisposableListener } from './utils/Dom';
+import { IDisposable } from 'xterm';
 
 const MAX_ROWS_TO_READ = 20;
 const ACTIVE_ITEM_ID_PREFIX = 'xterm-active-item-';
+
+enum BoundaryPosition {
+  Top,
+  Bottom
+}
 
 export class AccessibilityManager implements IDisposable {
   private _accessibilityTreeRoot: HTMLElement;
@@ -19,7 +26,9 @@ export class AccessibilityManager implements IDisposable {
   private _liveRegionLineCount: number = 0;
 
   private _renderRowsDebouncer: RenderDebouncer;
-  private _navigationMode: NavigationMode;
+
+  private _topBoundaryFocusListener: (e: FocusEvent) => void;
+  private _bottomBoundaryFocusListener: (e: FocusEvent) => void;
 
   private _disposables: IDisposable[] = [];
 
@@ -37,19 +46,24 @@ export class AccessibilityManager implements IDisposable {
   constructor(private _terminal: ITerminal) {
     this._accessibilityTreeRoot = document.createElement('div');
     this._accessibilityTreeRoot.classList.add('xterm-accessibility');
+
     this._rowContainer = document.createElement('div');
     this._rowContainer.classList.add('xterm-accessibility-tree');
     for (let i = 0; i < this._terminal.rows; i++) {
       this._rowElements[i] = this._createAccessibilityTreeNode();
       this._rowContainer.appendChild(this._rowElements[i]);
     }
+
+    this._topBoundaryFocusListener = e => this._onBoundaryFocus(e, BoundaryPosition.Top);
+    this._bottomBoundaryFocusListener = e => this._onBoundaryFocus(e, BoundaryPosition.Bottom);
+    this._rowElements[0].addEventListener('focus', this._topBoundaryFocusListener);
+    this._rowElements[this._rowElements.length - 1].addEventListener('focus', this._bottomBoundaryFocusListener);
+
     this._refreshRowsDimensions();
     this._accessibilityTreeRoot.appendChild(this._rowContainer);
 
     this._renderRowsDebouncer = new RenderDebouncer(this._terminal, this._renderRows.bind(this));
     this._refreshRows();
-
-    this._navigationMode = new NavigationMode(this._terminal, this._rowContainer, this._rowElements, this);
 
     this._liveRegion = document.createElement('div');
     this._liveRegion.classList.add('live-region');
@@ -59,7 +73,6 @@ export class AccessibilityManager implements IDisposable {
     this._terminal.element.insertAdjacentElement('afterbegin', this._accessibilityTreeRoot);
 
     this._disposables.push(this._renderRowsDebouncer);
-    this._disposables.push(this._navigationMode);
     this._disposables.push(this._terminal.addDisposableListener('resize', data => this._onResize(data.cols, data.rows)));
     this._disposables.push(this._terminal.addDisposableListener('refresh', data => this._refreshRows(data.start, data.end)));
     this._disposables.push(this._terminal.addDisposableListener('scroll', data => this._refreshRows()));
@@ -67,13 +80,13 @@ export class AccessibilityManager implements IDisposable {
     this._disposables.push(this._terminal.addDisposableListener('a11y.char', (char) => this._onChar(char)));
     this._disposables.push(this._terminal.addDisposableListener('linefeed', () => this._onChar('\n')));
     this._disposables.push(this._terminal.addDisposableListener('a11y.tab', spaceCount => this._onTab(spaceCount)));
-    this._disposables.push(this._terminal.addDisposableListener('charsizechanged', () => this._refreshRowsDimensions()));
     this._disposables.push(this._terminal.addDisposableListener('key', keyChar => this._onKey(keyChar)));
     this._disposables.push(this._terminal.addDisposableListener('blur', () => this._clearLiveRegion()));
     // TODO: Maybe renderer should fire an event on terminal when the characters change and that
     //       should be listened to instead? That would mean that the order of events are always
     //       guarenteed
     this._disposables.push(this._terminal.addDisposableListener('dprchange', () => this._refreshRowsDimensions()));
+    this._disposables.push(this._terminal.renderer.addDisposableListener('resize', () => this._refreshRowsDimensions()));
     // This shouldn't be needed on modern browsers but is present in case the
     // media query that drives the dprchange event isn't supported
     this._disposables.push(addDisposableListener(window, 'resize', () => this._refreshRowsDimensions()));
@@ -90,15 +103,70 @@ export class AccessibilityManager implements IDisposable {
     this._rowElements = null;
   }
 
-  public get isNavigationModeActive(): boolean {
-    return this._navigationMode.isActive;
-  }
+  private _onBoundaryFocus(e: FocusEvent, position: BoundaryPosition): void {
+    const boundaryElement = <HTMLElement>e.target;
+    const beforeBoundaryElement = this._rowElements[position === BoundaryPosition.Top ? 1 : this._rowElements.length - 2];
 
-  public enterNavigationMode(): void {
-    this._navigationMode.enter();
+    // Don't scroll if the buffer top has reached the end in that direction
+    const posInSet = boundaryElement.getAttribute('aria-posinset');
+    const lastRowPos = position === BoundaryPosition.Top ? '1' : `${this._terminal.buffer.lines.length}`;
+    if (posInSet === lastRowPos) {
+      return;
+    }
+
+    // Don't scroll when the last focused item was not the second row (focus is going the other
+    // direction)
+    if (e.relatedTarget !== beforeBoundaryElement) {
+      return;
+    }
+
+    // Remove old boundary element from array
+    let topBoundaryElement: HTMLElement;
+    let bottomBoundaryElement: HTMLElement;
+    if (position === BoundaryPosition.Top) {
+      topBoundaryElement = boundaryElement;
+      bottomBoundaryElement = this._rowElements.pop();
+      this._rowContainer.removeChild(bottomBoundaryElement);
+    } else {
+      topBoundaryElement = this._rowElements.shift();
+      bottomBoundaryElement = boundaryElement;
+      this._rowContainer.removeChild(topBoundaryElement);
+    }
+
+    // Remove listeners from old boundary elements
+    topBoundaryElement.removeEventListener('focus', this._topBoundaryFocusListener);
+    bottomBoundaryElement.removeEventListener('focus', this._bottomBoundaryFocusListener);
+
+    // Add new element to array/DOM
+    if (position === BoundaryPosition.Top) {
+      const newElement = this._createAccessibilityTreeNode();
+      this._rowElements.unshift(newElement);
+      this._rowContainer.insertAdjacentElement('afterbegin', newElement);
+    } else {
+      const newElement = this._createAccessibilityTreeNode();
+      this._rowElements.push(newElement);
+      this._rowContainer.appendChild(newElement);
+    }
+
+    // Add listeners to new boundary elements
+    this._rowElements[0].addEventListener('focus', this._topBoundaryFocusListener);
+    this._rowElements[this._rowElements.length - 1].addEventListener('focus', this._bottomBoundaryFocusListener);
+
+    // Scroll up
+    this._terminal.scrollLines(position === BoundaryPosition.Top ? -1 : 1);
+
+    // Focus new boundary before element
+    this._rowElements[position === BoundaryPosition.Top ? 1 : this._rowElements.length - 2].focus();
+
+    // Prevent the standard behavior
+    e.preventDefault();
+    e.stopImmediatePropagation();
   }
 
   private _onResize(cols: number, rows: number): void {
+    // Remove bottom boundary listener
+    this._rowElements[this._rowElements.length - 1].removeEventListener('focus', this._bottomBoundaryFocusListener);
+
     // Grow rows as required
     for (let i = this._rowContainer.children.length; i < this._terminal.rows; i++) {
       this._rowElements[i] = this._createAccessibilityTreeNode();
@@ -109,12 +177,17 @@ export class AccessibilityManager implements IDisposable {
       this._rowContainer.removeChild(this._rowElements.pop());
     }
 
+    // Add bottom boundary listener
+    this._rowElements[this._rowElements.length - 1].addEventListener('focus', this._bottomBoundaryFocusListener);
+
     this._refreshRowsDimensions();
   }
 
-  private _createAccessibilityTreeNode(): HTMLElement {
+  public _createAccessibilityTreeNode(): HTMLElement {
     const element = document.createElement('div');
-    element.setAttribute('role', 'menuitem');
+    element.setAttribute('role', 'listitem');
+    element.tabIndex = -1;
+    this._refreshRowDimensions(element);
     return element;
   }
 
@@ -130,26 +203,16 @@ export class AccessibilityManager implements IDisposable {
         // Have the screen reader ignore the char if it was just input
         const shiftedChar = this._charsToConsume.shift();
         if (shiftedChar !== char) {
-          if (char === ' ') {
-            // Always use nbsp for spaces in order to preserve the space between characters in
-            // voiceover's caption window
-            this._liveRegion.innerHTML += '&nbsp;';
-          } else {
-            this._liveRegion.textContent += char;
-          }
+          this._announceCharacter(char);
         }
       } else {
-        if (char === ' ') {
-          this._liveRegion.innerHTML += '&nbsp;';
-        } else
-        this._liveRegion.textContent += char;
+        this._announceCharacter(char);
       }
 
       if (char === '\n') {
         this._liveRegionLineCount++;
         if (this._liveRegionLineCount === MAX_ROWS_TO_READ + 1) {
-          // TODO: Enable localization
-          this._liveRegion.textContent += 'Too much output to announce, navigate to rows manually to read';
+          this._liveRegion.textContent += Strings.tooMuchOutput;
         }
       }
 
@@ -186,190 +249,39 @@ export class AccessibilityManager implements IDisposable {
   }
 
   private _renderRows(start: number, end: number): void {
-    const buffer: IBuffer = (<any>this._terminal.buffer);
-    const setSize = (buffer.lines.length).toString();
+    const buffer: IBuffer = this._terminal.buffer;
+    const setSize = buffer.lines.length.toString();
     for (let i = start; i <= end; i++) {
       const lineData = buffer.translateBufferLineToString(buffer.ydisp + i, true);
-      this._rowElements[i].textContent = lineData;
       const posInSet = (buffer.ydisp + i + 1).toString();
-      this._rowElements[i].setAttribute('aria-posinset', posInSet);
-      this._rowElements[i].setAttribute('aria-setsize', setSize);
+      const element = this._rowElements[i];
+      element.textContent = lineData.length === 0 ? Strings.blankLine : lineData;
+      element.setAttribute('aria-posinset', posInSet);
+      element.setAttribute('aria-setsize', setSize);
     }
-  }
-
-  public rotateRows(): void {
-    this._rowContainer.removeChild(this._rowElements.shift());
-    const newRowIndex = this._rowElements.length;
-    this._rowElements[newRowIndex] = this._createAccessibilityTreeNode();
-    this._rowContainer.appendChild(this._rowElements[newRowIndex]);
-    this._refreshRowsDimensions();
   }
 
   private _refreshRowsDimensions(): void {
-    const buffer: IBuffer = (<any>this._terminal.buffer);
-    const dimensions = this._terminal.renderer.dimensions;
+    if (!this._terminal.renderer.dimensions.actualCellHeight) {
+      return;
+    }
+    const buffer: IBuffer = this._terminal.buffer;
     for (let i = 0; i < this._terminal.rows; i++) {
-      this._rowElements[i].style.height = `${dimensions.actualCellHeight}px`;
+      this._refreshRowDimensions(this._rowElements[i]);
     }
   }
 
-  public announce(text: string): void {
-    this._clearLiveRegion();
-    this._liveRegion.textContent = text;
-  }
-}
-
-class NavigationMode implements IDisposable {
-  private _activeItemId: string;
-  private _isNavigationModeActive: boolean = false;
-  private _absoluteFocusedRow: number;
-  private _focusedElement: HTMLElement;
-
-  private _disposables: IDisposable[] = [];
-
-  constructor(
-    private _terminal: ITerminal,
-    private _rowContainer: HTMLElement,
-    private _rowElements: HTMLElement[],
-    private _accessibilityManager: AccessibilityManager
-  ) {
-    this._activeItemId = ACTIVE_ITEM_ID_PREFIX + Math.floor((Math.random() * 100000));
-
-    this._disposables.push(addDisposableListener(this._rowContainer, 'keyup', e => {
-      if (this.isActive) {
-        return this.onKeyUp(e);
-      }
-      return false;
-    }));
-    this._disposables.push(addDisposableListener(this._rowContainer, 'keydown', e => {
-      if (this.isActive) {
-        return this.onKeyDown(e);
-      }
-      return false;
-    }));
+  private _refreshRowDimensions(element: HTMLElement): void {
+    element.style.height = `${this._terminal.renderer.dimensions.actualCellHeight}px`;
   }
 
-  public dispose(): void {
-    this._disposables.forEach(d => d.dispose());
-    this._disposables = null;
-  }
-
-  public enter(): void {
-    // TODO: Should entering navigation mode send ydisp to ybase?
-    this._isNavigationModeActive = true;
-    this._accessibilityManager.announce('Entered line navigation mode');
-    this._rowContainer.tabIndex = 0;
-    this._rowContainer.setAttribute('role', 'menu');
-    this._rowContainer.setAttribute('aria-activedescendant', this._activeItemId);
-    this._navigateToElement(this._terminal.buffer.ydisp + this._terminal.buffer.y);
-    this._rowContainer.focus();
-  }
-
-  public leave(): void {
-    this._isNavigationModeActive = false;
-    this._accessibilityManager.announce('Left line navigation mode');
-    this._rowContainer.removeAttribute('tabindex');
-    this._rowContainer.removeAttribute('aria-activedescendant');
-    this._rowContainer.removeAttribute('role');
-    if (this._focusedElement) {
-      this._focusedElement.removeAttribute('id');
+  private _announceCharacter(char: string): void {
+    if (char === ' ') {
+      // Always use nbsp for spaces in order to preserve the space between characters in
+      // voiceover's caption window
+      this._liveRegion.innerHTML += '&nbsp;';
+    } else {
+      this._liveRegion.textContent += char;
     }
-    this._terminal.textarea.focus();
-  }
-
-  public get isActive(): boolean {
-    return this._isNavigationModeActive;
-  }
-
-  public onKeyDown(e: KeyboardEvent): boolean {
-    return this._onKey(e, e => {
-      if (this._isNavigationModeActive) {
-        return true;
-      }
-      return false;
-    });
-  }
-
-  public onKeyUp(e: KeyboardEvent): boolean {
-    return this._onKey(e, e => {
-      if (this._isNavigationModeActive) {
-        switch (e.keyCode) {
-          case 27: return this._onEscape(e);
-          case 33: return this._onPageUp(e);
-          case 34: return this._onPageDown(e);
-          case 35: return this._onEnd(e);
-          case 36: return this._onHome(e);
-          case 38: return this._onArrowUp(e);
-          case 40: return this._onArrowDown(e);
-        }
-      }
-      return false;
-    });
-  }
-
-  private _onKey(e: KeyboardEvent, handler: (e: KeyboardEvent) => boolean): boolean {
-    if (handler && handler(e)) {
-      e.preventDefault();
-      e.stopPropagation();
-      return true;
-    }
-    return false;
-  }
-
-  private _onEscape(e: KeyboardEvent): boolean {
-    this.leave();
-    return true;
-  }
-
-  private _onArrowUp(e: KeyboardEvent): boolean {
-    return this._focusRow(this._absoluteFocusedRow - 1);
-  }
-
-  private _onArrowDown(e: KeyboardEvent): boolean {
-    return this._focusRow(this._absoluteFocusedRow + 1);
-  }
-
-  private _onPageUp(e: KeyboardEvent): boolean {
-    return this._focusRow(this._absoluteFocusedRow - this._terminal.rows);
-  }
-
-  private _onPageDown(e: KeyboardEvent): boolean {
-    return this._focusRow(this._absoluteFocusedRow + this._terminal.rows);
-  }
-
-  private _onHome(e: KeyboardEvent): boolean {
-    return this._focusRow(0);
-  }
-
-  private _onEnd(e: KeyboardEvent): boolean {
-    return this._focusRow(this._terminal.buffer.lines.length - 1);
-  }
-
-  private _focusRow(row: number): boolean {
-    this._navigateToElement(row);
-    this._rowContainer.focus();
-    return true;
-  }
-
-  private _navigateToElement(absoluteRow: number): void {
-    // Make sure there is no active element when scroll and rotate happens
-    if (this._focusedElement) {
-      this._rowContainer.removeAttribute('aria-activedescendant');
-      this._focusedElement.removeAttribute('id');
-    }
-
-    // Rotate rows to ensure the next focused item is read out correctly
-    if (absoluteRow < this._terminal.buffer.ydisp || absoluteRow >= this._terminal.buffer.ydisp + this._terminal.rows) {
-      this._accessibilityManager.rotateRows();
-    }
-
-    // Scroll to row if it's outside of the viewport
-    absoluteRow = this._terminal.scrollToRow(absoluteRow);
-    this._absoluteFocusedRow = absoluteRow;
-
-    // Focus the new active element
-    this._rowContainer.setAttribute('aria-activedescendant', this._activeItemId);
-    this._focusedElement = this._rowElements[absoluteRow - this._terminal.buffer.ydisp];
-    this._focusedElement.id = this._activeItemId;
   }
 }
