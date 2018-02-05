@@ -71,6 +71,9 @@ export class MockTerminal implements ITerminal {
   write(data: string): void {
     throw new Error('Method not implemented.');
   }
+  send(data: string): void {
+    throw new Error('Method not implemented.');
+  }
   bracketedPasteMode: boolean;
   mouseHelper: IMouseHelper;
   renderer: IRenderer;
@@ -94,6 +97,7 @@ export class MockTerminal implements ITerminal {
   scrollback: number;
   buffers: IBufferSet;
   buffer: IBuffer;
+  applicationCursor: boolean;
   handler(data: string): void {
     throw new Error('Method not implemented.');
   }

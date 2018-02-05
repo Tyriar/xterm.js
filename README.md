@@ -24,7 +24,7 @@ It enables applications to provide fully featured terminals to their users and c
 First you need to install the module, we ship exclusively through [npm](https://www.npmjs.com/) so you need that installed and then add xterm.js as a dependency by running:
 
 ```
-npm install
+npm install xterm
 ```
 
 To start using xterm.js on your browser, add the `xterm.js` and `xterm.css` to the head of your html page. Then create a `<div id="terminal"></div>` onto which xterm can attach itself.
@@ -125,6 +125,7 @@ computational environment for Jupyter, supporting interactive data science and s
 - [**rtty**](https://github.com/zhaojh329/rtty): A reverse proxy WebTTY. It is composed of the client and the server.
 - [**Pisth**](https://github.com/ColdGrub1384/Pisth): An SFTP and SSH client for iOS
 - [**abstruse**](https://github.com/bleenco/abstruse): Abstruse CI is a continuous integration platform based on Node.JS and Docker.
+- [**Microsoft SQL Operations Studio**](https://github.com/Microsoft/sqlopsstudio): A data management tool that enables working with SQL Server, Azure SQL DB and SQL DW from Windows, macOS and Linux
 
 Do you use xterm.js in your application as well? Please [open a Pull Request](https://github.com/sourcelair/xterm.js/pulls) to include it here. We would love to have it in our list.
 

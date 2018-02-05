@@ -18,6 +18,12 @@ declare module 'xterm' {
    */
   export interface ITerminalOptions {
     /**
+     * Whether background should support non-opaque color. It must be set before
+     * executing open() method and can't be changed later without excuting it again.
+     * Warning: Enabling this option can reduce performances somewhat.
+     */
+    allowTransparency?: boolean;
+    /**
      * A data uri of the sound to use for the bell (needs bellStyle = 'sound').
      */
     bellSound?: string;
@@ -86,6 +92,12 @@ declare module 'xterm' {
      * Whether to treat option as the meta key.
      */
     macOptionIsMeta?: boolean;
+
+    /**
+     * Whether to select the word under the cursor on right click, this is
+     * standard behavior in a lot of macOS applications.
+     */
+    rightClickSelectsWord?: boolean;
 
     /**
      * The number of rows in the terminal.
@@ -457,7 +469,7 @@ declare module 'xterm' {
      * Retrieves an option's value from the terminal.
      * @param key The option key.
      */
-    getOption(key: 'cancelEvents' | 'convertEol' | 'cursorBlink' | 'debug' | 'disableStdin' | 'enableBold' | 'macOptionIsMeta' | 'popOnBell' | 'screenKeys' | 'useFlowControl' | 'visualBell'): boolean;
+    getOption(key: 'allowTransparency' | 'cancelEvents' | 'convertEol' | 'cursorBlink' | 'debug' | 'disableStdin' | 'enableBold' | 'macOptionIsMeta' | 'rightClickSelectsWord' | 'popOnBell' | 'screenKeys' | 'useFlowControl' | 'visualBell'): boolean;
     /**
      * Retrieves an option's value from the terminal.
      * @param key The option key.
@@ -508,7 +520,7 @@ declare module 'xterm' {
      * @param key The option key.
      * @param value The option value.
      */
-    setOption(key: 'cancelEvents' | 'convertEol' | 'cursorBlink' | 'debug' | 'disableStdin' | 'enableBold' | 'macOptionIsMeta' | 'popOnBell' | 'screenKeys' | 'useFlowControl' | 'visualBell', value: boolean): void;
+    setOption(key: 'allowTransparency' | 'cancelEvents' | 'convertEol' | 'cursorBlink' | 'debug' | 'disableStdin' | 'enableBold' | 'macOptionIsMeta' | 'popOnBell' | 'rightClickSelectsWord' | 'screenKeys' | 'useFlowControl' | 'visualBell', value: boolean): void;
     /**
      * Sets an option on the terminal.
      * @param key The option key.
