@@ -87,6 +87,7 @@ export interface IInputHandlingTerminal extends IEventEmitter {
 }
 
 export interface IViewport {
+  scrollBarWidth: number;
   syncScrollArea(): void;
   onWheel(ev: WheelEvent): void;
   onTouchStart(ev: TouchEvent): void;
@@ -177,6 +178,7 @@ export interface ILinkHoverEvent {
 }
 
 export interface ITerminal extends PublicTerminal, IElementAccessor, IBufferAccessor, ILinkifierAccessor {
+  screenElement: HTMLElement;
   selectionManager: ISelectionManager;
   charMeasure: ICharMeasure;
   renderer: IRenderer;
@@ -190,6 +192,7 @@ export interface ITerminal extends PublicTerminal, IElementAccessor, IBufferAcce
   buffers: IBufferSet;
   isFocused: boolean;
   mouseHelper: IMouseHelper;
+  viewport: IViewport;
   bracketedPasteMode: boolean;
   applicationCursor: boolean;
 
@@ -332,7 +335,7 @@ export interface ILinkMatcherOptions {
    * only activating a link when a certain modifier is held down, if not the
    * mouse event will continue propagation (eg. double click to select word).
    */
-  willLinkActivate?: (event: MouseEvent, uri: string) => boolean; 
+  willLinkActivate?: (event: MouseEvent, uri: string) => boolean;
 }
 
 export interface IBrowser {
