@@ -4,7 +4,7 @@
  */
 
 import { IMouseZoneManager } from './input/Types';
-import { ILinkHoverEvent, ILinkMatcher, LinkMatcherHandler, LinkHoverEventTypes, ILinkMatcherOptions, IBufferAccessor, ILinkifier, IElementAccessor } from './Types';
+import { ILinkHoverEvent, ILinkMatcher, LinkMatcherHandler, LinkHoverEventTypes, ILinkMatcherOptions, ILinkifier, ITerminal } from './Types';
 import { MouseZone } from './input/MouseZoneManager';
 import { EventEmitter } from './EventEmitter';
 
@@ -27,7 +27,7 @@ export class Linkifier extends EventEmitter implements ILinkifier {
   private _rowsToLinkify: {start: number, end: number};
 
   constructor(
-    protected _terminal: IBufferAccessor & IElementAccessor
+    protected _terminal: ITerminal
   ) {
     super();
     this._rowsToLinkify = {
@@ -157,11 +157,25 @@ export class Linkifier extends EventEmitter implements ILinkifier {
    * @param rowIndex The index of the row to linkify.
    */
   private _linkifyRow(rowIndex: number): void {
+    // Ensure the row exists
     const absoluteRowIndex = this._terminal.buffer.ydisp + rowIndex;
     if (absoluteRowIndex >= this._terminal.buffer.lines.length) {
       return;
     }
-    const text = this._terminal.buffer.translateBufferLineToString(absoluteRowIndex, false);
+
+    // Only attempt to linkify rows that start in the viewport
+    if ((<any>this._terminal.buffer.lines.get(absoluteRowIndex)).isWrapped) {
+      return;
+    }
+
+    // Construct full unwrapped line text
+    let text = this._terminal.buffer.translateBufferLineToString(absoluteRowIndex, false);
+    let currentIndex = absoluteRowIndex + 1;
+    while (currentIndex < this._terminal.buffer.lines.length &&
+        (<any>this._terminal.buffer.lines.get(currentIndex)).isWrapped) {
+      text += this._terminal.buffer.translateBufferLineToString(currentIndex++, false);
+    }
+
     for (let i = 0; i < this._linkMatchers.length; i++) {
       this._doLinkifyRow(rowIndex, text, this._linkMatchers[i]);
     }
@@ -220,8 +234,9 @@ export class Linkifier extends EventEmitter implements ILinkifier {
   private _addLink(x: number, y: number, uri: string, matcher: ILinkMatcher): void {
     this._mouseZoneManager.add(new MouseZone(
       x + 1,
-      x + 1 + uri.length,
       y + 1,
+      (x + 1 + uri.length) % this._terminal.cols,
+      y + 1 + Math.floor((x + 1 + uri.length) / this._terminal.cols),
       e => {
         if (matcher.handler) {
           return matcher.handler(e, uri);
@@ -229,17 +244,17 @@ export class Linkifier extends EventEmitter implements ILinkifier {
         window.open(uri, '_blank');
       },
       e => {
-        this.emit(LinkHoverEventTypes.HOVER, <ILinkHoverEvent>{ x, y, length: uri.length});
+        this.emit(LinkHoverEventTypes.HOVER, this._createLinkHoverEvent(x, y, uri));
         this._terminal.element.style.cursor = 'pointer';
       },
       e => {
-        this.emit(LinkHoverEventTypes.TOOLTIP, <ILinkHoverEvent>{ x, y, length: uri.length});
+        this.emit(LinkHoverEventTypes.TOOLTIP, this._createLinkHoverEvent(x, y, uri));
         if (matcher.hoverTooltipCallback) {
           matcher.hoverTooltipCallback(e, uri);
         }
       },
       () => {
-        this.emit(LinkHoverEventTypes.LEAVE, <ILinkHoverEvent>{ x, y, length: uri.length});
+        this.emit(LinkHoverEventTypes.LEAVE, this._createLinkHoverEvent(x, y, uri));
         this._terminal.element.style.cursor = '';
         if (matcher.hoverLeaveCallback) {
           matcher.hoverLeaveCallback();
@@ -252,5 +267,15 @@ export class Linkifier extends EventEmitter implements ILinkifier {
         return true;
       }
     ));
+  }
+
+  private _createLinkHoverEvent(x: number, y: number, uri: string): ILinkHoverEvent {
+    return {
+      x1: x,
+      y1: y,
+      x2: (x + uri.length) % this._terminal.cols,
+      y2: y + Math.floor((x + uri.length) / this._terminal.cols),
+      cols: this._terminal.cols
+    };
   }
 }
