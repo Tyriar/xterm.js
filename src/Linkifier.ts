@@ -158,14 +158,21 @@ export class Linkifier extends EventEmitter implements ILinkifier {
    */
   private _linkifyRow(rowIndex: number): void {
     // Ensure the row exists
-    const absoluteRowIndex = this._terminal.buffer.ydisp + rowIndex;
+    let absoluteRowIndex = this._terminal.buffer.ydisp + rowIndex;
     if (absoluteRowIndex >= this._terminal.buffer.lines.length) {
       return;
     }
 
-    // Only attempt to linkify rows that start in the viewport
     if ((<any>this._terminal.buffer.lines.get(absoluteRowIndex)).isWrapped) {
-      return;
+      // Only attempt to linkify rows that start in the viewport
+      if (rowIndex !== 0) {
+        return;
+      }
+      // If the first row is wrapped, backtrack to find the origin row and linkify that
+      do {
+        rowIndex--;
+        absoluteRowIndex--;
+      } while ((<any>this._terminal.buffer.lines.get(absoluteRowIndex)).isWrapped);
     }
 
     // Construct full unwrapped line text
@@ -232,11 +239,20 @@ export class Linkifier extends EventEmitter implements ILinkifier {
    * @param matcher The link matcher for the link.
    */
   private _addLink(x: number, y: number, uri: string, matcher: ILinkMatcher): void {
+    const x1 = x % this._terminal.cols;
+    const y1 = y + Math.floor(x / this._terminal.cols);
+    let x2 = (x1 + uri.length) % this._terminal.cols;
+    let y2 = y1 + Math.floor((x1 + uri.length) / this._terminal.cols);
+    if (x2 === 0) {
+      x2 = this._terminal.cols;
+      y2--;
+    }
+
     this._mouseZoneManager.add(new MouseZone(
-      x + 1,
-      y + 1,
-      (x + 1 + uri.length) % this._terminal.cols,
-      y + 1 + Math.floor((x + 1 + uri.length) / this._terminal.cols),
+      x1 + 1,
+      y1 + 1,
+      x2 + 1,
+      y2 + 1,
       e => {
         if (matcher.handler) {
           return matcher.handler(e, uri);
@@ -244,17 +260,17 @@ export class Linkifier extends EventEmitter implements ILinkifier {
         window.open(uri, '_blank');
       },
       e => {
-        this.emit(LinkHoverEventTypes.HOVER, this._createLinkHoverEvent(x, y, uri));
+        this.emit(LinkHoverEventTypes.HOVER, this._createLinkHoverEvent(x1, y1, x2, y2));
         this._terminal.element.style.cursor = 'pointer';
       },
       e => {
-        this.emit(LinkHoverEventTypes.TOOLTIP, this._createLinkHoverEvent(x, y, uri));
+        this.emit(LinkHoverEventTypes.TOOLTIP, this._createLinkHoverEvent(x1, y1, x2, y2));
         if (matcher.hoverTooltipCallback) {
           matcher.hoverTooltipCallback(e, uri);
         }
       },
       () => {
-        this.emit(LinkHoverEventTypes.LEAVE, this._createLinkHoverEvent(x, y, uri));
+        this.emit(LinkHoverEventTypes.LEAVE, this._createLinkHoverEvent(x1, y1, x2, y2));
         this._terminal.element.style.cursor = '';
         if (matcher.hoverLeaveCallback) {
           matcher.hoverLeaveCallback();
@@ -269,13 +285,7 @@ export class Linkifier extends EventEmitter implements ILinkifier {
     ));
   }
 
-  private _createLinkHoverEvent(x: number, y: number, uri: string): ILinkHoverEvent {
-    return {
-      x1: x,
-      y1: y,
-      x2: (x + uri.length) % this._terminal.cols,
-      y2: y + Math.floor((x + uri.length) / this._terminal.cols),
-      cols: this._terminal.cols
-    };
+  private _createLinkHoverEvent(x1: number, y1: number, x2: number, y2: number): ILinkHoverEvent {
+    return { x1, y1, x2, y2, cols: this._terminal.cols };
   }
 }
