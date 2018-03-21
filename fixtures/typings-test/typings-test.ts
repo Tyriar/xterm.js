@@ -4,7 +4,7 @@
 
 /// <reference path="../../typings/xterm.d.ts" />
 
-import { Terminal } from 'xterm';
+import { Terminal, IMarker } from 'xterm';
 
 namespace constructor {
   {
@@ -200,6 +200,8 @@ namespace methods_core {
       t.scrollLines(1);
       t.scrollToTop();
       t.scrollToBottom();
+      t.scrollToLine(0);
+      t.scrollToLine(10);
     }
   }
   namespace selection {
@@ -209,36 +211,47 @@ namespace methods_core {
       const r2: string = t.getSelection();
       t.clearSelection();
       t.selectAll();
+      t.selectLines(0, 10);
     }
   }
 }
 
 namespace methods_experimental {
-  {
-    const t: Terminal = new Terminal();
-    t.registerLinkMatcher(/foo/, () => {});
-    t.registerLinkMatcher(new RegExp('foo'), () => {});
-    t.registerLinkMatcher(/foo/, () => {}, {});
-    t.registerLinkMatcher(/foo/, (event: MouseEvent, uri: string) => {
-      console.log(event, uri);
-      return void 0;
-    }, {});
-    t.registerLinkMatcher(/foo/, () => true, {});
-    t.registerLinkMatcher(/foo/, () => false, {});
-    t.registerLinkMatcher(/foo/, () => true, {
-      matchIndex: 1
-    });
-    t.registerLinkMatcher(/foo/, () => true, {
-      matchIndex: 1,
-      priority: 1,
-      validationCallback: (uri: string, callback: (isValid: boolean) => void) => {
-        console.log(uri, callback);
-      },
-      tooltipCallback: (e: MouseEvent, uri: string) => {
-        console.log(e, uri);
-      },
-      leaveCallback: () => {}
-    });
-    t.deregisterLinkMatcher(1);
+  namespace link_matchers {
+    {
+      const t: Terminal = new Terminal();
+      t.registerLinkMatcher(/foo/, () => {});
+      t.registerLinkMatcher(new RegExp('foo'), () => {});
+      t.registerLinkMatcher(/foo/, () => {}, {});
+      t.registerLinkMatcher(/foo/, (event: MouseEvent, uri: string) => {
+        console.log(event, uri);
+        return void 0;
+      }, {});
+      t.registerLinkMatcher(/foo/, () => true, {});
+      t.registerLinkMatcher(/foo/, () => false, {});
+      t.registerLinkMatcher(/foo/, () => true, {
+        matchIndex: 1
+      });
+      t.registerLinkMatcher(/foo/, () => true, {
+        matchIndex: 1,
+        priority: 1,
+        validationCallback: (uri: string, callback: (isValid: boolean) => void) => {
+          console.log(uri, callback);
+        },
+        tooltipCallback: (e: MouseEvent, uri: string) => {
+          console.log(e, uri);
+        },
+        leaveCallback: () => {}
+      });
+      t.deregisterLinkMatcher(1);
+    }
+  }
+  namespace markers {
+    {
+      const t: Terminal = new Terminal();
+      t.addMarker();
+      t.addMarker(1);
+      const markers: IMarker[] = t.markers;
+    }
   }
 }

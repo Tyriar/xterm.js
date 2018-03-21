@@ -421,7 +421,7 @@ declare module 'xterm' {
      * alt buffer is active, undefined is returned.
      * @param cursorYOffset The y position offset of the marker from the cursor.
      */
-    addMarker(cursorYOffset: number): IMarker;
+    addMarker(cursorYOffset?: number): IMarker;
 
     /**
      * Gets whether the terminal has an active selection.

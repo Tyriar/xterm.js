@@ -1357,7 +1357,7 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     return this.buffer.markers;
   }
 
-  public addMarker(cursorYOffset: number): IMarker {
+  public addMarker(cursorYOffset: number = 0): IMarker {
     // Disallow markers on the alt buffer
     if (this.buffer !== this.buffers.normal) {
       return;
