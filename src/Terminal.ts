@@ -2162,7 +2162,9 @@ export class Terminal extends EventEmitter implements ITerminal, IInputHandlingT
     this._customKeyEventHandler = customKeyEventHandler;
     this._inputHandler = inputHandler;
     this.refresh(0, this.rows - 1);
-    this.viewport.syncScrollArea();
+    if (this.viewport) {
+      this.viewport.syncScrollArea();
+    }
   }
 
 
