@@ -210,13 +210,7 @@ export class TextRenderLayer extends BaseRenderLayer {
 
     this._charAtlas.beginFrame();
 
-    if (firstRow === 0 && lastRow === terminal.rows - 1) {
-      // HACK: Remove this special case when the problem is fixed in Chrome/Electron, see Microsoft/vscode#51094
-      this._ctx.clearRect(0, 0, (<HTMLCanvasElement>(<any>this)._canvas).width, (<HTMLCanvasElement>(<any>this)._canvas).height);
-    } else {
-      this.clearCells(0, firstRow, terminal.cols, lastRow - firstRow + 1);
-    }
-
+    this.clearCells(0, firstRow, terminal.cols, lastRow - firstRow + 1);
     this._drawBackground(terminal, firstRow, lastRow);
     this._drawForeground(terminal, firstRow, lastRow);
   }
