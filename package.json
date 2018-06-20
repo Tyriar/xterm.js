@@ -2,7 +2,7 @@
   "name": "vscode-xterm",
   "description": "Full xterm terminal, in your browser",
   "version": "3.5.0-beta13",
-  "main": "lib/Terminal.js",
+  "main": "lib/public/Terminal.js",
   "types": "typings/xterm.d.ts",
   "repository": "https://github.com/xtermjs/xterm.js",
   "license": "MIT",
