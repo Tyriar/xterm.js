@@ -22,7 +22,7 @@
  */
 
 import { IInputHandlingTerminal, IViewport, ICompositionHelper, ITerminalOptions, ITerminal, IBrowser, ILinkifier, ILinkMatcherOptions, CustomKeyEventHandler, LinkMatcherHandler, CharData, LineData } from './Types';
-import { IMouseZoneManager } from './input/Types';
+import { IMouseZoneManager } from './ui/Types';
 import { IRenderer } from './renderer/Types';
 import { BufferSet } from './BufferSet';
 import { Buffer, MAX_BUFFER_SIZE, DEFAULT_ATTR } from './Buffer';
@@ -36,7 +36,7 @@ import { InputHandler } from './InputHandler';
 import { Renderer } from './renderer/Renderer';
 import { Linkifier } from './Linkifier';
 import { SelectionManager } from './SelectionManager';
-import { CharMeasure } from './utils/CharMeasure';
+import { CharMeasure } from './ui/CharMeasure';
 import * as Browser from './shared/utils/Browser';
 import { addDisposableDomListener } from './ui/Lifecycle';
 import * as Strings from './Strings';
@@ -44,9 +44,9 @@ import { MouseHelper } from './utils/MouseHelper';
 import { clone } from './utils/Clone';
 import { DEFAULT_BELL_SOUND, SoundManager } from './SoundManager';
 import { DEFAULT_ANSI_COLORS } from './renderer/ColorManager';
-import { MouseZoneManager } from './input/MouseZoneManager';
+import { MouseZoneManager } from './ui/MouseZoneManager';
 import { AccessibilityManager } from './AccessibilityManager';
-import { ScreenDprMonitor } from './utils/ScreenDprMonitor';
+import { ScreenDprMonitor } from './ui/ScreenDprMonitor';
 import { ITheme, IMarker, IDisposable } from 'xterm';
 import { removeTerminalFromCache } from './renderer/atlas/CharAtlasCache';
 import { DomRenderer } from './renderer/dom/DomRenderer';
@@ -98,6 +98,7 @@ const DEFAULT_OPTIONS: ITerminalOptions = {
   screenReaderMode: false,
   debug: false,
   macOptionIsMeta: false,
+  macOptionClickForcesSelection: false,
   cancelEvents: false,
   disableStdin: false,
   useFlowControl: false,
@@ -171,6 +172,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
   public savedCols: number;
 
   public curAttr: number;
+  public savedCurAttr: number;
 
   public params: (string | number)[];
   public currentParam: string | number;
@@ -441,6 +443,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
           this.charMeasure.measure(this.options);
         }
         break;
+      case 'drawBoldTextInBrightColors':
       case 'experimentalCharAtlas':
       case 'enableBold':
       case 'letterSpacing':
@@ -584,6 +587,8 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
       if (!wasMondifierKeyOnlyEvent(ev)) {
         this.focus();
       }
+
+      self._keyUp(ev);
     }, true));
 
     this.register(addDisposableDomListener(this.textarea, 'keydown', (ev: KeyboardEvent) => this._keyDown(ev), true));
@@ -694,7 +699,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
 
     this.selectionManager = new SelectionManager(this, this.charMeasure);
     this.register(addDisposableDomListener(this.element, 'mousedown', (e: MouseEvent) => this.selectionManager.onMouseDown(e)));
-    this.register(this.selectionManager.addDisposableListener('refresh', data => this.renderer.onSelectionChanged(data.start, data.end)));
+    this.register(this.selectionManager.addDisposableListener('refresh', data => this.renderer.onSelectionChanged(data.start, data.end, data.columnSelectMode)));
     this.register(this.selectionManager.addDisposableListener('newselection', text => {
       // If there's a new selection, put it into the textarea, focus and select it
       // in order to register it as a selection on the OS. This event is fired
@@ -1104,6 +1109,17 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
   }
 
   /**
+   * Change the cursor style for different selection modes
+   */
+  public updateCursorStyle(ev: KeyboardEvent): void {
+    if (this.selectionManager && this.selectionManager.shouldColumnSelect(ev)) {
+      this.element.classList.add('xterm-cursor-crosshair');
+    } else {
+      this.element.classList.remove('xterm-cursor-crosshair');
+    }
+  }
+
+  /**
    * Display the cursor element
    */
   public showCursor(): void {
@@ -1420,6 +1436,8 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
 
     const result = evaluateKeyboardEvent(event, this.applicationCursor, this.browser.isMac, this.options.macOptionIsMeta);
 
+    this.updateCursorStyle(event);
+
     // if (result.key === C0.DC3) { // XOFF
     //   this._writeStopped = true;
     // } else if (result.key === C0.DC1) { // XON
@@ -1489,6 +1507,10 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     if (this.glevel === g) {
       this.charset = charset;
     }
+  }
+
+  protected _keyUp(ev: KeyboardEvent): void {
+    this.updateCursorStyle(ev);
   }
 
   /**
@@ -1835,9 +1857,11 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     this.options.cols = this.cols;
     const customKeyEventHandler = this._customKeyEventHandler;
     const inputHandler = this._inputHandler;
+    const cursorState = this.cursorState;
     this._setup();
     this._customKeyEventHandler = customKeyEventHandler;
     this._inputHandler = inputHandler;
+    this.cursorState = cursorState;
     this.refresh(0, this.rows - 1);
     if (this.viewport) {
       this.viewport.syncScrollArea();

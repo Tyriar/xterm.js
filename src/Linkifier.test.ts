@@ -4,11 +4,11 @@
  */
 
 import { assert } from 'chai';
-import { IMouseZoneManager, IMouseZone } from './input/Types';
+import { IMouseZoneManager, IMouseZone } from './ui/Types';
 import { ILinkMatcher, LineData, ITerminal } from './Types';
 import { Linkifier } from './Linkifier';
 import { MockBuffer, MockTerminal } from './utils/TestUtils.test';
-import { CircularList } from './utils/CircularList';
+import { CircularList } from './common/CircularList';
 
 class TestLinkifier extends Linkifier {
   constructor(terminal: ITerminal) {

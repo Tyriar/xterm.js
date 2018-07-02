@@ -11,8 +11,8 @@ import { IRenderLayer, IColorSet, IRenderer, IRenderDimensions } from './Types';
 import { ITerminal } from '../Types';
 import { LinkRenderLayer } from './LinkRenderLayer';
 import { EventEmitter } from '../EventEmitter';
-import { RenderDebouncer } from '../utils/RenderDebouncer';
-import { ScreenDprMonitor } from '../utils/ScreenDprMonitor';
+import { RenderDebouncer } from '../ui/RenderDebouncer';
+import { ScreenDprMonitor } from '../ui/ScreenDprMonitor';
 import { ITheme } from 'xterm';
 
 export class Renderer extends EventEmitter implements IRenderer {
@@ -143,8 +143,8 @@ export class Renderer extends EventEmitter implements IRenderer {
     this._runOperation(l => l.onFocus(this._terminal));
   }
 
-  public onSelectionChanged(start: [number, number], end: [number, number]): void {
-    this._runOperation(l => l.onSelectionChanged(this._terminal, start, end));
+  public onSelectionChanged(start: [number, number], end: [number, number], columnSelectMode: boolean = false): void {
+    this._runOperation(l => l.onSelectionChanged(this._terminal, start, end, columnSelectMode));
   }
 
   public onCursorMove(): void {
