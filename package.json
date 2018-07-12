@@ -1,7 +1,7 @@
 {
   "name": "vscode-xterm",
   "description": "Full xterm terminal, in your browser",
-  "version": "3.6.0-beta2",
+  "version": "3.6.0-beta3",
   "main": "lib/public/Terminal.js",
   "types": "typings/xterm.d.ts",
   "repository": "https://github.com/xtermjs/xterm.js",
