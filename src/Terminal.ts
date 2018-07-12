@@ -21,7 +21,7 @@
  *   http://linux.die.net/man/7/urxvt
  */
 
-import { IInputHandlingTerminal, IViewport, ICompositionHelper, ITerminalOptions, ITerminal, IBrowser, ILinkifier, ILinkMatcherOptions, CustomKeyEventHandler, LinkMatcherHandler, CharData, LineData } from './Types';
+import { IInputHandlingTerminal, IViewport, ICompositionHelper, ITerminalOptions, ITerminal, IBrowser, ILinkifier, ILinkMatcherOptions, CustomKeyEventHandler, LinkMatcherHandler, CharData, LineData, CharacterJoinerHandler } from './Types';
 import { IMouseZoneManager } from './ui/Types';
 import { IRenderer } from './renderer/Types';
 import { BufferSet } from './BufferSet';
@@ -32,7 +32,6 @@ import { Viewport } from './Viewport';
 import { rightClickHandler, moveTextAreaUnderMouseCursor, pasteHandler, copyHandler } from './handlers/Clipboard';
 import { C0 } from './common/data/EscapeSequences';
 import { InputHandler } from './InputHandler';
-// import { Parser } from './Parser';
 import { Renderer } from './renderer/Renderer';
 import { Linkifier } from './Linkifier';
 import { SelectionManager } from './SelectionManager';
@@ -584,7 +583,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     }, true));
 
     this.register(addDisposableDomListener(this.element, 'keyup', (ev: KeyboardEvent) => {
-      if (!wasMondifierKeyOnlyEvent(ev)) {
+      if (!wasModifierKeyOnlyEvent(ev)) {
         this.focus();
       }
 
@@ -1007,28 +1006,39 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
         return this.cancel(ev);
       }
 
-      // TODO: these event listeners should be managed by the disposable, the Terminal reference may
-      // be kept aroud if Terminal.dispose is fired when the mouse is down
+      // TODO: All mouse handling should be pulled into its own file.
 
       // bind events
+      let moveHandler: (event: MouseEvent) => void;
       if (this.normalMouse) {
-        this._document.addEventListener('mousemove', sendMove);
+        moveHandler = (event: MouseEvent) => {
+          // Do nothing if normal mouse mode is on. This can happen if the mouse is held down when the
+          // terminal exits normalMouse mode.
+          if (!this.normalMouse) {
+            return;
+          }
+          sendMove(event);
+        };
+        // TODO: these event listeners should be managed by the disposable, the Terminal reference may
+        // be kept aroud if Terminal.dispose is fired when the mouse is down
+        this._document.addEventListener('mousemove', moveHandler);
       }
 
       // x10 compatibility mode can't send button releases
-      if (!this.x10Mouse) {
-        const handler = (ev: MouseEvent) => {
+      const handler = (ev: MouseEvent) => {
+        if (this.normalMouse && !this.x10Mouse) {
           sendButton(ev);
-          // TODO: Seems dangerous calling this on document?
-          if (this.normalMouse) {
-            this._document.removeEventListener('mousemove', sendMove);
-          }
-          this._document.removeEventListener('mouseup', handler);
-          return this.cancel(ev);
-        };
-        // TODO: Seems dangerous calling this on document?
-        this._document.addEventListener('mouseup', handler);
-      }
+        }
+        if (moveHandler) {
+          // Even though this should only be attached when this.normalMouse is true, holding the
+          // mouse button down when normalMouse changes can happen. Just always try to remove it.
+          this._document.removeEventListener('mousemove', moveHandler);
+          moveHandler = null;
+        }
+        this._document.removeEventListener('mouseup', handler);
+        return this.cancel(ev);
+      };
+      this._document.addEventListener('mouseup', handler);
 
       return this.cancel(ev);
     }));
@@ -1360,6 +1370,18 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
    */
   public deregisterLinkMatcher(matcherId: number): void {
     if (this.linkifier.deregisterLinkMatcher(matcherId)) {
+      this.refresh(0, this.rows - 1);
+    }
+  }
+
+  public registerCharacterJoiner(handler: CharacterJoinerHandler): number {
+    const joinerId = this.renderer.registerCharacterJoiner(handler);
+    this.refresh(0, this.rows - 1);
+    return joinerId;
+  }
+
+  public deregisterCharacterJoiner(joinerId: number): void {
+    if (this.renderer.deregisterCharacterJoiner(joinerId)) {
       this.refresh(0, this.rows - 1);
     }
   }
@@ -1943,7 +1965,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
  * Helpers
  */
 
-function wasMondifierKeyOnlyEvent(ev: KeyboardEvent): boolean {
+function wasModifierKeyOnlyEvent(ev: KeyboardEvent): boolean {
   return ev.keyCode === 16 || // Shift
     ev.keyCode === 17 || // Ctrl
     ev.keyCode === 18; // Alt
