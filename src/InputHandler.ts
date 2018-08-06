@@ -4,10 +4,10 @@
  * @license MIT
  */
 
-import { CharData, IInputHandler, IDcsHandler, IEscapeSequenceParser, IBuffer } from './Types';
+import { CharData, IInputHandler, IDcsHandler, IEscapeSequenceParser, IBuffer, IInputHandlingTerminal } from './Types';
 import { C0, C1 } from './common/data/EscapeSequences';
 import { CHARSETS, DEFAULT_CHARSET } from './core/data/Charsets';
-import { CHAR_DATA_CHAR_INDEX, CHAR_DATA_WIDTH_INDEX, CHAR_DATA_CODE_INDEX, DEFAULT_ATTR } from './Buffer';
+import { CHAR_DATA_CHAR_INDEX, CHAR_DATA_WIDTH_INDEX, CHAR_DATA_CODE_INDEX, DEFAULT_ATTR, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE } from './Buffer';
 import { FLAGS } from './renderer/Types';
 import { wcwidth } from './CharWidth';
 import { EscapeSequenceParser } from './EscapeSequenceParser';
@@ -40,7 +40,7 @@ class RequestTerminfo implements IDcsHandler {
   }
   unhook(): void {
     // invalid: DCS 0 + r Pt ST
-    this._terminal.send(`${C0.ESC}P0+r${this._data}${C0.ESC}\\`);
+    this._terminal.handler(`${C0.ESC}P0+r${this._data}${C0.ESC}\\`);
   }
 }
 
@@ -68,25 +68,25 @@ class DECRQSS implements IDcsHandler {
     switch (this._data) {
       // valid: DCS 1 $ r Pt ST (xterm)
       case '"q': // DECSCA
-        return this._terminal.send(`${C0.ESC}P1$r0"q${C0.ESC}\\`);
+        return this._terminal.handler(`${C0.ESC}P1$r0"q${C0.ESC}\\`);
       case '"p': // DECSCL
-        return this._terminal.send(`${C0.ESC}P1$r61"p${C0.ESC}\\`);
+        return this._terminal.handler(`${C0.ESC}P1$r61"p${C0.ESC}\\`);
       case 'r': // DECSTBM
         const pt = '' + (this._terminal.buffer.scrollTop + 1) +
                 ';' + (this._terminal.buffer.scrollBottom + 1) + 'r';
-        return this._terminal.send(`${C0.ESC}P1$r${pt}${C0.ESC}\\`);
+        return this._terminal.handler(`${C0.ESC}P1$r${pt}${C0.ESC}\\`);
       case 'm': // SGR
         // TODO: report real settings instead of 0m
-        return this._terminal.send(`${C0.ESC}P1$r0m${C0.ESC}\\`);
+        return this._terminal.handler(`${C0.ESC}P1$r0m${C0.ESC}\\`);
       case ' q': // DECSCUSR
         const STYLES: {[key: string]: number} = {'block': 2, 'underline': 4, 'bar': 6};
         let style = STYLES[this._terminal.getOption('cursorStyle')];
         style -= this._terminal.getOption('cursorBlink');
-        return this._terminal.send(`${C0.ESC}P1$r${style} q${C0.ESC}\\`);
+        return this._terminal.handler(`${C0.ESC}P1$r${style} q${C0.ESC}\\`);
       default:
         // invalid: DCS 0 $ r Pt ST (xterm)
         this._terminal.error('Unknown DCS $q %s', this._data);
-        this._terminal.send(`${C0.ESC}P0$r${this._data}${C0.ESC}\\`);
+        this._terminal.handler(`${C0.ESC}P0$r${this._data}${C0.ESC}\\`);
     }
   }
 }
@@ -116,7 +116,7 @@ export class InputHandler extends Disposable implements IInputHandler {
   private _surrogateHigh: string;
 
   constructor(
-      private _terminal: any, // TODO: reestablish IInputHandlingTerminal here
+      private _terminal: IInputHandlingTerminal,
       private _parser: IEscapeSequenceParser = new EscapeSequenceParser())
   {
     super();
@@ -129,16 +129,16 @@ export class InputHandler extends Disposable implements IInputHandler {
      * custom fallback handlers
      */
     this._parser.setCsiHandlerFallback((collect: string, params: number[], flag: number) => {
-      this._terminal.error('Unknown CSI code: ', collect, params, String.fromCharCode(flag));
+      this._terminal.error('Unknown CSI code: ', { collect, params, flag: String.fromCharCode(flag) });
     });
     this._parser.setEscHandlerFallback((collect: string, flag: number) => {
-      this._terminal.error('Unknown ESC code: ', collect, String.fromCharCode(flag));
+      this._terminal.error('Unknown ESC code: ', { collect, flag: String.fromCharCode(flag) });
     });
     this._parser.setExecuteHandlerFallback((code: number) => {
-      this._terminal.error('Unknown EXECUTE code: ', code);
+      this._terminal.error('Unknown EXECUTE code: ', { code });
     });
     this._parser.setOscHandlerFallback((identifier: number, data: string) => {
-      this._terminal.error('Unknown OSC code: ', identifier, data);
+      this._terminal.error('Unknown OSC code: ', { identifier, data });
     });
 
     /**
@@ -304,7 +304,9 @@ export class InputHandler extends Disposable implements IInputHandler {
     let buffer = this._terminal.buffer;
     const cursorStartX = buffer.x;
     const cursorStartY = buffer.y;
-    if (this._terminal.debug) {
+
+    // TODO: Consolidate debug/logging #1560
+    if ((<any>this._terminal).debug) {
       this._terminal.log('data: ' + data);
     }
 
@@ -436,11 +438,11 @@ export class InputHandler extends Disposable implements IInputHandler {
           if (removed[CHAR_DATA_WIDTH_INDEX] === 0
               && bufferRow[this._terminal.cols - 2]
               && bufferRow[this._terminal.cols - 2][CHAR_DATA_WIDTH_INDEX] === 2) {
-                bufferRow[this._terminal.cols - 2] = [curAttr, ' ', 1, 32  /* ' '.charCodeAt(0) */ ];
+                bufferRow[this._terminal.cols - 2] = [curAttr, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE];
           }
 
           // insert empty cell at cursor
-          bufferRow.splice(buffer.x, 0, [curAttr, ' ', 1, 32  /* ' '.charCodeAt(0) */ ]);
+          bufferRow.splice(buffer.x, 0, [curAttr, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]);
         }
       }
 
@@ -552,7 +554,7 @@ export class InputHandler extends Disposable implements IInputHandler {
 
     const row = buffer.y + buffer.ybase;
     let j = buffer.x;
-    const ch: CharData = [this._terminal.eraseAttr(), ' ', 1, 32]; // xterm
+    const ch: CharData = [this._terminal.eraseAttr(), NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]; // xterm
 
     while (param-- && j < this._terminal.cols) {
       buffer.lines.get(row).splice(j++, 0, ch);
@@ -862,7 +864,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     const buffer = this._terminal.buffer;
 
     const row = buffer.y + buffer.ybase;
-    const ch: CharData = [this._terminal.eraseAttr(), ' ', 1, 32]; // xterm
+    const ch: CharData = [this._terminal.eraseAttr(), NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]; // xterm
 
     while (param--) {
       buffer.lines.get(row).splice(buffer.x, 1);
@@ -924,7 +926,7 @@ export class InputHandler extends Disposable implements IInputHandler {
 
     const row = buffer.y + buffer.ybase;
     let j = buffer.x;
-    const ch: CharData = [this._terminal.eraseAttr(), ' ', 1, 32]; // xterm
+    const ch: CharData = [this._terminal.eraseAttr(), NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]; // xterm
 
     while (param-- && j < this._terminal.cols) {
       buffer.lines.get(row)[j++] = ch;
@@ -986,7 +988,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     const buffer = this._terminal.buffer;
 
     const line = buffer.lines.get(buffer.ybase + buffer.y);
-    const ch = line[buffer.x - 1] || [DEFAULT_ATTR, ' ', 1, 32];
+    const ch = line[buffer.x - 1] || [DEFAULT_ATTR, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE];
 
     while (param--) {
       line[buffer.x++] = ch;
@@ -1037,24 +1039,24 @@ export class InputHandler extends Disposable implements IInputHandler {
 
     if (!collect) {
       if (this._terminal.is('xterm') || this._terminal.is('rxvt-unicode') || this._terminal.is('screen')) {
-        this._terminal.send(C0.ESC + '[?1;2c');
+        this._terminal.handler(C0.ESC + '[?1;2c');
       } else if (this._terminal.is('linux')) {
-        this._terminal.send(C0.ESC + '[?6c');
+        this._terminal.handler(C0.ESC + '[?6c');
       }
     } else if (collect === '>') {
       // xterm and urxvt
       // seem to spit this
       // out around ~370 times (?).
       if (this._terminal.is('xterm')) {
-        this._terminal.send(C0.ESC + '[>0;276;0c');
+        this._terminal.handler(C0.ESC + '[>0;276;0c');
       } else if (this._terminal.is('rxvt-unicode')) {
-        this._terminal.send(C0.ESC + '[>85;95;0c');
+        this._terminal.handler(C0.ESC + '[>85;95;0c');
       } else if (this._terminal.is('linux')) {
         // not supported by linux console.
         // linux console echoes parameters.
-        this._terminal.send(params[0] + 'c');
+        this._terminal.handler(params[0] + 'c');
       } else if (this._terminal.is('screen')) {
-        this._terminal.send(C0.ESC + '[>83;40003;0c');
+        this._terminal.handler(C0.ESC + '[>83;40003;0c');
       }
     }
   }
@@ -1738,19 +1740,19 @@ export class InputHandler extends Disposable implements IInputHandler {
           break;
         case 15:
           // no printer
-          // this.send(C0.ESC + '[?11n');
+          // this.handler(C0.ESC + '[?11n');
           break;
         case 25:
           // dont support user defined keys
-          // this.send(C0.ESC + '[?21n');
+          // this.handler(C0.ESC + '[?21n');
           break;
         case 26:
           // north american keyboard
-          // this.send(C0.ESC + '[?27;1;0;0n');
+          // this.handler(C0.ESC + '[?27;1;0;0n');
           break;
         case 53:
           // no dec locator/mouse
-          // this.send(C0.ESC + '[?50n');
+          // this.handler(C0.ESC + '[?50n');
           break;
       }
     }

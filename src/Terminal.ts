@@ -25,7 +25,7 @@ import { IInputHandlingTerminal, IViewport, ICompositionHelper, ITerminalOptions
 import { IMouseZoneManager } from './ui/Types';
 import { IRenderer } from './renderer/Types';
 import { BufferSet } from './BufferSet';
-import { Buffer, MAX_BUFFER_SIZE, DEFAULT_ATTR } from './Buffer';
+import { Buffer, MAX_BUFFER_SIZE, DEFAULT_ATTR, NULL_CELL_CODE, NULL_CELL_WIDTH, NULL_CELL_CHAR } from './Buffer';
 import { CompositionHelper } from './CompositionHelper';
 import { EventEmitter } from './EventEmitter';
 import { Viewport } from './Viewport';
@@ -135,7 +135,6 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
   public cursorHidden: boolean;
   public convertEol: boolean;
 
-  private _sendDataQueue: string;
   private _customKeyEventHandler: CustomKeyEventHandler;
 
   // modes
@@ -193,7 +192,6 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
 
   // Store if user went browsing history in scrollback
   private _userScrolling: boolean;
-  private _isDisposed: boolean = false;
 
   private _inputHandler: InputHandler;
   public soundManager: SoundManager;
@@ -216,7 +214,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
   /**
    * Creates a new `Terminal` object.
    *
-   * @param {object} options An object containing a set of options, the available options are:
+   * @param options An object containing a set of options, the available options are:
    *   - `cursorBlink` (boolean): Whether the terminal cursor blinks
    *   - `cols` (number): The number of columns of the terminal (horizontal size)
    *   - `rows` (number): The number of rows of the terminal (vertical size)
@@ -234,7 +232,6 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
   }
 
   public dispose(): void {
-    this._isDisposed = true;
     super.dispose();
     this._customKeyEventHandler = null;
     removeTerminalFromCache(this);
@@ -273,7 +270,6 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
 
     this.cursorState = 0;
     this.cursorHidden = false;
-    this._sendDataQueue = '';
     this._customKeyEventHandler = null;
 
     // modes
@@ -351,7 +347,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
 
   /**
    * Retrieves an option's value from the terminal.
-   * @param {string} key The option key.
+   * @param key The option key.
    */
   public getOption(key: string): any {
     if (!(key in DEFAULT_OPTIONS)) {
@@ -363,8 +359,8 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
 
   /**
    * Sets an option on the terminal.
-   * @param {string} key The option key.
-   * @param {any} value The option value.
+   * @param key The option key.
+   * @param value The option value.
    */
   public setOption(key: string, value: any): void {
     if (!(key in DEFAULT_OPTIONS)) {
@@ -509,7 +505,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
    */
   private _onTextAreaFocus(): void {
     if (this.sendFocus) {
-      this.send(C0.ESC + '[I');
+      this.handler(C0.ESC + '[I');
     }
     this.element.classList.add('focus');
     this.showCursor();
@@ -533,7 +529,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     this.textarea.value = '';
     this.refresh(this.buffer.y, this.buffer.y);
     if (this.sendFocus) {
-      this.send(C0.ESC + '[O');
+      this.handler(C0.ESC + '[O');
     }
     this.element.classList.remove('focus');
     this.emit('blur');
@@ -625,7 +621,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
   /**
    * Opens the terminal within an element.
    *
-   * @param {HTMLElement} parent The element to create the terminal within.
+   * @param parent The element to create the terminal within.
    */
   public open(parent: HTMLElement): void {
     this._parent = parent || this._parent;
@@ -889,7 +885,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
         else if (button === 3) return;
         else data += '0';
         data += '~[' + pos.x + ',' + pos.y + ']\r';
-        self.send(data);
+        self.handler(data);
         return;
       }
 
@@ -902,7 +898,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
         else if (button === 1) button = 4;
         else if (button === 2) button = 6;
         else if (button === 3) button = 3;
-        self.send(C0.ESC + '['
+        self.handler(C0.ESC + '['
                   + button
                   + ';'
                   + (button === 3 ? 4 : 0)
@@ -922,14 +918,14 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
         pos.y -= 32;
         pos.x++;
         pos.y++;
-        self.send(C0.ESC + '[' + button + ';' + pos.x + ';' + pos.y + 'M');
+        self.handler(C0.ESC + '[' + button + ';' + pos.x + ';' + pos.y + 'M');
         return;
       }
 
       if (self.sgrMouse) {
         pos.x -= 32;
         pos.y -= 32;
-        self.send(C0.ESC + '[<'
+        self.handler(C0.ESC + '[<'
                   + (((button & 3) === 3 ? button & ~3 : button) - 32)
                   + ';'
                   + pos.x
@@ -945,7 +941,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
       encode(data, pos.x);
       encode(data, pos.y);
 
-      self.send(C0.ESC + '[M' + String.fromCharCode.apply(String, data));
+      self.handler(C0.ESC + '[M' + String.fromCharCode.apply(String, data));
     }
 
     function getButton(ev: MouseEvent): number {
@@ -1094,7 +1090,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
           for (let i = 0; i < Math.abs(amount); i++) {
             data += sequence;
           }
-          this.send(data);
+          this.handler(data);
         }
         return;
       }
@@ -1127,8 +1123,8 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
   /**
    * Tells the renderer to refresh terminal content between two rows (inclusive) at the next
    * opportunity.
-   * @param {number} start The row to start from (between 0 and this.rows - 1).
-   * @param {number} end The row to end at (between start and this.rows - 1).
+   * @param start The row to start from (between 0 and this.rows - 1).
+   * @param end The row to end at (between start and this.rows - 1).
    */
   public refresh(start: number, end: number): void {
     if (this.renderer) {
@@ -1138,8 +1134,8 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
 
   /**
    * Queues linkification for the specified rows.
-   * @param {number} start The row to start from (between 0 and this.rows - 1).
-   * @param {number} end The row to end at (between start and this.rows - 1).
+   * @param start The row to start from (between 0 and this.rows - 1).
+   * @param end The row to end at (between start and this.rows - 1).
    */
   private _queueLinkification(start: number, end: number): void {
     if (this.linkifier) {
@@ -1231,8 +1227,8 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
 
   /**
    * Scroll the display of the terminal
-   * @param {number} disp The number of lines to scroll down (negative scroll up).
-   * @param {boolean} suppressScrollEvent Don't emit the scroll event as scrollLines. This is used
+   * @param disp The number of lines to scroll down (negative scroll up).
+   * @param suppressScrollEvent Don't emit the scroll event as scrollLines. This is used
    * to avoid unwanted events being handled by the viewport when the event was triggered from the
    * viewport originally.
    */
@@ -1263,7 +1259,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
 
   /**
    * Scroll the display of the terminal by a number of pages.
-   * @param {number} pageCount The number of pages to scroll (negative scrolls up).
+   * @param pageCount The number of pages to scroll (negative scrolls up).
    */
   public scrollPages(pageCount: number): void {
     this.scrollLines(pageCount * (this.rows - 1));
@@ -1292,7 +1288,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
 
   /**
    * Writes text to the terminal.
-   * @param {string} data The text to write to the terminal.
+   * @param data The text to write to the terminal.
    */
   public write(data: string): void {
     // Ensure the terminal isn't disposed
@@ -1313,7 +1309,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     if (this.options.useFlowControl && !this._xoffSentToCatchUp && this.writeBuffer.length >= WRITE_BUFFER_PAUSE_THRESHOLD) {
       // XOFF - stop pty pipe
       // XON will be triggered by emulator before processing data chunk
-      this.send(C0.DC3);
+      this.handler(C0.DC3);
       this._xoffSentToCatchUp = true;
     }
 
@@ -1340,7 +1336,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
       // If XOFF was sent in order to catch up with the pty process, resume it if
       // the writeBuffer is empty to allow more data to come in.
       if (this._xoffSentToCatchUp && writeBatch.length === 0 && this.writeBuffer.length === 0) {
-        this.send(C0.DC1);
+        this.handler(C0.DC1);
         this._xoffSentToCatchUp = false;
       }
 
@@ -1368,7 +1364,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
 
   /**
    * Writes text to the terminal, followed by a break line character (\n).
-   * @param {string} data The text to write to the terminal.
+   * @param data The text to write to the terminal.
    */
   public writeln(data: string): void {
     this.write(data + '\r\n');
@@ -1481,7 +1477,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
    * Handle a keydown event
    * Key Resources:
    *   - https://developer.mozilla.org/en-US/docs/DOM/KeyboardEvent
-   * @param {KeyboardEvent} ev The keydown event to be handled.
+   * @param ev The keydown event to be handled.
    */
   protected _keyDown(event: KeyboardEvent): boolean {
     if (this._customKeyEventHandler && this._customKeyEventHandler(event) === false) {
@@ -1578,7 +1574,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
    * Handle a keypress event.
    * Key Resources:
    *   - https://developer.mozilla.org/en-US/docs/DOM/KeyboardEvent
-   * @param {KeyboardEvent} ev The keypress event to be handled.
+   * @param ev The keypress event to be handled.
    */
   protected _keyPress(ev: KeyboardEvent): boolean {
     let key;
@@ -1613,21 +1609,6 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     this.handler(key);
 
     return true;
-  }
-
-  /**
-   * Send data for handling to the terminal
-   * @param {string} data
-   */
-  public send(data: string): void {
-    if (!this._sendDataQueue) {
-      setTimeout(() => {
-        this.handler(this._sendDataQueue);
-        this._sendDataQueue = '';
-      }, 1);
-    }
-
-    this._sendDataQueue += data;
   }
 
   /**
@@ -1670,8 +1651,8 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
   /**
    * Resizes the terminal.
    *
-   * @param {number} x The number of columns to resize to.
-   * @param {number} y The number of rows to resize to.
+   * @param x The number of columns to resize to.
+   * @param y The number of rows to resize to.
    */
   public resize(x: number, y: number): void {
     if (isNaN(x) || isNaN(y)) {
@@ -1705,7 +1686,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
 
   /**
    * Updates the range of rows to refresh
-   * @param {number} y The number of rows to refresh next.
+   * @param y The number of rows to refresh next.
    */
   public updateRange(y: number): void {
     if (y < this._refreshStart) this._refreshStart = y;
@@ -1728,15 +1709,15 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
 
   /**
    * Erase in the identified line everything from "x" to the end of the line (right).
-   * @param {number} x The column from which to start erasing to the end of the line.
-   * @param {number} y The line in which to operate.
+   * @param x The column from which to start erasing to the end of the line.
+   * @param y The line in which to operate.
    */
   public eraseRight(x: number, y: number): void {
     const line = this.buffer.lines.get(this.buffer.ybase + y);
     if (!line) {
       return;
     }
-    const ch: CharData = [this.eraseAttr(), ' ', 1, 32 /* ' '.charCodeAt(0) */]; // xterm
+    const ch: CharData = [this.eraseAttr(), NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]; // xterm
     for (; x < this.cols; x++) {
       line[x] = ch;
     }
@@ -1745,15 +1726,15 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
 
   /**
    * Erase in the identified line everything from "x" to the start of the line (left).
-   * @param {number} x The column from which to start erasing to the start of the line.
-   * @param {number} y The line in which to operate.
+   * @param x The column from which to start erasing to the start of the line.
+   * @param y The line in which to operate.
    */
   public eraseLeft(x: number, y: number): void {
     const line = this.buffer.lines.get(this.buffer.ybase + y);
     if (!line) {
       return;
     }
-    const ch: CharData = [this.eraseAttr(), ' ', 1, 32 /* ' '.charCodeAt(0) */]; // xterm
+    const ch: CharData = [this.eraseAttr(), NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]; // xterm
     x++;
     while (x--) {
       line[x] = ch;
@@ -1783,7 +1764,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
 
   /**
    * Erase all content in the given line
-   * @param {number} y The line to erase all of its contents.
+   * @param y The line to erase all of its contents.
    */
   public eraseLine(y: number): void {
     this.eraseRight(0, y);
@@ -1791,15 +1772,15 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
 
   /**
    * Return the data array of a blank line
-   * @param {boolean} cur First bunch of data for each "blank" character.
-   * @param {boolean} isWrapped Whether the new line is wrapped from the previous line.
-   * @param {boolean} cols The number of columns in the terminal, if this is not
+   * @param cur First bunch of data for each "blank" character.
+   * @param isWrapped Whether the new line is wrapped from the previous line.
+   * @param cols The number of columns in the terminal, if this is not
    * set, the terminal's current column count would be used.
    */
   public blankLine(cur?: boolean, isWrapped?: boolean, cols?: number): LineData {
     const attr = cur ? this.eraseAttr() : DEFAULT_ATTR;
 
-    const ch: CharData = [attr, ' ', 1, 32 /* ' '.charCodeAt(0) */]; // width defaults to 1 halfwidth character
+    const ch: CharData = [attr, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]; // width defaults to 1 halfwidth character
     const line: LineData = [];
 
     // TODO: It is not ideal that this is a property on an array, a buffer line
@@ -1822,9 +1803,9 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
    */
   public ch(cur?: boolean): CharData {
     if (cur) {
-      return [this.eraseAttr(), ' ', 1, 32 /* ' '.charCodeAt(0) */];
+      return [this.eraseAttr(), NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE];
     }
-    return [DEFAULT_ATTR, ' ', 1, 32 /* ' '.charCodeAt(0) */];
+    return [DEFAULT_ATTR, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE];
   }
 
   /**
@@ -1837,7 +1818,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
 
   /**
    * Emit the 'data' event and populate the given data.
-   * @param {string} data The data to populate in the event.
+   * @param data The data to populate in the event.
    */
   public handler(data: string): void {
     // Prevents all events to pty process if stdin is disabled
@@ -1859,7 +1840,7 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
 
   /**
    * Emit the 'title' event and populate the given title.
-   * @param {string} title The title to populate in the event.
+   * @param title The title to populate in the event.
    */
   public handleTitle(title: string): void {
     /**
