@@ -9,7 +9,7 @@
       "es2015.promise"
     ],
     "rootDir": "src",
-    "outDir": "lib",
+    "outDir": "lib/ui",
     "sourceMap": true,
     "removeComments": true,
     "preserveWatchOutput": true,
@@ -17,10 +17,20 @@
     "noImplicitAny": true
   },
   "include": [
-    "src/**/*",
+    "src/*.ts",
+    "src/core/**/*.ts",
+    "src/handlers/**/*.ts",
+    "src/public/**/*.ts",
+    "src/renderer/**/*.ts",
+    "src/shared/**/*.ts",
+    "src/ui/**/*.ts",
+    "src/utils/**/*.ts",
     "typings/xterm.d.ts"
   ],
   "exclude": [
     "src/addons/**/*"
+  ],
+  "references": [
+    { "path": "./src/common" }
   ]
 }

@@ -55,7 +55,7 @@
     "test-coverage": "nyc -x gulpfile.js -x '**/*test*' npm run mocha",
     "mocha": "gulp test",
     "build:docs": "jsdoc -c jsdoc.json",
-    "tsc": "tsc",
+    "tsc": "tsc --build --watch --verbose",
     "prebuild": "concurrently --kill-others-on-fail --names \"lib,attach,fit,fullscreen,search,terminado,webLinks,winptyCompat,zmodem,css\" \"tsc\" \"tsc -p ./src/addons/attach\" \"tsc -p ./src/addons/fit\" \"tsc -p ./src/addons/fullscreen\" \"tsc -p ./src/addons/search\" \"tsc -p ./src/addons/terminado\" \"tsc -p ./src/addons/webLinks\" \"tsc -p ./src/addons/winptyCompat\" \"tsc -p ./src/addons/zmodem\" \"gulp css\"",
     "build": "gulp build",
     "prepublish": "npm run build",
