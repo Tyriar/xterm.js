@@ -81,6 +81,8 @@ declare module 'xterm' {
      */
     enableBold?: boolean;
 
+    enableBenchmarking?: boolean;
+
     /**
      * What character atlas implementation to use. The character atlas caches drawn characters,
      * speeding up rendering significantly. However, it can introduce some minor rendering

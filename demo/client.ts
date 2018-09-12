@@ -74,7 +74,10 @@ function createTerminal(): void {
   while (terminalContainer.children.length) {
     terminalContainer.removeChild(terminalContainer.children[0]);
   }
-  term = new Terminal({});
+  term = new Terminal({
+    experimentalCharAtlas: 'dynamic',
+    enableBenchmarking: true
+  });
   window.term = term;  // Expose `term` to window for debugging purposes
   term.on('resize', (size: { cols: number, rows: number }) => {
     if (!pid) {

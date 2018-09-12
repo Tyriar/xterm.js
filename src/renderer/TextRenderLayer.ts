@@ -222,6 +222,16 @@ export class TextRenderLayer extends BaseRenderLayer {
   }
 
   private _drawForeground(terminal: ITerminal, firstRow: number, lastRow: number): void {
+    let start: number;
+    if (terminal.options.enableBenchmarking) {
+      if (!(<any>terminal).times) {
+        (<any>terminal).times = [];
+        (<any>terminal).avg = () => {
+          return (<any>terminal).times.reduce((a: number, b: number) => a + b) / (<any>terminal).times.length;
+        };
+      }
+      start = performance.now();
+    }
     this._forEachCell(terminal, firstRow, lastRow, this._characterJoinerRegistry, (code, chars, width, x, y, fg, bg, flags) => {
       if (flags & FLAGS.INVISIBLE) {
         return;
@@ -246,6 +256,12 @@ export class TextRenderLayer extends BaseRenderLayer {
         !!(flags & FLAGS.BOLD), !!(flags & FLAGS.DIM), !!(flags & FLAGS.ITALIC)
       );
     });
+    if (terminal.options.enableBenchmarking) {
+      const time = (performance.now() - start) / (lastRow - firstRow + 1);
+      for (let i = 0; i <= lastRow - firstRow; i++) {
+        (<any>terminal).times.push(time);
+      }
+    }
   }
 
   public onGridChanged(terminal: ITerminal, firstRow: number, lastRow: number): void {
