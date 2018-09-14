@@ -251,6 +251,19 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
   }
 
   private _setup(): void {
+
+    if (this.options.enableBenchmarking) {
+      if (!(<any>this).times) {
+        (<any>this).times = [];
+        (<any>this).avg = () => {
+          return (<any>this).times.reduce((a: number, b: number) => a + b) / (<any>this).times.length;
+        };
+        (<any>this).draws = {
+          cached: 0,
+          uncached: 0
+        };
+      }
+    }
     Object.keys(DEFAULT_OPTIONS).forEach((key) => {
       if (this.options[key] === null || this.options[key] === undefined) {
         this.options[key] = DEFAULT_OPTIONS[key];

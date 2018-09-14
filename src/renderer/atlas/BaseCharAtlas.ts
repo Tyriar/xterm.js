@@ -3,8 +3,6 @@
  * @license MIT
  */
 
-import { IGlyphIdentifier } from './Types';
-
 export default abstract class BaseCharAtlas {
   private _didWarmUp: boolean = false;
 
@@ -46,7 +44,13 @@ export default abstract class BaseCharAtlas {
    */
   public abstract draw(
     ctx: CanvasRenderingContext2D,
-    glyph: IGlyphIdentifier,
+    chars: string,
+    code: number,
+    bg: number,
+    fg: number,
+    bold: boolean,
+    dim: boolean,
+    italic: boolean,
     x: number,
     y: number
   ): boolean;

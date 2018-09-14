@@ -76,7 +76,7 @@ function createTerminal(): void {
   }
   term = new Terminal({
     experimentalCharAtlas: 'dynamic',
-    enableBenchmarking: true
+    enableBenchmarking: false
   });
   window.term = term;  // Expose `term` to window for debugging purposes
   term.on('resize', (size: { cols: number, rows: number }) => {

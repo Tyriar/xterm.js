@@ -247,14 +247,17 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     fg += drawInBrightColor ? 8 : 0;
     const atlasDidDraw = this._charAtlas && this._charAtlas.draw(
       this._ctx,
-      {chars, code, bg, fg, bold: bold && terminal.options.enableBold, dim, italic},
+      chars, code, bg, fg, bold && terminal.options.enableBold, dim, italic,
       x * this._scaledCellWidth + this._scaledCharLeft,
       y * this._scaledCellHeight + this._scaledCharTop
     );
 
     if (!atlasDidDraw) {
+      // (<any>terminal).draws.uncached++;
       this._drawUncachedChars(terminal, chars, width, fg, x, y, bold && terminal.options.enableBold, dim, italic);
-    }
+    }/* else {
+      (<any>terminal).draws.cached++;
+    }*/
   }
 
   /**
