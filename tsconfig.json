@@ -25,10 +25,12 @@
     "src/shared/**/*.ts",
     "src/ui/**/*.ts",
     "src/utils/**/*.ts",
-    "typings/xterm.d.ts"
+    "typings/xterm.d.ts",
+    "src/common/**.d.ts"
   ],
   "exclude": [
-    "src/addons/**/*"
+    "src/addons/**/*",
+    "src/common/**/*"
   ],
   "references": [
     { "path": "./src/common" }
