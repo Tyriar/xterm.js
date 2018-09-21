@@ -3,12 +3,13 @@
   "include": [],
   "references": [
     { "path": "./src" },
-    { "path": "./src/addons/fit" }
-    { "path": "./src/addons/fullscreen" }
-    { "path": "./src/addons/search" }
-    { "path": "./src/addons/terminado" }
-    { "path": "./src/addons/webLinks" }
-    { "path": "./src/addons/winptyCompat" }
+    { "path": "./src/addons/attach" },
+    { "path": "./src/addons/fit" },
+    { "path": "./src/addons/fullscreen" },
+    { "path": "./src/addons/search" },
+    { "path": "./src/addons/terminado" },
+    { "path": "./src/addons/webLinks" },
+    { "path": "./src/addons/winptyCompat" },
     { "path": "./src/addons/zmodem" }
   ]
 }

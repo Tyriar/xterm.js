@@ -57,13 +57,12 @@
     "test-coverage": "nyc -x gulpfile.js -x '**/*test*' npm run mocha",
     "mocha": "gulp test",
     "build:docs": "jsdoc -c jsdoc.json",
-    "tsc": "tsc --build --watch --verbose",
-    "prebuild": "concurrently --kill-others-on-fail --names \"lib,attach,fit,fullscreen,search,terminado,webLinks,winptyCompat,zmodem,css\" \"tsc\" \"tsc -p ./src/addons/attach\" \"tsc -p ./src/addons/fit\" \"tsc -p ./src/addons/fullscreen\" \"tsc -p ./src/addons/search\" \"tsc -p ./src/addons/terminado\" \"tsc -p ./src/addons/webLinks\" \"tsc -p ./src/addons/winptyCompat\" \"tsc -p ./src/addons/zmodem\" \"gulp css\"",
+    "prebuild": "concurrently --kill-others-on-fail --names \"tsc,css\" \"tsc --build\" \"gulp css\"",
     "build": "gulp build",
     "prepublish": "npm run build",
     "coveralls": "nyc report --reporter=text-lcov | coveralls",
     "webpack": "gulp webpack",
-    "watch": "concurrently --kill-others-on-fail --names \"lib,css\" \"tsc -w\" \"gulp watch-css\"",
+    "watch": "tsc --build --watch",
     "watch-addons": "concurrently --kill-others-on-fail --names \"attach,fit,fullscreen,search,terminado,webLinks,winptyCompat,zmodem\" \"tsc -w -p ./src/addons/attach\" \"tsc -w -p ./src/addons/fit\" \"tsc -w -p ./src/addons/fullscreen\" \"tsc -w -p ./src/addons/search\" \"tsc -w -p ./src/addons/terminado\" \"tsc -w -p ./src/addons/webLinks\" \"tsc -w -p ./src/addons/winptyCompat\" \"tsc -w -p ./src/addons/zmodem\""
   }
 }

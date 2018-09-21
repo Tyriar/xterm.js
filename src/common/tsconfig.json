@@ -11,10 +11,13 @@
     "removeComments": true,
     "preserveWatchOutput": true,
     "noUnusedLocals": true,
-    "noImplicitAny": true
+    "noImplicitAny": true,
+    "types": [
+      "../../node_modules/@types/mocha",
+      "../.."
+    ]
   },
   "include": [
-    "./**/*",
-    "../../typings/xterm.d.ts"
+    "./**/*"
   ]
 }

@@ -5,7 +5,6 @@
     "lib": [
       "dom",
       "es5",
-      "es6",
       "scripthost",
       "es2015.promise"
     ],
@@ -15,7 +14,11 @@
     "removeComments": true,
     "preserveWatchOutput": true,
     "noUnusedLocals": true,
-    "noImplicitAny": true
+    "noImplicitAny": true,
+    "types": [
+      "../../node_modules/@types/mocha",
+      "..",
+    ]
   },
   "include": [
     "*.ts",
@@ -26,7 +29,6 @@
     "shared/**/*.ts",
     "ui/**/*.ts",
     "utils/**/*.ts",
-    "../typings/xterm.d.ts",
     "../lib/common/**.d.ts"
   ],
   "exclude": [
