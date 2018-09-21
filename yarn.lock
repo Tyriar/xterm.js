@@ -5451,9 +5451,9 @@ typedarray@^0.0.6, typedarray@~0.0.5:
   version "0.0.6"
   resolved "https://registry.yarnpkg.com/typedarray/-/typedarray-0.0.6.tgz#867ac74e3864187b1d3d47d996a78ec5c8830777"
 
-typescript@3.0:
-  version "3.0.3"
-  resolved "https://registry.yarnpkg.com/typescript/-/typescript-3.0.3.tgz#4853b3e275ecdaa27f78fda46dc273a7eb7fc1c8"
+typescript@^3.1.0-dev.20180920:
+  version "3.1.0-dev.20180920"
+  resolved "https://registry.yarnpkg.com/typescript/-/typescript-3.1.0-dev.20180920.tgz#4851d2b9cfa2a2d25312c018c32a1f5c77b93307"
 
 uglify-js@^2.6, uglify-js@^2.8.29:
   version "2.8.29"

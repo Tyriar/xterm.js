@@ -13,7 +13,7 @@ declare const Promise: any;
 export interface IOffscreenCanvas {
   width: number;
   height: number;
-  getContext(type: '2d', config?: Canvas2DContextAttributes): CanvasRenderingContext2D;
+  getContext(type: '2d', config?: CanvasRenderingContext2DSettings): CanvasRenderingContext2D;
   transferToImageBitmap(): ImageBitmap;
 }
 

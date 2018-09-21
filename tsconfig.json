@@ -1,38 +1,14 @@
 {
-  "compilerOptions": {
-    "module": "commonjs",
-    "target": "es5",
-    "lib": [
-      "dom",
-      "es5",
-      "scripthost",
-      "es2015.promise"
-    ],
-    "rootDir": "src",
-    "outDir": "lib/ui",
-    "sourceMap": true,
-    "removeComments": true,
-    "preserveWatchOutput": true,
-    "noUnusedLocals": true,
-    "noImplicitAny": true
-  },
-  "include": [
-    "src/*.ts",
-    "src/core/**/*.ts",
-    "src/handlers/**/*.ts",
-    "src/public/**/*.ts",
-    "src/renderer/**/*.ts",
-    "src/shared/**/*.ts",
-    "src/ui/**/*.ts",
-    "src/utils/**/*.ts",
-    "typings/xterm.d.ts",
-    "src/common/**.d.ts"
-  ],
-  "exclude": [
-    "src/addons/**/*",
-    "src/common/**/*"
-  ],
+  "files": [],
+  "include": [],
   "references": [
-    { "path": "./src/common" }
+    { "path": "./src" },
+    { "path": "./src/addons/fit" }
+    { "path": "./src/addons/fullscreen" }
+    { "path": "./src/addons/search" }
+    { "path": "./src/addons/terminado" }
+    { "path": "./src/addons/webLinks" }
+    { "path": "./src/addons/winptyCompat" }
+    { "path": "./src/addons/zmodem" }
   ]
 }
