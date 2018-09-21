@@ -1,7 +1,7 @@
 {
   "name": "xterm",
   "description": "Full xterm terminal, in your browser",
-  "version": "3.6.0",
+  "version": "3.7.0",
   "main": "lib/public/Terminal.js",
   "types": "typings/xterm.d.ts",
   "repository": "https://github.com/xtermjs/xterm.js",
@@ -12,6 +12,7 @@
     "@types/jsdom": "11.0.1",
     "@types/mocha": "^2.2.33",
     "@types/node": "6.0.108",
+    "@types/webpack": "^4.4.11",
     "browserify": "^13.3.0",
     "chai": "3.5.0",
     "concurrently": "^3.5.1",
@@ -32,24 +33,25 @@
     "merge-stream": "^1.0.1",
     "node-pty": "0.7.6",
     "nodemon": "1.10.2",
-    "npm-run-all": "^4.1.2",
     "nyc": "^11.8.0",
     "sorcery": "^0.10.0",
     "source-map-loader": "^0.2.3",
+    "ts-loader": "^4.5.0",
     "tslint": "^5.9.1",
     "tslint-consistent-codestyle": "^1.13.0",
     "typescript": "^3.1.0-dev.20180920",
     "vinyl-buffer": "^1.0.0",
     "vinyl-source-stream": "^1.1.0",
-    "webpack": "^3.10.0",
-    "webpack-stream": "^4.0.0",
+    "webpack": "^4.17.1",
+    "webpack-cli": "^3.1.0",
     "zmodem.js": "^0.1.5"
   },
   "scripts": {
-    "start": "concurrently --kill-others-on-fail --names \"demo,server\" \"gulp watch-demo\" \"node demo/app\"",
+    "start": "node demo/start",
     "start-zmodem": "node demo/zmodem/app",
-    "lint": "tslint 'src/**/*.ts'",
-    "test": "npm-run-all mocha lint",
+    "lint": "tslint 'src/**/*.ts' './demo/**/*.ts'",
+    "test": "npm run mocha",
+    "posttest": "npm run lint",
     "test-debug": "node --inspect-brk node_modules/.bin/gulp test",
     "test-suite": "gulp mocha-suite --test",
     "test-coverage": "nyc -x gulpfile.js -x '**/*test*' npm run mocha",
@@ -61,6 +63,7 @@
     "prepublish": "npm run build",
     "coveralls": "nyc report --reporter=text-lcov | coveralls",
     "webpack": "gulp webpack",
-    "watch": "concurrently --kill-others-on-fail --names \"lib,attach,fit,fullscreen,search,terminado,webLinks,winptyCompat,zmodem,css\" \"tsc -w\" \"tsc -w -p ./src/addons/attach\" \"tsc -w -p ./src/addons/fit\" \"tsc -w -p ./src/addons/fullscreen\" \"tsc -w -p ./src/addons/search\" \"tsc -w -p ./src/addons/terminado\" \"tsc -w -p ./src/addons/webLinks\" \"tsc -w -p ./src/addons/winptyCompat\" \"tsc -w -p ./src/addons/zmodem\" \"gulp watch-css\""
+    "watch": "concurrently --kill-others-on-fail --names \"lib,css\" \"tsc -w\" \"gulp watch-css\"",
+    "watch-addons": "concurrently --kill-others-on-fail --names \"attach,fit,fullscreen,search,terminado,webLinks,winptyCompat,zmodem\" \"tsc -w -p ./src/addons/attach\" \"tsc -w -p ./src/addons/fit\" \"tsc -w -p ./src/addons/fullscreen\" \"tsc -w -p ./src/addons/search\" \"tsc -w -p ./src/addons/terminado\" \"tsc -w -p ./src/addons/webLinks\" \"tsc -w -p ./src/addons/winptyCompat\" \"tsc -w -p ./src/addons/zmodem\""
   }
 }

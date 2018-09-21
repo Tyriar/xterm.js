@@ -4,12 +4,12 @@
  */
 
 import { IRenderer, IRenderDimensions, IColorSet } from '../Types';
-import { ITerminal, CharacterJoinerHandler } from '../../Types';
+import { ILinkHoverEvent, ITerminal, CharacterJoinerHandler, LinkHoverEventTypes } from '../../Types';
 import { ITheme } from 'xterm';
 import { EventEmitter } from '../../common/EventEmitter';
 import { ColorManager } from '../ColorManager';
 import { RenderDebouncer } from '../../ui/RenderDebouncer';
-import { BOLD_CLASS, ITALIC_CLASS, CURSOR_CLASS, DomRendererRowFactory } from './DomRendererRowFactory';
+import { BOLD_CLASS, ITALIC_CLASS, CURSOR_CLASS, CURSOR_STYLE_BLOCK_CLASS, CURSOR_STYLE_BAR_CLASS, CURSOR_STYLE_UNDERLINE_CLASS, DomRendererRowFactory } from './DomRendererRowFactory';
 
 const TERMINAL_CLASS_PREFIX = 'xterm-dom-renderer-owner-';
 const ROW_CONTAINER_CLASS = 'xterm-rows';
@@ -79,6 +79,9 @@ export class DomRenderer extends EventEmitter implements IRenderer {
     this._terminal.element.classList.add(TERMINAL_CLASS_PREFIX + this._terminalClass);
     this._terminal.screenElement.appendChild(this._rowContainer);
     this._terminal.screenElement.appendChild(this._selectionContainer);
+
+    this._terminal.linkifier.on(LinkHoverEventTypes.HOVER, (e: ILinkHoverEvent) => this._onLinkHover(e));
+    this._terminal.linkifier.on(LinkHoverEventTypes.LEAVE, (e: ILinkHoverEvent) => this._onLinkLeave(e));
   }
 
   public dispose(): void {
@@ -160,13 +163,19 @@ export class DomRenderer extends EventEmitter implements IRenderer {
         `}`;
     // Cursor
     styles +=
-        `${this._terminalSelector} .${ROW_CONTAINER_CLASS}.${FOCUS_CLASS} .${CURSOR_CLASS} {` +
+        `${this._terminalSelector} .${ROW_CONTAINER_CLASS}:not(.${FOCUS_CLASS}) .${CURSOR_CLASS} {` +
+        ` outline: 1px solid ${this.colorManager.colors.cursor.css};` +
+        ` outline-offset: -1px;` +
+        `}` +
+        `${this._terminalSelector} .${ROW_CONTAINER_CLASS}.${FOCUS_CLASS} .${CURSOR_CLASS}.${CURSOR_STYLE_BLOCK_CLASS} {` +
         ` background-color: ${this.colorManager.colors.cursor.css};` +
         ` color: ${this.colorManager.colors.cursorAccent.css};` +
         `}` +
-        `${this._terminalSelector} .${ROW_CONTAINER_CLASS}:not(.${FOCUS_CLASS}) .${CURSOR_CLASS} {` +
-        ` outline: 1px solid #fff;` +
-        ` outline-offset: -1px;` +
+        `${this._terminalSelector} .${ROW_CONTAINER_CLASS}.${FOCUS_CLASS} .${CURSOR_CLASS}.${CURSOR_STYLE_BAR_CLASS} {` +
+        ` box-shadow: 1px 0 0 ${this.colorManager.colors.cursor.css} inset;` +
+        `}` +
+        `${this._terminalSelector} .${ROW_CONTAINER_CLASS}.${FOCUS_CLASS} .${CURSOR_CLASS}.${CURSOR_STYLE_UNDERLINE_CLASS} {` +
+        ` box-shadow: 0 -1px 0 ${this.colorManager.colors.cursor.css} inset;` +
         `}`;
     // Selection
     styles +=
@@ -319,7 +328,8 @@ export class DomRenderer extends EventEmitter implements IRenderer {
 
       const row = y + terminal.buffer.ydisp;
       const lineData = terminal.buffer.lines.get(row);
-      rowElement.appendChild(this._rowFactory.createRow(lineData, row === cursorAbsoluteY, cursorX, terminal.charMeasure.width, terminal.cols));
+      const cursorStyle = terminal.options.cursorStyle;
+      rowElement.appendChild(this._rowFactory.createRow(lineData, row === cursorAbsoluteY, cursorStyle, cursorX, terminal.charMeasure.width, terminal.cols));
     }
 
     this._terminal.emit('refresh', {start, end});
@@ -331,4 +341,23 @@ export class DomRenderer extends EventEmitter implements IRenderer {
 
   public registerCharacterJoiner(handler: CharacterJoinerHandler): number { return -1; }
   public deregisterCharacterJoiner(joinerId: number): boolean { return false; }
+
+  private _onLinkHover(e: ILinkHoverEvent): void {
+    this._setCellUnderline(e.x1, e.x2, e.y1, e.y2, e.cols, true);
+  }
+
+  private _onLinkLeave(e: ILinkHoverEvent): void {
+    this._setCellUnderline(e.x1, e.x2, e.y1, e.y2, e.cols, false);
+  }
+
+  private _setCellUnderline(x: number, x2: number, y: number, y2: number, cols: number, enabled: boolean): void {
+    while (x !== x2 || y !== y2) {
+      const span = <HTMLElement>this._rowElements[y].children[x];
+      span.style.textDecoration = enabled ? 'underline' : 'none';
+      x = (x + 1) % cols;
+      if (x === 0) {
+        y++;
+      }
+    }
+  }
 }
