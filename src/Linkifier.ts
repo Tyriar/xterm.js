@@ -197,7 +197,8 @@ export class Linkifier extends EventEmitter implements ILinkifier {
    */
   private _doLinkifyRow(rowIndex: number, text: string, matcher: ILinkMatcher): void {
     // clone regex to do a global search on text
-    const rex = new RegExp(matcher.regex.source, matcher.regex.flags + 'g');
+    const flags = (<any>matcher.regex).flags ? (<any>matcher.regex).flags : this.toString().match(/[gimuy]*$/)[0];
+    const rex = new RegExp(matcher.regex.source, flags + 'g');
     let match;
     let stringIndex = -1;
     while ((match = rex.exec(text)) !== null) {
