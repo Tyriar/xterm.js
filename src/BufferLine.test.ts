@@ -203,14 +203,16 @@ describe('BufferLine', function(): void {
   it('getTrimmedLength', function(): void {
     // Note: trim is currently hardcoded to SP
     const line = new TestBufferLine(10, [1, 'a', 0, 'a'.charCodeAt(0)], false);
-    chai.expect(line.getTrimmedLength()).equals(10);
+    chai.expect(line.getTrimmedLength(10)).equals(10);
     line.replaceCells(8, 10, [0, ' ', 1, 32]);
-    chai.expect(line.getTrimmedLength()).equals(8);
+    chai.expect(line.getTrimmedLength(8)).equals(8);
     line.replaceCells(2, 4, [0, ' ', 1, 32]);
-    chai.expect(line.getTrimmedLength()).equals(8);
+    chai.expect(line.getTrimmedLength(8)).equals(8);
+    chai.expect(line.getTrimmedLength(4)).equals(8);
     line.replaceCells(4, 8, [0, ' ', 1, 32]);
-    chai.expect(line.getTrimmedLength()).equals(2);
+    chai.expect(line.getTrimmedLength(4)).equals(4);
+    chai.expect(line.getTrimmedLength(2)).equals(2);
     line.replaceCells(0, 4, [0, ' ', 1, 32]);
-    chai.expect(line.getTrimmedLength()).equals(0);
+    chai.expect(line.getTrimmedLength(0)).equals(0);
   });
 });

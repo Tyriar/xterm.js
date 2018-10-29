@@ -249,7 +249,7 @@ export class Buffer implements IBuffer {
       if (!line) {
         return [-1, -1];
       }
-      const length = (trimRight) ? line.getTrimmedLength() : line.length;
+      const length = (trimRight) ? line.getTrimmedLength(this._terminal.cols) : line.length;
       for (let i = 0; i < length; ++i) {
         stringIndex -= line.get(i)[CHAR_DATA_CHAR_INDEX].length;
         if (stringIndex < 0) {

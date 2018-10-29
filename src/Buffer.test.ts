@@ -522,7 +522,7 @@ describe('Buffer', () => {
     it('should point to correct trimmed .translateBufferLineToString', function(): void {
       terminal.writeSync([
         'abc',              // #1
-        '１２３４５',         // #2
+        '１２３４',         // #2
         '￥cafe\u0301￥'     // #3
       ].join('\r\n'));
       let content = '';
@@ -532,9 +532,17 @@ describe('Buffer', () => {
         const endIndex = terminal.buffer.stringIndexToBufferIndex(i, s.length - 1, true);
         const endChar = terminal.buffer.lines.get(i).get(endIndex[1])[CHAR_DATA_CHAR_INDEX];
         assert.equal(s[s.length - 1], endChar);
-        // with trim active the next stop after s should be [i + 1, 0]
-        assert.deepEqual(terminal.buffer.stringIndexToBufferIndex(i, s.length, true), [i + 1, 0]);
+        // with trim active the next stop after s should be [i + 1, 0], when the cols are
+        const contentCols = [3, 8, 8][i];
+        terminal.cols = contentCols;
+        assert.deepEqual(terminal.buffer.stringIndexToBufferIndex(i, s.length, true), [i + 1, 0],
+            'when there is no whitespace at the end of the row and trimRight is active, the next stop after s should be on the next row');
+        terminal.cols = 10;
+        assert.deepEqual(terminal.buffer.stringIndexToBufferIndex(i, s.length, true), [i, contentCols],
+            'when there is whitespace at the end of the row and trimRight is active the next stop after s should be the end of the s');
       }
+      // Make the viewport small so whitespace is trimmed
+      terminal.cols = 3;
       const lastIndex = terminal.buffer.stringIndexToBufferIndex(0, content.length - 1, true);
       const lastChar = terminal.buffer.lines.get(lastIndex[0]).get(lastIndex[1])[CHAR_DATA_CHAR_INDEX];
       assert.equal(content[content.length - 1], lastChar);

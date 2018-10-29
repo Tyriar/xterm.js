@@ -109,9 +109,9 @@ export class BufferLine implements IBufferLine {
     return newLine;
   }
 
-  public getTrimmedLength(): number {
+  public getTrimmedLength(viewportCols: number): number {
     for (let i = this.length - 1; i >= 0; --i) {
-      if (this.get(i)[CHAR_DATA_CHAR_INDEX] !== ' ') {
+      if (this.get(i)[CHAR_DATA_CHAR_INDEX] !== ' ' || i < viewportCols) {
         return i + 1;
       }
     }
@@ -289,9 +289,9 @@ export class BufferLineTypedArray implements IBufferLine {
     return newLine;
   }
 
-  public getTrimmedLength(): number {
+  public getTrimmedLength(viewportCols: number): number {
     for (let i = this.length - 1; i >= 0; --i) {
-      if (this._data[i * CELL_SIZE + Cell.STRING] !== 32) {  // 32 ==> ' '.charCodeAt(0)
+      if (this._data[i * CELL_SIZE + Cell.STRING] !== 32 || i < viewportCols) {  // 32 ==> ' '.charCodeAt(0)
         return i + 1;
       }
     }

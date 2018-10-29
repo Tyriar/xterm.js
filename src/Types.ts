@@ -19,6 +19,7 @@ export type LinkMatcherValidationCallback = (uri: string, callback: (isValid: bo
 
 export type CharacterJoinerHandler = (text: string) => [number, number][];
 
+// TODO: These are the opposite to how they're stored everywhere else [x(col), y(row)]
 // BufferIndex denotes a position in the buffer: [rowIndex, colIndex]
 export type BufferIndex = [number, number];
 
@@ -524,7 +525,7 @@ export interface IBufferLine {
   fill(fillCharData: CharData): void;
   copyFrom(line: IBufferLine): void;
   clone(): IBufferLine;
-  getTrimmedLength(): number;
+  getTrimmedLength(viewportCols: number): number;
 }
 
 export interface IBufferLineConstructor {
