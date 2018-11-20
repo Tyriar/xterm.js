@@ -16,6 +16,13 @@ import { ScreenDprMonitor } from '../ui/ScreenDprMonitor';
 import { ITheme } from 'xterm';
 import { CharacterJoinerRegistry } from '../renderer/CharacterJoinerRegistry';
 
+(<any>window).cframes = [];
+(<any>window).creport = () => {
+  const frames = (<any>window).cframes as number[];
+  const average = Math.round(frames.reduce((p, c) => p + c, 0) / frames.length * 100) / 100;
+  console.log(`Canvas: frames ${frames.length}, average ${average}ms`);
+};
+
 export class Renderer extends EventEmitter implements IRenderer {
   private _renderDebouncer: RenderDebouncer;
 
@@ -195,7 +202,9 @@ export class Renderer extends EventEmitter implements IRenderer {
    * necessary before queueing up the next one.
    */
   private _renderRows(start: number, end: number): void {
+    const startTime = performance.now();
     this._renderLayers.forEach(l => l.onGridChanged(this._terminal, start, end));
+    (<any>window).cframes.push(performance.now() - startTime);
     this._terminal.emit('refresh', { start, end });
   }
 

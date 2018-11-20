@@ -23,6 +23,13 @@ import { RenderModel, RENDER_INVERTED_DEFAULT_COLOR, COMBINED_CHAR_BIT_MASK } fr
 
 export const INDICIES_PER_CELL = 4;
 
+(<any>window).wframes = [];
+(<any>window).wreport = () => {
+  const frames = (<any>window).wframes as number[];
+  const average = Math.round(frames.reduce((p, c) => p + c, 0) / frames.length * 100) / 100;
+  console.log(`WebGL: frames ${frames.length}, average ${average}ms`);
+};
+
 export class WebglRenderer extends EventEmitter implements IRenderer {
   private _renderDebouncer: RenderDebouncer;
   private _renderLayers: IRenderLayer[];
@@ -251,6 +258,7 @@ export class WebglRenderer extends EventEmitter implements IRenderer {
   }
 
   private _renderRows(start: number, end: number): void {
+    const startTime = performance.now();
     // Update render layers
     this._renderLayers.forEach(l => l.onGridChanged(this._terminal, start, end));
 
@@ -265,6 +273,8 @@ export class WebglRenderer extends EventEmitter implements IRenderer {
     // Render
     this._rectangleRenderer.render();
     this._glyphRenderer.render(this._model.selection.hasSelection);
+
+    (<any>window).wframes.push(performance.now() - startTime);
 
     // Emit event
     this._terminal.emit('refresh', { start, end });
@@ -423,5 +433,6 @@ export class WebglRenderer extends EventEmitter implements IRenderer {
     // This fixes 110% and 125%, not 150% or 175% though
     this.dimensions.actualCellHeight = this.dimensions.scaledCellHeight / devicePixelRatio;
     this.dimensions.actualCellWidth = this.dimensions.scaledCellWidth / devicePixelRatio;
+    // console.log('dimensions', this.dimensions);
   }
 }
