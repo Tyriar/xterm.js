@@ -4,13 +4,9 @@
  */
 
 import { IRenderModel, ISelectionRenderModel } from './Types';
+import { fill } from '../../common/TypedArrayUtils';
 
 export const RENDER_MODEL_INDICIES_PER_CELL = 4;
-
-// HACK: Cannot use INVERTED_DEFAULT_COLOR (-1) here because _model.cells is a
-// Uint32Array. This should be changed when true color is introduced to whatever
-// the mechanism is for the buffer.
-export const RENDER_INVERTED_DEFAULT_COLOR = 258;
 
 export const COMBINED_CHAR_BIT_MASK = 0x80000000;
 
@@ -42,8 +38,8 @@ export class RenderModel implements IRenderModel {
   }
 
   public clear(): void {
-    this.cells.fill(0, 0);
-    this.lineLengths.fill(0, 0);
+    fill(this.cells, 0, 0);
+    fill(this.lineLengths, 0, 0);
     this.clearSelection();
   }
 
