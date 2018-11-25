@@ -118,6 +118,7 @@ export default class WebglCharAtlas extends BaseCharAtlas {
   }
 
   public getRasterizedGlyphCombinedChar(chars: string, attr: number, bg: number, fg: number, enableBold: boolean): IRasterizedGlyph {
+    this._tmpCanvas.width = this._config.scaledCharWidth * chars.length + TMP_CANVAS_GLYPH_PADDING * 2;
     let rasterizedGlyphSet = this._cacheMapCombined[chars];
     if (!rasterizedGlyphSet) {
       rasterizedGlyphSet = {};
@@ -255,7 +256,8 @@ export default class WebglCharAtlas extends BaseCharAtlas {
     }
 
     const rasterizedGlyph = this._findGlyphBoundingBox(imageData, this._workBoundingBox);
-    const clippedImageData = this._clipImageData(imageData, this._workBoundingBox);
+    // const clippedImageData = this._clipImageData(imageData, this._workBoundingBox);
+    const clippedImageData = imageData;
 
     // Check if there is enough room in the current row and go to next if needed
     if (this._currentRowX + this._config.scaledCharWidth > TEXTURE_WIDTH) {
@@ -289,65 +291,65 @@ export default class WebglCharAtlas extends BaseCharAtlas {
    */
   private _findGlyphBoundingBox(imageData: ImageData, boundingBox: IBoundingBox): IRasterizedGlyph {
     boundingBox.top = 0;
-    let found = false;
-    for (let y = 0; y < this._tmpCanvas.height; y++) {
-      for (let x = 0; x < this._tmpCanvas.width; x++) {
-        const alphaOffset = y * this._tmpCanvas.width * 4 + x * 4 + 3;
-        if (imageData.data[alphaOffset] !== 0) {
-          boundingBox.top = y;
-          found = true;
-          break;
-        }
-      }
-      if (found) {
-        break;
-      }
-    }
+    // let found = false;
+    // for (let y = 0; y < this._tmpCanvas.height; y++) {
+    //   for (let x = 0; x < this._tmpCanvas.width; x++) {
+    //     const alphaOffset = y * this._tmpCanvas.width * 4 + x * 4 + 3;
+    //     if (imageData.data[alphaOffset] !== 0) {
+    //       boundingBox.top = y;
+    //       found = true;
+    //       break;
+    //     }
+    //   }
+    //   if (found) {
+    //     break;
+    //   }
+    // }
     boundingBox.left = 0;
-    found = false;
-    for (let x = 0; x < this._tmpCanvas.width; x++) {
-      for (let y = 0; y < this._tmpCanvas.height; y++) {
-        const alphaOffset = y * this._tmpCanvas.width * 4 + x * 4 + 3;
-        if (imageData.data[alphaOffset] !== 0) {
-          boundingBox.left = x;
-          found = true;
-          break;
-        }
-      }
-      if (found) {
-        break;
-      }
-    }
+    // found = false;
+    // for (let x = 0; x < this._tmpCanvas.width; x++) {
+    //   for (let y = 0; y < this._tmpCanvas.height; y++) {
+    //     const alphaOffset = y * this._tmpCanvas.width * 4 + x * 4 + 3;
+    //     if (imageData.data[alphaOffset] !== 0) {
+    //       boundingBox.left = x;
+    //       found = true;
+    //       break;
+    //     }
+    //   }
+    //   if (found) {
+    //     break;
+    //   }
+    // }
     boundingBox.right = this._tmpCanvas.width;
-    found = false;
-    for (let x = this._tmpCanvas.width - 1; x >= 0; x--) {
-      for (let y = 0; y < this._tmpCanvas.height; y++) {
-        const alphaOffset = y * this._tmpCanvas.width * 4 + x * 4 + 3;
-        if (imageData.data[alphaOffset] !== 0) {
-          boundingBox.right = x;
-          found = true;
-          break;
-        }
-      }
-      if (found) {
-        break;
-      }
-    }
+    // found = false;
+    // for (let x = this._tmpCanvas.width - 1; x >= 0; x--) {
+    //   for (let y = 0; y < this._tmpCanvas.height; y++) {
+    //     const alphaOffset = y * this._tmpCanvas.width * 4 + x * 4 + 3;
+    //     if (imageData.data[alphaOffset] !== 0) {
+    //       boundingBox.right = x;
+    //       found = true;
+    //       break;
+    //     }
+    //   }
+    //   if (found) {
+    //     break;
+    //   }
+    // }
     boundingBox.bottom = this._tmpCanvas.height;
-    found = false;
-    for (let y = this._tmpCanvas.height - 1; y >= 0; y--) {
-      for (let x = 0; x < this._tmpCanvas.width; x++) {
-        const alphaOffset = y * this._tmpCanvas.width * 4 + x * 4 + 3;
-        if (imageData.data[alphaOffset] !== 0) {
-          boundingBox.bottom = y;
-          found = true;
-          break;
-        }
-      }
-      if (found) {
-        break;
-      }
-    }
+    // found = false;
+    // for (let y = this._tmpCanvas.height - 1; y >= 0; y--) {
+    //   for (let x = 0; x < this._tmpCanvas.width; x++) {
+    //     const alphaOffset = y * this._tmpCanvas.width * 4 + x * 4 + 3;
+    //     if (imageData.data[alphaOffset] !== 0) {
+    //       boundingBox.bottom = y;
+    //       found = true;
+    //       break;
+    //     }
+    //   }
+    //   if (found) {
+    //     break;
+    //   }
+    // }
     return {
       texturePosition: { x: 0, y: 0 },
       texturePositionClipSpace: { x: 0, y: 0 },

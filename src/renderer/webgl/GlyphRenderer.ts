@@ -6,12 +6,13 @@
 import { createProgram, PROJECTION_MATRIX } from './WebglUtils';
 import { IRenderDimensions } from '../Types';
 import { ITerminal, IBufferLine } from '../../Types';
-import { NULL_CELL_CODE, CHAR_DATA_CHAR_INDEX } from '../../Buffer';
+import { NULL_CELL_CODE, CHAR_DATA_CHAR_INDEX, DEFAULT_ATTR } from '../../Buffer';
 import WebglCharAtlas from './WebglCharAtlas';
 import { IWebGL2RenderingContext, IWebGLVertexArrayObject, IRenderModel, IRasterizedGlyph } from './Types';
 import { INDICIES_PER_CELL } from './WebglRenderer';
 import { COMBINED_CHAR_BIT_MASK } from './RenderModel';
 import { fill, slice } from '../../common/TypedArrayUtils';
+import { DEFAULT_COLOR } from '../atlas/Types';
 
 interface IVertices {
   attributes: Float32Array;
@@ -82,6 +83,8 @@ export class GlyphRenderer {
   private _atlasTexture: WebGLTexture;
   private _attributesBuffer: WebGLBuffer;
   private _activeBuffer: number = 0;
+
+  private _wordCount: number = 0;
 
   private _vertices: IVertices = {
     count: 0,
@@ -161,7 +164,67 @@ export class GlyphRenderer {
   }
 
   public beginFrame(): boolean {
+    this._wordCount = 0;
     return this._atlas.beginFrame();
+  }
+
+  public updateModel(model: IRenderModel, start: number, end: number): void {
+    const terminal = this._terminal;
+    start = 0;
+    end = terminal.rows - 1;
+
+    for (let y = start; y <= end; y++) {
+      // TODO: linelengths
+      let wordStarted = false;
+      let wordStartX = 0;
+      for (let x = 0; x < terminal.cols; x++) {
+        const i = ((y * terminal.cols) + x) * 4;
+        if (wordStarted) {
+          if (model.cells[i] === NULL_CELL_CODE) {
+            const arr = [];
+            let word = '';
+            for (let charX = wordStartX; charX <= x; charX++) {
+              arr.push(model.cells[((y * terminal.cols) + charX) * 4]);
+            }
+            word = String.fromCharCode.apply(null, arr);
+            // console.log('Word found', wordStartX, x, word);
+
+            // Cache
+            const rasterizedGlyph = this._atlas.getRasterizedGlyphCombinedChar(word, model.cells[i + 1], model.cells[i + 2], model.cells[i + 3], true);
+            // console.log('rasterizedGlyph', rasterizedGlyph);
+            if (rasterizedGlyph) {
+              this._wordCount++;
+              const buffer = this._vertices.attributesBuffers[this._activeBuffer];
+              const i2 = this._wordCount * INDICES_PER_CELL;
+
+              // a_origin
+              buffer[i2    ] = -rasterizedGlyph.offset.x + this._dimensions.scaledCharLeft;
+              buffer[i2 + 1] = -rasterizedGlyph.offset.y + this._dimensions.scaledCharTop;
+              // a_size
+              buffer[i2 + 2] = rasterizedGlyph.size.x / this._dimensions.scaledCanvasWidth;
+              buffer[i2 + 3] = rasterizedGlyph.size.y / this._dimensions.scaledCanvasHeight;
+              // a_texcoord
+              buffer[i2 + 4] = rasterizedGlyph.texturePositionClipSpace.x;
+              buffer[i2 + 5] = rasterizedGlyph.texturePositionClipSpace.y;
+              // a_texsize
+              buffer[i2 + 6] = rasterizedGlyph.sizeClipSpace.x;
+              buffer[i2 + 7] = rasterizedGlyph.sizeClipSpace.y;
+              // a_texsize
+              buffer[i2 + 8] = wordStartX / terminal.cols;
+              buffer[i2 + 9] = y / terminal.rows;
+            }
+
+            wordStarted = false;
+          }
+        } else {
+          if (model.cells[i] !== NULL_CELL_CODE) {
+            wordStarted = true;
+            wordStartX = x;
+            continue;
+          }
+        }
+      }
+    }
   }
 
   public updateCell(x: number, y: number, code: number, attr: number, bg: number, fg: number, chars: string): void {
@@ -307,18 +370,19 @@ export class GlyphRenderer {
     gl.useProgram(this._program);
     gl.bindVertexArray(this._vertexArrayObject);
 
-    this._activeBuffer = (this._activeBuffer + 1) % 2;
-    this._vertices.attributesBuffers[this._activeBuffer];
-    let bufferLength = 0;
-    for (let y = 0; y < renderModel.lineLengths.length; y++) {
-      const si = y * this._terminal.cols * INDICES_PER_CELL;
-      const sub = (isSelectionVisible ? this._vertices.selectionAttributes : this._vertices.attributes).subarray(si, si + renderModel.lineLengths[y] * INDICES_PER_CELL);
-      this._vertices.attributesBuffers[this._activeBuffer].set(sub, bufferLength);
-      bufferLength += sub.length;
-    }
+    // this._vertices.attributesBuffers[this._activeBuffer];
+    // let bufferLength = 0;
+    // for (let y = 0; y < renderModel.lineLengths.length; y++) {
+      // const si = y * this._terminal.cols * INDICES_PER_CELL;
+      // const sub = (isSelectionVisible ? this._vertices.selectionAttributes : this._vertices.attributes).subarray(si, si + renderModel.lineLengths[y] * INDICES_PER_CELL);
+      // this._vertices.attributesBuffers[this._activeBuffer].set(sub, bufferLength);
+      // bufferLength += sub.length;
+    // }
     gl.bindBuffer(gl.ARRAY_BUFFER, this._attributesBuffer);
-    const buffer = this._vertices.attributesBuffers[this._activeBuffer].subarray(0, bufferLength);
-    gl.bufferData(gl.ARRAY_BUFFER, buffer, gl.STREAM_DRAW);
+    // const buffer = this._vertices.attributesBuffers[this._activeBuffer].subarray(0, bufferLength);
+    // gl.bufferData(gl.ARRAY_BUFFER, buffer, gl.STREAM_DRAW);
+    gl.bufferData(gl.ARRAY_BUFFER, this._vertices.attributesBuffers[this._activeBuffer], gl.STREAM_DRAW);
+    this._activeBuffer = (this._activeBuffer + 1) % 2;
 
     // Bind the texture atlas if it's changed
     if (this._atlas.hasCanvasChanged) {
@@ -335,7 +399,7 @@ export class GlyphRenderer {
     gl.uniform2f(this._resolutionLocation, gl.canvas.width, gl.canvas.height);
 
     // Draw the viewport
-    gl.drawElementsInstanced(gl.TRIANGLES, 6, gl.UNSIGNED_BYTE, 0, buffer.length / INDICES_PER_CELL);
+    gl.drawElementsInstanced(gl.TRIANGLES, 6, gl.UNSIGNED_BYTE, 0, this._wordCount/*buffer.length / INDICES_PER_CELL*/);
   }
 
   public setAtlas(atlas: WebglCharAtlas): void {

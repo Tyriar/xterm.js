@@ -329,6 +329,7 @@ export class WebglRenderer extends EventEmitter implements IRenderer {
         this._glyphRenderer.updateCell(x, y, code, attr, bg, fg, chars);
       }
     }
+    this._glyphRenderer.updateModel(this._model, start, end);
     this._rectangleRenderer.updateBackgrounds(this._model);
   }
 
