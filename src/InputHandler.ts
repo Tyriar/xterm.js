@@ -115,6 +115,10 @@ class DECRQSS implements IDcsHandler {
 export class InputHandler extends Disposable implements IInputHandler {
   private _surrogateFirst: string;
 
+  // This is set to true when the last character in a row is printed, allowing us to invalidate the
+  // following next CR sent by the shell
+  private _lineWrapped: boolean;
+
   constructor(
       protected _terminal: IInputHandlingTerminal,
       private _parser: IEscapeSequenceParser = new EscapeSequenceParser())
@@ -325,6 +329,7 @@ export class InputHandler extends Disposable implements IInputHandler {
   }
 
   public print(data: string, start: number, end: number): void {
+    this._lineWrapped = false;
     let char: string;
     let code: number;
     let chWidth: number;
@@ -415,19 +420,22 @@ export class InputHandler extends Disposable implements IInputHandler {
         // autowrap - DECAWM
         // automatically wraps to the beginning of the next line
         if (wraparoundMode) {
-          buffer.x = 0;
-          buffer.y++;
-          if (buffer.y > buffer.scrollBottom) {
-            buffer.y--;
-            this._terminal.scroll(true);
-          } else {
-            // The line already exists (eg. the initial viewport), mark it as a
-            // wrapped line
-            buffer.lines.get(buffer.y).isWrapped = true;
-          }
-          // row changed, get it again
-          bufferRow = buffer.lines.get(buffer.y + buffer.ybase);
+          console.log('Wrap!');
+          this._lineWrapped = true;
+          // buffer.x = 0;
+          // buffer.y++;
+          // if (buffer.y > buffer.scrollBottom) {
+          //   buffer.y--;
+          //   this._terminal.scroll(true);
+          // } else {
+          //   // The line already exists (eg. the initial viewport), mark it as a
+          //   // wrapped line
+          //   buffer.lines.get(buffer.y).isWrapped = true;
+          // }
+          // // row changed, get it again
+          // bufferRow = buffer.lines.get(buffer.y + buffer.ybase);
         } else {
+          // TODO: Fix for reflow
           if (chWidth === 2) {
             // FIXME: check for xterm behavior
             // What to do here? We got a wide char that does not fit into last cell
@@ -450,6 +458,7 @@ export class InputHandler extends Disposable implements IInputHandler {
         }
       }
 
+      console.log(`Insert at ${buffer.x},${buffer.y}`);
       // write current char to buffer and advance cursor
       bufferRow.set(buffer.x++, [curAttr, char, chWidth, code]);
 
@@ -478,6 +487,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * Line Feed or New Line (NL).  (LF  is Ctrl-J).
    */
   public lineFeed(): void {
+    console.log('LF');
     // make buffer local for faster access
     const buffer = this._terminal.buffer;
 
@@ -506,7 +516,10 @@ export class InputHandler extends Disposable implements IInputHandler {
    * Carriage Return (Ctrl-M).
    */
   public carriageReturn(): void {
-    this._terminal.buffer.x = 0;
+    console.log('cr');
+    if (!this._lineWrapped) {
+      this._terminal.buffer.x = 0;
+    }
   }
 
   /**
@@ -1905,6 +1918,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    *   Moves cursor to first position on next line.
    */
   public nextLine(): void {
+    console.log('NEL');
     this._terminal.buffer.x = 0;
     this.index();
   }
