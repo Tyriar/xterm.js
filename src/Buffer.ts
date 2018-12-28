@@ -3,11 +3,11 @@
  * @license MIT
  */
 
-import { CircularList } from './common/CircularList';
 import { CharData, ITerminal, IBuffer, IBufferLine, BufferIndex, IBufferStringIterator, IBufferStringIteratorResult } from './Types';
 import { EventEmitter } from './common/EventEmitter';
 import { IMarker } from 'xterm';
 import { BufferLine } from './BufferLine';
+import { WrappedCircularList } from './common/WrappedCircularList';
 
 export const DEFAULT_ATTR = (0 << 18) | (257 << 9) | (256 << 0);
 export const CHAR_DATA_ATTR_INDEX = 0;
@@ -28,7 +28,7 @@ export const NULL_CELL_CODE = 32;
  *   - scroll position
  */
 export class Buffer implements IBuffer {
-  public lines: CircularList<IBufferLine>;
+  public lines: WrappedCircularList<IBufferLine>;
   public ydisp: number;
   public ybase: number;
   public y: number;
@@ -98,7 +98,7 @@ export class Buffer implements IBuffer {
     this.ybase = 0;
     this.y = 0;
     this.x = 0;
-    this.lines = new CircularList<IBufferLine>(this._getCorrectBufferLength(this._terminal.rows));
+    this.lines = new WrappedCircularList<IBufferLine>(this._getCorrectBufferLength(this._terminal.rows));
     this.scrollTop = 0;
     this.scrollBottom = this._terminal.rows - 1;
     this.setupTabStops();
