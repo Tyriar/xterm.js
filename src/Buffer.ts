@@ -239,7 +239,7 @@ export class Buffer implements IBuffer {
     this.scrollBottom = newRows - 1;
 
     if (this.hasScrollback && this._bufferLineConstructor === BufferLine) {
-      this._reflow(newCols);
+      this._reflow(newCols, newRows);
 
       // Trim the end of the line off if cols shrunk
       if (this._cols > newCols) {
@@ -254,7 +254,7 @@ export class Buffer implements IBuffer {
     this._rows = newRows;
   }
 
-  private _reflow(newCols: number): void {
+  private _reflow(newCols: number, newRows: number): void {
     if (this._cols === newCols) {
       return;
     }
@@ -265,10 +265,14 @@ export class Buffer implements IBuffer {
         y += this._reflowLarger(y, newCols);
       }
     } else {
-      // Go backwards as many lines may be trimmed and this will avoid considering them
-      for (let y = this.lines.length - 1; y >= 0; y--) {
-        y -= this._reflowSmaller(y, newCols);
+      this._reflowSmallerEvaluateIndexes(newCols, newRows);
+      // Add missing rows needed
+      while (this.lines.length < this._reflowIndexesLength) {
+        this.lines.push(this.getBlankLine(DEFAULT_ATTR, false));
+        // TODO: These rows need their isWrapped state updated
       }
+      // Go backwards as many lines may be trimmed and this will avoid considering them
+      this._reflowSmaller(newCols);
     }
   }
 
@@ -344,93 +348,194 @@ export class Buffer implements IBuffer {
     return wrappedLines.length - countToRemove - 1;
   }
 
-  private _reflowSmaller(y: number, newCols: number): number {
-    // Check whether this line is a problem
-    let nextLine = this.lines.get(y) as BufferLine;
-    if (!nextLine.isWrapped && nextLine.getTrimmedLength() <= newCols) {
-      return 0;
-    }
+  /**
+   * Used to store which old indexes lines will be used for during reflow, this is the first phase
+   * of reflow that allows avoiding element shifting within the CircularList and instead assigning
+   * the rows directly. This array is filled from the end backwards and may not be full and each
+   * value contains the _first line_ of a wrapped row.
+   */
+  private _reflowIndexes: Uint16Array;
+  private _reflowIndexesLength: number;
 
-    // Gather wrapped lines and adjust y to be the starting line
-    const wrappedLines: BufferLine[] = [nextLine];
-    if (nextLine.isWrapped) {
-      while (true) {
-        nextLine = this.lines.get(--y) as BufferLine;
-        // TODO: unshift is expensive
-        wrappedLines.unshift(nextLine);
-        if (!nextLine.isWrapped || y === 0) {
-          break;
+  private _reflowSmallerEvaluateIndexes(newCols: number, newRows: number): void {
+    // TODO: Only recreate array if more space is needed (or the new size is much smaller)? Need to track a start index if so
+    this._reflowIndexes = new Uint16Array(this._getCorrectBufferLength(newRows));
+    let i = this._reflowIndexes.length;
+
+    // Go backwards as many lines may be trimmed and this will avoid considering them
+    for (let y = this.lines.length - 1; y >= 0; y--) {
+        // Check whether this line is a problem
+      let nextLine = this.lines.get(y) as BufferLine;
+      if (!nextLine.isWrapped && nextLine.getTrimmedLength() <= newCols) {
+        // TODO: "Null rows" from an empty buffer should not be counted here
+        this._reflowIndexes[--i] = y;
+        continue;
+      }
+
+      // Gather wrapped lines and adjust y to be the starting line
+      const wrappedLines: BufferLine[] = [nextLine];
+      if (nextLine.isWrapped) {
+        while (true) {
+          nextLine = this.lines.get(--y) as BufferLine;
+          // TODO: unshift is expensive?
+          wrappedLines.unshift(nextLine);
+          if (!nextLine.isWrapped || y === 0) {
+            break;
+          }
         }
       }
+
+      // Determine how many lines need to be inserted at the end, based on the trimmed length of
+      // the last wrapped line
+      const lastLineLength = wrappedLines[wrappedLines.length - 1].getTrimmedLength();
+      const cellsNeeded = (wrappedLines.length - 1) * this._cols + lastLineLength;
+      const linesNeeded = Math.ceil(cellsNeeded / newCols);
+      // console.log(`line ${y} needs ${linesNeeded}, filling i=${i}`);
+      i -= linesNeeded;
+      this._reflowIndexes.fill(y, i, i + linesNeeded);
     }
 
-    // Determine how many lines need to be inserted at the end, based on the trimmed length of
-    // the last wrapped line
-    const lastLineLength = wrappedLines[wrappedLines.length - 1].getTrimmedLength();
-    const cellsNeeded = (wrappedLines.length - 1) * this._cols + lastLineLength;
-    const linesNeeded = Math.ceil(cellsNeeded / newCols);
-    const linesToAdd = linesNeeded - wrappedLines.length;
-    let trimmedLines: number;
-    if (this.ybase === 0 && this.y !== this.lines.length - 1) {
-      // If the top section of the buffer is not yet filled
-      trimmedLines = Math.max(0, this.y - this.lines.maxLength + linesToAdd);
-    } else {
-      trimmedLines = Math.max(0, this.lines.length - this.lines.maxLength + linesToAdd);
-    }
+    this._reflowIndexesLength = this._reflowIndexes.length - i;
+  }
 
-    // Add the new lines
-    const newLines: BufferLine[] = [];
-    for (let i = 0; i < linesToAdd; i++) {
-      const newLine = this.getBlankLine(DEFAULT_ATTR, true) as BufferLine;
-      newLines.push(newLine);
-    }
-    this.lines.splice(y + wrappedLines.length, 0, ...newLines);
-    wrappedLines.push(...newLines);
+  private _reflowSmaller(newCols: number): void {
+    const stopIndex = this._reflowIndexes.length - this._reflowIndexesLength;
+    let linesNeeded = 0;
+    for (let iy = this._reflowIndexes.length - 1; iy >= stopIndex; iy--) {
+      const y = this._reflowIndexes[iy];
+      linesNeeded++;
+      if (y === this._reflowIndexes[iy - 1] && iy !== stopIndex) {
+        continue;
+      }
 
-    // Copy buffer data to new locations, this needs to happen backwards to do in-place
-    let destLineIndex = Math.floor(cellsNeeded / newCols);
-    let destCol = cellsNeeded % newCols;
-    if (destCol === 0) {
-      destLineIndex--;
-      destCol = newCols;
-    }
-    let srcLineIndex = wrappedLines.length - linesToAdd - 1;
-    let srcCol = lastLineLength;
-    while (srcLineIndex >= 0) {
-      const cellsToCopy = Math.min(srcCol, destCol);
-      wrappedLines[destLineIndex].copyCellsFrom(wrappedLines[srcLineIndex], srcCol - cellsToCopy, destCol - cellsToCopy, cellsToCopy, true);
-      destCol -= cellsToCopy;
+      const wrappedLines: BufferLine[] = [];
+      const reflowIndexesRelativeY = iy - stopIndex;
+      for (let iw = 0; iw < linesNeeded; iw++) {
+        wrappedLines.push(this.lines.get(reflowIndexesRelativeY + iw) as BufferLine);
+      }
+
+      // TODO: This was copied for convenience, we just need the number of lines this original took up. Could also keep track of the last `y` considered for this
+      const originalLines: BufferLine[] = [this.lines.get(y) as BufferLine];
+      let iyy = 0;
+      let nextLine = this.lines.get(y + ++iyy) as BufferLine;
+      while (nextLine && nextLine.isWrapped) {
+        originalLines.push(nextLine);
+        nextLine = this.lines.get(y + ++iyy) as BufferLine;
+      }
+      const linesToAdd = linesNeeded - originalLines.length;
+
+      // Update wrapped state of the lines (needs to happen after originalLines are gathered
+      for (let iw = 0; iw < linesNeeded; iw++) {
+        wrappedLines[iw].isWrapped = iw !== 0;
+      }
+
+      const lastLineLength =  originalLines[originalLines.length - 1].getTrimmedLength();
+      // const lastLineLength = wrappedLines[wrappedLines.length - 1].getTrimmedLength();
+      const cellsNeeded = (originalLines.length - 1) * this._cols + lastLineLength;
+
+    // for (let y = this.lines.length - 1; y >= 0; y--) {
+      // // Check whether this line is a problem
+      // let nextLine = this.lines.get(y) as BufferLine;
+      // if (!nextLine.isWrapped && nextLine.getTrimmedLength() <= newCols) {
+      //   return 0;
+      // }
+
+      // // Gather wrapped lines and adjust y to be the starting line
+      // const wrappedLines: BufferLine[] = [nextLine];
+      // if (nextLine.isWrapped) {
+      //   while (true) {
+      //     nextLine = this.lines.get(--y) as BufferLine;
+      //     // TODO: unshift is expensive
+      //     wrappedLines.unshift(nextLine);
+      //     if (!nextLine.isWrapped || y === 0) {
+      //       break;
+      //     }
+      //   }
+      // }
+
+      // // Determine how many lines need to be inserted at the end, based on the trimmed length of
+      // // the last wrapped line
+      // const lastLineLength = wrappedLines[wrappedLines.length - 1].getTrimmedLength();
+      // const cellsNeeded = (wrappedLines.length - 1) * this._cols + lastLineLength;
+      // const linesNeeded = Math.ceil(cellsNeeded / newCols);
+      // const linesToAdd = linesNeeded - wrappedLines.length;
+      let trimmedLines: number;
+      if (this.ybase === 0 && this.y !== this.lines.length - 1) {
+        // If the top section of the buffer is not yet filled
+        trimmedLines = Math.max(0, this.y - this.lines.maxLength + linesToAdd);
+      } else {
+        trimmedLines = Math.max(0, this.lines.length - this.lines.maxLength + linesToAdd);
+      }
+
+      // Add the new lines
+      // const newLines: BufferLine[] = [];
+      // for (let i = 0; i < linesToAdd; i++) {
+      //   const newLine = this.getBlankLine(DEFAULT_ATTR, true) as BufferLine;
+      //   newLines.push(newLine);
+      // }
+      // this.lines.splice(y + wrappedLines.length, 0, ...newLines);
+      // wrappedLines.push(...newLines);
+
+      // Copy buffer data to new locations, this needs to happen backwards to do in-place
+      let destLineIndex = Math.floor(cellsNeeded / newCols);
+      let destCol = cellsNeeded % newCols;
       if (destCol === 0) {
         destLineIndex--;
         destCol = newCols;
       }
-      srcCol -= cellsToCopy;
-      if (srcCol === 0) {
-        srcLineIndex--;
-        srcCol = this._cols;
-      }
-    }
+      if (destLineIndex !== -1) {
+        let srcLineIndex = originalLines.length - 1;
+        let srcCol = lastLineLength;
 
-    // Adjust viewport as needed
-    let viewportAdjustments = linesToAdd - trimmedLines;
-    while (viewportAdjustments-- > 0) {
-      if (this.ybase === 0) {
-        if (this.y < this._rows - 1) {
-          this.y++;
-          this.lines.pop();
-        } else {
-          this.ybase++;
-          this.ydisp++;
+        // null out the end portion of the line
+        for (let is = destCol; is < newCols; is++) {
+          // TODO: Pull fill char data into constant
+          wrappedLines[destLineIndex].set(is, [DEFAULT_ATTR, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]);
+        }
+
+        while (srcLineIndex >= 0) {
+          const cellsToCopy = Math.min(srcCol, destCol);
+          // console.log(`write ${originalLines[srcLineIndex].translateToString().substr(srcCol, cellsToCopy)} to line ${reflowIndexesRelativeY + destLineIndex}`);
+          // console.log('originalLines[srcLineIndex]', originalLines[srcLineIndex].translateToString());
+          wrappedLines[destLineIndex].copyCellsFrom(originalLines[srcLineIndex], srcCol - cellsToCopy, destCol - cellsToCopy, cellsToCopy, true);
+          destCol -= cellsToCopy;
+          if (destCol === 0) {
+            destLineIndex--;
+            destCol = newCols;
+          }
+          srcCol -= cellsToCopy;
+          if (srcCol === 0) {
+            srcLineIndex--;
+            srcCol = this._cols;
+          }
         }
       } else {
-        if (this.ybase === this.ydisp) {
-          this.ybase++;
-          this.ydisp++;
+        // Empty line
+        wrappedLines[0].fill([DEFAULT_ATTR, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]);
+      }
+
+      // Adjust viewport as needed
+      let viewportAdjustments = linesToAdd - trimmedLines;
+      while (viewportAdjustments-- > 0) {
+        if (this.ybase === 0) {
+          if (this.y < this._rows - 1) {
+            this.y++;
+            this.lines.pop();
+          } else {
+            this.ybase++;
+            this.ydisp++;
+          }
+        } else {
+          if (this.ybase === this.ydisp) {
+            this.ybase++;
+            this.ydisp++;
+          }
         }
       }
-    }
 
-    return wrappedLines.length - 1 - linesToAdd + trimmedLines;
+      // y -= wrappedLines.length - 1 - linesToAdd + trimmedLines;
+      linesNeeded = 0;
+    }
   }
 
   /**
