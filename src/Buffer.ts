@@ -267,7 +267,7 @@ export class Buffer implements IBuffer {
     } else {
       this._reflowSmallerEvaluateIndexes(newCols, newRows);
       // Add missing rows needed
-      while (this.lines.length < this._reflowIndexesLength) {
+      while (!this.lines.isFull && this.lines.length < this._reflowIndexesLength) {
         this.lines.push(this.getBlankLine(DEFAULT_ATTR, false));
         // TODO: These rows need their isWrapped state updated
       }
@@ -364,7 +364,13 @@ export class Buffer implements IBuffer {
 
     // Go backwards as many lines may be trimmed and this will avoid considering them
     for (let y = this.lines.length - 1; y >= 0; y--) {
-        // Check whether this line is a problem
+      // Discard any remaining rows that are pushed out of the scrollback
+      if (i < 0) {
+        // TODO: What happens when _reflowIndexesLength is > this number?? Amend fill call at bottom of function?
+        break;
+      }
+
+      // Check whether this line is a problem
       let nextLine = this.lines.get(y) as BufferLine;
       if (!nextLine.isWrapped && nextLine.getTrimmedLength() <= newCols) {
         // TODO: "Null rows" from an empty buffer should not be counted here
@@ -392,10 +398,11 @@ export class Buffer implements IBuffer {
       const linesNeeded = Math.ceil(cellsNeeded / newCols);
       // console.log(`line ${y} needs ${linesNeeded}, filling i=${i}`);
       i -= linesNeeded;
+      // const negativeOffset = Math.min(0, i);
       this._reflowIndexes.fill(y, i, i + linesNeeded);
     }
 
-    this._reflowIndexesLength = this._reflowIndexes.length - i;
+    this._reflowIndexesLength = this._reflowIndexes.length - Math.max(0, i);
   }
 
   private _reflowSmaller(newCols: number): void {
