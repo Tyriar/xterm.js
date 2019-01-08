@@ -10,6 +10,7 @@
 import { Terminal } from '../lib/public/Terminal';
 import { AttachAddon } from 'xterm-addon-attach';
 import { WebLinksAddon } from 'xterm-addon-web-links';
+import { WebLinksAddonWithConfig } from '../src/Terminal';
 
 import * as fit from '../lib/addons/fit/fit';
 import * as fullscreen from '../lib/addons/fullscreen/fullscreen';
@@ -87,7 +88,21 @@ function createTerminal(): void {
 
   // Load addons
   const typedTerm = term as TerminalType;
-  typedTerm.loadAddon(WebLinksAddon).init();
+
+  // Works
+  typedTerm.loadAddon(WebLinksAddon);
+
+  // Doesn't work since it extends ITerminalAddonWithConfig
+  typedTerm.loadAddon(WebLinksAddonWithConfig);
+
+  // Works
+  typedTerm.loadAddonWithConfig(WebLinksAddonWithConfig, { handler: () => {} });
+
+  // Doesn't work since { a: 1 } isn't a IWebLinksAddonConfig
+  typedTerm.loadAddonWithConfig(WebLinksAddonWithConfig, {
+    a: 1
+  });
+
   attachAddon = typedTerm.loadAddon(AttachAddon);
 
   window.term = term;  // Expose `term` to window for debugging purposes

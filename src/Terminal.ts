@@ -45,7 +45,7 @@ import { DEFAULT_ANSI_COLORS } from './renderer/ColorManager';
 import { MouseZoneManager } from './ui/MouseZoneManager';
 import { AccessibilityManager } from './AccessibilityManager';
 import { ScreenDprMonitor } from './ui/ScreenDprMonitor';
-import { ITheme, IMarker, IDisposable, ITerminalAddon, ITerminalAddonConstructor } from 'xterm';
+import { ITheme, IMarker, IDisposable, ITerminalAddon, ITerminalAddonConstructor, ITerminalAddonWithConfig, ITerminalAddonWithConfigConstructor } from 'xterm';
 import { removeTerminalFromCache } from './renderer/atlas/CharAtlasCache';
 import { DomRenderer } from './renderer/dom/DomRenderer';
 import { IKeyboardEvent } from './common/Types';
@@ -1941,12 +1941,60 @@ export class Terminal extends EventEmitter implements ITerminal, IDisposable, II
     return this._addonManager.loadAddon(this, addonConstructor);
   }
 
+  public loadAddonWithConfig<T extends ITerminalAddonWithConfig<K>, K>(addonConstructor: ITerminalAddonWithConfigConstructor<T, K>, config: K): T {
+    return this._addonManager.loadAddonWithConfig(this, addonConstructor, config);
+  }
+
   public disposeAddon<T extends ITerminalAddon>(addonConstructor: ITerminalAddonConstructor<T>): void {
     this._addonManager.disposeAddon(addonConstructor);
   }
 
   public getAddon<T extends ITerminalAddon>(addonConstructor: ITerminalAddonConstructor<T>): T {
     return this._addonManager.getAddon(addonConstructor);
+  }
+}
+
+const protocolClause = '(https?:\\/\\/)';
+const domainCharacterSet = '[\\da-z\\.-]+';
+const negatedDomainCharacterSet = '[^\\da-z\\.-]+';
+const domainBodyClause = '(' + domainCharacterSet + ')';
+const tldClause = '([a-z\\.]{2,6})';
+const ipClause = '((\\d{1,3}\\.){3}\\d{1,3})';
+const localHostClause = '(localhost)';
+const portClause = '(:\\d{1,5})';
+const hostClause = '((' + domainBodyClause + '\\.' + tldClause + ')|' + ipClause + '|' + localHostClause + ')' + portClause + '?';
+const pathClause = '(\\/[\\/\\w\\.\\-%~:]*)*([^:"\'\\s])';
+const queryStringHashFragmentCharacterSet = '[0-9\\w\\[\\]\\(\\)\\/\\?\\!#@$%&\'*+,:;~\\=\\.\\-]*';
+const queryStringClause = '(\\?' + queryStringHashFragmentCharacterSet + ')?';
+const hashFragmentClause = '(#' + queryStringHashFragmentCharacterSet + ')?';
+const negatedPathCharacterSet = '[^\\/\\w\\.\\-%]+';
+const bodyClause = hostClause + pathClause + queryStringClause + hashFragmentClause;
+const start = '(?:^|' + negatedDomainCharacterSet + ')(';
+const end = ')($|' + negatedPathCharacterSet + ')';
+const strictUrlRegex = new RegExp(start + protocolClause + bodyClause + end);
+
+function handleLink(event: MouseEvent, uri: string): void {
+  window.open(uri, '_blank');
+}
+
+export interface IWebLinksAddonConfig {
+  handler?: (event: MouseEvent, uri: string) => void;
+  options?: ILinkMatcherOptions;
+}
+
+export class WebLinksAddonWithConfig implements ITerminalAddonWithConfig<IWebLinksAddonConfig> {
+  private _linkMatcherId: number;
+
+  constructor(private _terminal: Terminal, config: IWebLinksAddonConfig) {
+  }
+
+  public init(handler: (event: MouseEvent, uri: string) => void = handleLink, options: ILinkMatcherOptions = {}): void {
+    options.matchIndex = 1;
+    this._linkMatcherId = this._terminal.registerLinkMatcher(strictUrlRegex, handler, options);
+  }
+
+  public dispose(): void {
+    this._terminal.deregisterLinkMatcher(this._linkMatcherId);
   }
 }
 

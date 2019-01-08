@@ -755,15 +755,35 @@ declare module 'xterm' {
     static applyAddon(addon: any): void;
 
     loadAddon<T extends ITerminalAddon>(addonConstructor: ITerminalAddonConstructor<T>): T;
-    disposeAddon<T extends ITerminalAddon>(addonConstructor: ITerminalAddonConstructor<T>): void;
-    getAddon<T extends ITerminalAddon>(addonConstructor: ITerminalAddonConstructor<T>): T;
+    loadAddonWithConfig<T extends ITerminalAddonWithConfig<K>, K>(addonConstructor: ITerminalAddonWithConfigConstructor<T, K>, config: K): T;
+    // disposeAddon<T extends ITerminalAddon<K>, K>(addonConstructor: ITerminalAddonConstructor<T, K>): void;
+    // getAddon<T extends ITerminalAddon<K>, K>(addonConstructor: ITerminalAddonConstructor<T, K>): T;
   }
 
   export interface ITerminalAddonConstructor<T extends ITerminalAddon> {
     new(terminal: Terminal): T;
   }
 
+  export interface ITerminalAddonWithConfigConstructor<T extends ITerminalAddonWithConfig<K>, K> {
+    new(terminal: Terminal, config: K): T;
+  }
+
   export interface ITerminalAddon {
+    /**
+     * This property declares all addon dependencies that must be intialized
+     * before this addon can be constructed. For addons with no dependencies
+     * just don't include this property.
+     */
+    // readonly DEPENDENCIES?: ITerminalAddonConstructor<ITerminalAddon>[];
+
+    /**
+     * This function includes anything that needs to happen to clean up when
+     * the addon is being disposed.
+     */
+    dispose(): void;
+  }
+
+  export interface ITerminalAddonWithConfig<K> {
     /**
      * This property declares all addon dependencies that must be intialized
      * before this addon can be constructed. For addons with no dependencies

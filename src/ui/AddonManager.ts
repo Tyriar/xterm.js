@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { ITerminalAddon, ITerminalAddonConstructor, IDisposable, Terminal } from 'xterm';
+import { ITerminalAddon, ITerminalAddonConstructor, IDisposable, Terminal, ITerminalAddonWithConfigConstructor } from 'xterm';
 
 export interface ILoadedAddon {
   ctor: ITerminalAddonConstructor<ITerminalAddon>;
@@ -33,6 +33,9 @@ export class AddonManager implements IDisposable {
     this._addons.push(loadedAddon);
     instance.dispose = () => this._wrappedAddonDispose(loadedAddon);
     return instance;
+  }
+  public loadAddonWithConfig<T extends ITerminalAddon, K>(terminal: Terminal, addonConstructor: ITerminalAddonWithConfigConstructor<T, K>, config: K): T {
+    return null;
   }
 
   public disposeAddon<T extends ITerminalAddon>(addonConstructor: ITerminalAddonConstructor<T>): void {
