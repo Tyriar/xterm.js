@@ -5,7 +5,7 @@
 
 import { IRenderer, IRenderDimensions, IColorSet, IRenderLayer, FLAGS } from '../Types';
 import { ITheme } from 'xterm';
-import { CharacterJoinerHandler, ITerminal } from '../../Types';
+import { CharacterJoinerHandler, ITerminal, ICellData } from '../../Types';
 import { ColorManager } from '../ColorManager';
 import { RenderDebouncer } from '../../ui/RenderDebouncer';
 import { GlyphRenderer } from './GlyphRenderer';
@@ -21,6 +21,7 @@ import { INVERTED_DEFAULT_COLOR, DEFAULT_COLOR } from '../atlas/Types';
 import { RenderModel, COMBINED_CHAR_BIT_MASK } from './RenderModel';
 import { EventEmitter2, IEvent } from '../../common/EventEmitter2';
 import { Disposable } from '../../common/Lifecycle';
+import { CellData } from '../../BufferLine';
 
 export const INDICIES_PER_CELL = 4;
 
@@ -31,6 +32,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
   private _screenDprMonitor: ScreenDprMonitor;
   private _devicePixelRatio: number;
 
+  private _workCell: ICellData = new CellData();
   private _model: RenderModel = new RenderModel();
 
   private _canvas: HTMLCanvasElement;
@@ -301,10 +303,12 @@ export class WebglRenderer extends Disposable implements IRenderer {
       const line = terminal.buffer.lines.get(row);
       this._model.lineLengths[y] = 0;
       for (let x = 0; x < terminal.cols; x++) {
-        const charData = line.get(x);
-        const chars = charData[CHAR_DATA_CHAR_INDEX];
-        let code = charData[CHAR_DATA_CODE_INDEX];
-        const attr = charData[CHAR_DATA_ATTR_INDEX];
+        line.loadCell(x, this._workCell);
+        // const charData = line.get(x);
+        // const chars = charData[CHAR_DATA_CHAR_INDEX];
+        // let code = charData[CHAR_DATA_CODE_INDEX];
+        // const attr = charData[CHAR_DATA_ATTR_INDEX];
+        const code = this._workCell.getCode();
         const i = ((y * terminal.cols) + x) * INDICIES_PER_CELL;
 
         if (code !== NULL_CELL_CODE) {
@@ -318,8 +322,8 @@ export class WebglRenderer extends Disposable implements IRenderer {
 
         // Resolve bg and fg and cache in the model
         const flags = attr >> 18;
-        let bg = attr & 0x1ff;
-        let fg = (attr >> 9) & 0x1ff;
+        let bg = this._workCell.bg;
+        let fg = this._workCell.fg;
 
         // If inverse flag is on, the foreground should become the background.
         if (flags & FLAGS.INVERSE) {
