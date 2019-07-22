@@ -106,18 +106,18 @@ export class AccessibilityManager extends Disposable {
 
   private _oscEnabled: boolean = true;
 
-  private _oscDisable(data: string): boolean {
+  private _oscDisable(data?: string): boolean {
     this._oscEnabled = false;
     return this._oscHint(data);
   }
 
-  private _oscEnable(data: string): boolean {
+  private _oscEnable(data?: string): boolean {
     this._oscEnabled = true;
     return this._oscHint(data);
   }
 
-  private _oscHint(data: string): boolean {
-    if (data.length > 0) {
+  private _oscHint(data?: string): boolean {
+    if (data && data.length > 0) {
       this._charsToAnnounce += ` ${data} `;
       this._clearLiveRegion();
       this._announceCharacters();
@@ -263,6 +263,7 @@ export class AccessibilityManager extends Disposable {
 
   private _onKey(keyChar: string): void {
     this._clearLiveRegion();
+    this._oscEnable();
     this._charsToConsume.push(keyChar);
   }
 
