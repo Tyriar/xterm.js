@@ -98,6 +98,29 @@ export class AccessibilityManager extends Disposable {
     // This shouldn't be needed on modern browsers but is present in case the
     // media query that drives the ScreenDprMonitor isn't supported
     this.register(addDisposableDomListener(window, 'resize', () => this._refreshRowsDimensions()));
+
+    this._terminal.addOscHandler(200, data => this._oscDisable(data));
+    this._terminal.addOscHandler(201, data => this._oscEnable(data));
+  }
+
+  private _oscEnabled: boolean = true;
+
+  private _oscDisable(data: string): boolean {
+    this._oscEnabled = false;
+    this._oscHint(data);
+    return true;
+  }
+
+  private _oscEnable(data: string): boolean {
+    this._oscEnabled = true;
+    this._oscHint(data);
+    return true;
+  }
+
+  private _oscHint(data: string): void {
+    if (data.length > 0) {
+      this._charsToAnnounce += data;
+    }
   }
 
   public dispose(): void {
@@ -201,6 +224,9 @@ export class AccessibilityManager extends Disposable {
   }
 
   private _onChar(char: string): void {
+    if (!this._oscEnabled) {
+      return;
+    }
     if (this._liveRegionLineCount < MAX_ROWS_TO_READ + 1) {
       if (this._charsToConsume.length > 0) {
         // Have the screen reader ignore the char if it was just input
