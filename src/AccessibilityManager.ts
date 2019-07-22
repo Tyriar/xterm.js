@@ -101,26 +101,28 @@ export class AccessibilityManager extends Disposable {
 
     this._terminal.addOscHandler(200, data => this._oscDisable(data));
     this._terminal.addOscHandler(201, data => this._oscEnable(data));
+    this._terminal.addOscHandler(202, data => this._oscHint(data));
   }
 
   private _oscEnabled: boolean = true;
 
   private _oscDisable(data: string): boolean {
     this._oscEnabled = false;
-    this._oscHint(data);
-    return true;
+    return this._oscHint(data);
   }
 
   private _oscEnable(data: string): boolean {
     this._oscEnabled = true;
-    this._oscHint(data);
-    return true;
+    return this._oscHint(data);
   }
 
-  private _oscHint(data: string): void {
+  private _oscHint(data: string): boolean {
     if (data.length > 0) {
-      this._charsToAnnounce += data;
+      this._charsToAnnounce += ` ${data} `;
+      this._clearLiveRegion();
+      this._announceCharacters();
     }
+    return true;
   }
 
   public dispose(): void {
@@ -244,15 +246,6 @@ export class AccessibilityManager extends Disposable {
           this._liveRegion.textContent += Strings.tooMuchOutput;
         }
       }
-
-      // Only detach/attach on mac as otherwise messages can go unaccounced
-      if (isMac) {
-        if (this._liveRegion.textContent && this._liveRegion.textContent.length > 0 && !this._liveRegion.parentNode) {
-          setTimeout(() => {
-            this._accessibilityTreeRoot.appendChild(this._liveRegion);
-          }, 0);
-        }
-      }
     }
   }
 
@@ -317,7 +310,17 @@ export class AccessibilityManager extends Disposable {
     if (this._charsToAnnounce.length === 0) {
       return;
     }
+
     this._liveRegion.textContent += this._charsToAnnounce;
     this._charsToAnnounce = '';
+
+    // Only detach/attach on mac as otherwise messages can go unannounced
+    if (isMac) {
+      if (this._liveRegion.textContent && this._liveRegion.textContent.length > 0 && !this._liveRegion.parentNode) {
+        setTimeout(() => {
+          this._accessibilityTreeRoot.appendChild(this._liveRegion);
+        }, 0);
+      }
+    }
   }
 }
