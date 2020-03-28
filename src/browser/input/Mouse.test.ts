@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import jsdom = require('jsdom');
+import * as jsdom from 'jsdom';
 import { assert } from 'chai';
 import { getCoords } from 'browser/input/Mouse';
 

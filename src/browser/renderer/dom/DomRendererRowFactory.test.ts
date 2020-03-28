@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import jsdom = require('jsdom');
+import * as jsdom from 'jsdom';
 import { assert } from 'chai';
 import { DomRendererRowFactory } from 'browser/renderer/dom/DomRendererRowFactory';
 import { NULL_CELL_CODE, NULL_CELL_WIDTH, NULL_CELL_CHAR, DEFAULT_ATTR, FgFlags, BgFlags, Attributes } from 'common/buffer/Constants';

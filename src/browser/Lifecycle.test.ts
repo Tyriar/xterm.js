@@ -5,7 +5,7 @@
 
 import { assert } from 'chai';
 import { addDisposableDomListener } from './Lifecycle';
-import jsdom = require('jsdom');
+import * as jsdom from 'jsdom';
 
 describe('addDisposableDomListener', () => {
   const dom = new jsdom.JSDOM();

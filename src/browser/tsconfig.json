@@ -3,7 +3,7 @@
   "compilerOptions": {
     "lib": [
       "dom",
-      "es2015",
+      "es6"
     ],
     "outDir": "../../out",
     "types": [
@@ -15,6 +15,9 @@
     }
   },
   "include": [ "./**/*" ],
+  "exclude": [
+    "../../node_modules/@types/jsdom"
+  ],
   "references": [
     { "path": "../common" }
   ]
