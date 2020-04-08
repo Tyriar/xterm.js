@@ -29,6 +29,8 @@
   ],
   "references": [
     { "path": "./common" },
-    { "path": "./browser" }
+    { "path": "./browser" },
+    { "path": "./components/mouse/browser" },
+    { "path": "./components/mouse/common" }
   ]
 }

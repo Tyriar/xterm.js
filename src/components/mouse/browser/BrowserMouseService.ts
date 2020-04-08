@@ -3,8 +3,8 @@
  * @license MIT
  */
 
-import { ICharSizeService, IRenderService, IMouseService } from './Services';
-import { getCoords, getRawByteCoords } from 'browser/input/Mouse';
+import { ICharSizeService, IRenderService, IMouseService } from 'browser/services/Services';
+import { getCoords, getRawByteCoords } from './Mouse';
 
 export class MouseService implements IMouseService {
   serviceBrand: any;

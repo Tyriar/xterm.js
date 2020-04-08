@@ -53,7 +53,7 @@ import { CharSizeService } from 'browser/services/CharSizeService';
 import { BufferService, MINIMUM_COLS, MINIMUM_ROWS } from 'common/services/BufferService';
 import { Disposable } from 'common/Lifecycle';
 import { IBufferSet, IBuffer } from 'common/buffer/Types';
-import { MouseService } from 'browser/services/MouseService';
+import { MouseService } from './components/mouse/browser/BrowserMouseService';
 import { IParams, IFunctionIdentifier } from 'common/parser/Types';
 import { CoreService } from 'common/services/CoreService';
 import { LogService } from 'common/services/LogService';

@@ -10,6 +10,8 @@ module.exports = {
       "src/browser/tsconfig.json",
       "src/common/tsconfig.json",
       "src/tsconfig.json",
+      "src/components/mouse/browser/tsconfig.json",
+      "src/components/mouse/common/tsconfig.json",
       "test/api/tsconfig.json",
       "test/benchmark/tsconfig.json",
       "addons/xterm-addon-attach/src/tsconfig.json",
