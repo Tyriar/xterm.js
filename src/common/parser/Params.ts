@@ -30,8 +30,8 @@ const MAX_SUBPARAMS = 256;
  */
 export class Params implements IParams {
   // params store and length
-  public params: Int32Array;
-  public length: number;
+  params: Int32Array;
+  length: number;
 
   // sub params store and length
   protected _subParams: Int32Array;
@@ -46,7 +46,7 @@ export class Params implements IParams {
   /**
    * Create a `Params` type from JS array representation.
    */
-  public static fromArray(values: ParamsArray): Params {
+  static fromArray(values: ParamsArray): Params {
     const params = new Params();
     if (!values.length) {
       return params;
@@ -86,7 +86,7 @@ export class Params implements IParams {
   /**
    * Clone object.
    */
-  public clone(): Params {
+  clone(): Params {
     const newParams = new Params(this.maxLength, this.maxSubParamsLength);
     newParams.params.set(this.params);
     newParams.length = this.length;
@@ -105,7 +105,7 @@ export class Params implements IParams {
    *    sequence: "1;2:3:4;5::6"
    *    array   : [1, 2, [3, 4], 5, [-1, 6]]
    */
-  public toArray(): ParamsArray {
+  toArray(): ParamsArray {
     const res: ParamsArray = [];
     for (let i = 0; i < this.length; ++i) {
       res.push(this.params[i]);
@@ -121,7 +121,7 @@ export class Params implements IParams {
   /**
    * Reset to initial empty state.
    */
-  public reset(): void {
+  reset(): void {
     this.length = 0;
     this._subParamsLength = 0;
     this._rejectDigits = false;
@@ -136,7 +136,7 @@ export class Params implements IParams {
    * Note: VT devices only stored up to 16 values, xterm seems to
    * store up to 30.
    */
-  public addParam(value: number): void {
+  addParam(value: number): void {
     this._digitIsSub = false;
     if (this.length >= this.maxLength) {
       this._rejectDigits = true;
@@ -156,7 +156,7 @@ export class Params implements IParams {
    * `Params` only stores up to `subParamsLength` sub parameters, any later
    * sub parameter will be ignored.
    */
-  public addSubParam(value: number): void {
+  addSubParam(value: number): void {
     this._digitIsSub = true;
     if (!this.length) {
       return;
@@ -175,7 +175,7 @@ export class Params implements IParams {
   /**
    * Whether parameter at index `idx` has sub parameters.
    */
-  public hasSubParams(idx: number): boolean {
+  hasSubParams(idx: number): boolean {
     return ((this._subParamsIdx[idx] & 0xFF) - (this._subParamsIdx[idx] >> 8) > 0);
   }
 
@@ -184,7 +184,7 @@ export class Params implements IParams {
    * Note: The values are borrowed, thus you need to copy
    * the values if you need to hold them in nonlocal scope.
    */
-  public getSubParams(idx: number): Int32Array | null {
+  getSubParams(idx: number): Int32Array | null {
     const start = this._subParamsIdx[idx] >> 8;
     const end = this._subParamsIdx[idx] & 0xFF;
     if (end - start > 0) {
@@ -197,7 +197,7 @@ export class Params implements IParams {
    * Return all sub parameters as {idx: subparams} mapping.
    * Note: The values are not borrowed.
    */
-  public getSubParamsAll(): {[idx: number]: Int32Array} {
+  getSubParamsAll(): {[idx: number]: Int32Array} {
     const result: {[idx: number]: Int32Array} = {};
     for (let i = 0; i < this.length; ++i) {
       const start = this._subParamsIdx[i] >> 8;
@@ -213,7 +213,7 @@ export class Params implements IParams {
    * Add a single digit value to current parameter.
    * This is used by the parser to account digits on a char by char basis.
    */
-  public addDigit(value: number): void {
+  addDigit(value: number): void {
     let length;
     if (this._rejectDigits
       || !(length = this._digitIsSub ? this._subParamsLength : this.length)

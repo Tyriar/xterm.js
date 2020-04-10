@@ -25,13 +25,13 @@ export class RenderService extends Disposable implements IRenderService {
   private _canvasHeight: number = 0;
 
   private _onDimensionsChange = new EventEmitter<IRenderDimensions>();
-  public get onDimensionsChange(): IEvent<IRenderDimensions> { return this._onDimensionsChange.event; }
+  get onDimensionsChange(): IEvent<IRenderDimensions> { return this._onDimensionsChange.event; }
   private _onRender = new EventEmitter<{ start: number, end: number }>();
-  public get onRender(): IEvent<{ start: number, end: number }> { return this._onRender.event; }
+  get onRender(): IEvent<{ start: number, end: number }> { return this._onRender.event; }
   private _onRefreshRequest = new EventEmitter<{ start: number, end: number }>();
-  public get onRefreshRequest(): IEvent<{ start: number, end: number }> { return this._onRefreshRequest.event; }
+  get onRefreshRequest(): IEvent<{ start: number, end: number }> { return this._onRefreshRequest.event; }
 
-  public get dimensions(): IRenderDimensions { return this._renderer.dimensions; }
+  get dimensions(): IRenderDimensions { return this._renderer.dimensions; }
 
   constructor(
     private _renderer: IRenderer,
@@ -75,7 +75,7 @@ export class RenderService extends Disposable implements IRenderService {
     }
   }
 
-  public refreshRows(start: number, end: number): void {
+  refreshRows(start: number, end: number): void {
     if (this._isPaused) {
       this._needsFullRefresh = true;
       return;
@@ -88,12 +88,12 @@ export class RenderService extends Disposable implements IRenderService {
     this._onRender.fire({ start, end });
   }
 
-  public resize(cols: number, rows: number): void {
+  resize(cols: number, rows: number): void {
     this._rowCount = rows;
     this._fireOnCanvasResize();
   }
 
-  public changeOptions(): void {
+  changeOptions(): void {
     this._renderer.onOptionsChanged();
     this.refreshRows(0, this._rowCount - 1);
     this._fireOnCanvasResize();
@@ -107,12 +107,12 @@ export class RenderService extends Disposable implements IRenderService {
     this._onDimensionsChange.fire(this._renderer.dimensions);
   }
 
-  public dispose(): void {
+  dispose(): void {
     this._renderer.dispose();
     super.dispose();
   }
 
-  public setRenderer(renderer: IRenderer): void {
+  setRenderer(renderer: IRenderer): void {
     // TODO: RenderService should be the only one to dispose the renderer
     this._renderer.dispose();
     this._renderer = renderer;
@@ -128,51 +128,51 @@ export class RenderService extends Disposable implements IRenderService {
     }
   }
 
-  public setColors(colors: IColorSet): void {
+  setColors(colors: IColorSet): void {
     this._renderer.setColors(colors);
     this._fullRefresh();
   }
 
-  public onDevicePixelRatioChange(): void {
+  onDevicePixelRatioChange(): void {
     this._renderer.onDevicePixelRatioChange();
     this.refreshRows(0, this._rowCount - 1);
   }
 
-  public onResize(cols: number, rows: number): void {
+  onResize(cols: number, rows: number): void {
     this._renderer.onResize(cols, rows);
     this._fullRefresh();
   }
 
   // TODO: Is this useful when we have onResize?
-  public onCharSizeChanged(): void {
+  onCharSizeChanged(): void {
     this._renderer.onCharSizeChanged();
   }
 
-  public onBlur(): void {
+  onBlur(): void {
     this._renderer.onBlur();
   }
 
-  public onFocus(): void {
+  onFocus(): void {
     this._renderer.onFocus();
   }
 
-  public onSelectionChanged(start: [number, number], end: [number, number], columnSelectMode: boolean): void {
+  onSelectionChanged(start: [number, number], end: [number, number], columnSelectMode: boolean): void {
     this._renderer.onSelectionChanged(start, end, columnSelectMode);
   }
 
-  public onCursorMove(): void {
+  onCursorMove(): void {
     this._renderer.onCursorMove();
   }
 
-  public clear(): void {
+  clear(): void {
     this._renderer.clear();
   }
 
-  public registerCharacterJoiner(handler: CharacterJoinerHandler): number {
+  registerCharacterJoiner(handler: CharacterJoinerHandler): number {
     return this._renderer.registerCharacterJoiner(handler);
   }
 
-  public deregisterCharacterJoiner(joinerId: number): boolean {
+  deregisterCharacterJoiner(joinerId: number): boolean {
     return this._renderer.deregisterCharacterJoiner(joinerId);
   }
 }

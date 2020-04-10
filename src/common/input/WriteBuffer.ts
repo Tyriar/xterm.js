@@ -39,7 +39,7 @@ export class WriteBuffer {
 
   constructor(private _action: (data: string | Uint8Array) => void) { }
 
-  public writeSync(data: string | Uint8Array): void {
+  writeSync(data: string | Uint8Array): void {
     // force sync processing on pending data chunks to avoid in-band data scrambling
     // does the same as innerWrite but without event loop
     if (this._writeBuffer.length) {
@@ -60,7 +60,7 @@ export class WriteBuffer {
     this._action(data);
   }
 
-  public write(data: string | Uint8Array, callback?: () => void): void {
+  write(data: string | Uint8Array, callback?: () => void): void {
     if (this._pendingData > DISCARD_WATERMARK) {
       throw new Error('write data discarded, use flow control to avoid losing data');
     }

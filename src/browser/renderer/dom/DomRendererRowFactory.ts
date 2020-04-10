@@ -31,11 +31,11 @@ export class DomRendererRowFactory {
   ) {
   }
 
-  public setColors(colors: IColorSet): void {
+  setColors(colors: IColorSet): void {
     this._colors = colors;
   }
 
-  public createRow(lineData: IBufferLine, isCursorRow: boolean, cursorStyle: string | undefined, cursorX: number, cursorBlink: boolean, cellWidth: number, cols: number): DocumentFragment {
+  createRow(lineData: IBufferLine, isCursorRow: boolean, cursorStyle: string | undefined, cursorX: number, cursorBlink: boolean, cellWidth: number, cols: number): DocumentFragment {
     const fragment = this._document.createDocumentFragment();
 
     // Find the line length first, this prevents the need to output a bunch of

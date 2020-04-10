@@ -20,7 +20,7 @@ export class BufferSet implements IBufferSet {
 
 
   private _onBufferActivate = new EventEmitter<{activeBuffer: IBuffer, inactiveBuffer: IBuffer}>();
-  public get onBufferActivate(): IEvent<{activeBuffer: IBuffer, inactiveBuffer: IBuffer}> { return this._onBufferActivate.event; }
+  get onBufferActivate(): IEvent<{activeBuffer: IBuffer, inactiveBuffer: IBuffer}> { return this._onBufferActivate.event; }
 
   /**
    * Create a new BufferSet for the given terminal.
@@ -44,28 +44,28 @@ export class BufferSet implements IBufferSet {
   /**
    * Returns the alt Buffer of the BufferSet
    */
-  public get alt(): Buffer {
+  get alt(): Buffer {
     return this._alt;
   }
 
   /**
    * Returns the normal Buffer of the BufferSet
    */
-  public get active(): Buffer {
+  get active(): Buffer {
     return this._activeBuffer;
   }
 
   /**
    * Returns the currently active Buffer of the BufferSet
    */
-  public get normal(): Buffer {
+  get normal(): Buffer {
     return this._normal;
   }
 
   /**
    * Sets the normal Buffer of the BufferSet as its currently active Buffer
    */
-  public activateNormalBuffer(): void {
+  activateNormalBuffer(): void {
     if (this._activeBuffer === this._normal) {
       return;
     }
@@ -85,7 +85,7 @@ export class BufferSet implements IBufferSet {
   /**
    * Sets the alt Buffer of the BufferSet as its currently active Buffer
    */
-  public activateAltBuffer(fillAttr?: IAttributeData): void {
+  activateAltBuffer(fillAttr?: IAttributeData): void {
     if (this._activeBuffer === this._alt) {
       return;
     }
@@ -106,7 +106,7 @@ export class BufferSet implements IBufferSet {
    * @param newCols The new number of columns.
    * @param newRows The new number of rows.
    */
-  public resize(newCols: number, newRows: number): void {
+  resize(newCols: number, newRows: number): void {
     this._normal.resize(newCols, newRows);
     this._alt.resize(newCols, newRows);
   }
@@ -115,7 +115,7 @@ export class BufferSet implements IBufferSet {
    * Setup the tab stops.
    * @param i The index to start setting up tab stops from.
    */
-  public setupTabStops(i?: number): void {
+  setupTabStops(i?: number): void {
     this._normal.setupTabStops(i);
     this._alt.setupTabStops(i);
   }

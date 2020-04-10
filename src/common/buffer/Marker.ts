@@ -11,12 +11,12 @@ export class Marker extends Disposable implements IMarker {
   private static _nextId = 1;
 
   private _id: number = Marker._nextId++;
-  public isDisposed: boolean = false;
+  isDisposed: boolean = false;
 
-  public get id(): number { return this._id; }
+  get id(): number { return this._id; }
 
   private _onDispose = new EventEmitter<void>();
-  public get onDispose(): IEvent<void> { return this._onDispose.event; }
+  get onDispose(): IEvent<void> { return this._onDispose.event; }
 
   constructor(
     public line: number
@@ -24,7 +24,7 @@ export class Marker extends Disposable implements IMarker {
     super();
   }
 
-  public dispose(): void {
+  dispose(): void {
     if (this.isDisposed) {
       return;
     }

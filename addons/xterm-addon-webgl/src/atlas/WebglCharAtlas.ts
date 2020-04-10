@@ -50,7 +50,7 @@ export class WebglCharAtlas implements IDisposable {
   private _cacheMapCombined: { [chars: string]: IRasterizedGlyphSet } = {};
 
   // The texture that the atlas is drawn to
-  public cacheCanvas: HTMLCanvasElement;
+  cacheCanvas: HTMLCanvasElement;
   private _cacheCtx: CanvasRenderingContext2D;
 
   private _tmpCanvas: HTMLCanvasElement;
@@ -65,7 +65,7 @@ export class WebglCharAtlas implements IDisposable {
   private _currentRowX: number = 0;
   private _currentRowHeight: number = 0;
 
-  public hasCanvasChanged = false;
+  hasCanvasChanged = false;
 
   private _workBoundingBox: IBoundingBox = { top: 0, left: 0, bottom: 0, right: 0 };
   private _workAttributeData: AttributeData = new AttributeData();
@@ -88,13 +88,13 @@ export class WebglCharAtlas implements IDisposable {
     this._tmpCtx = throwIfFalsy(this._tmpCanvas.getContext('2d', {alpha: this._config.allowTransparency}));
   }
 
-  public dispose(): void {
+  dispose(): void {
     if (this.cacheCanvas.parentElement) {
       this.cacheCanvas.parentElement.removeChild(this.cacheCanvas);
     }
   }
 
-  public warmUp(): void {
+  warmUp(): void {
     if (!this._didWarmUp) {
       this._doWarmUp();
       this._didWarmUp = true;
@@ -113,7 +113,7 @@ export class WebglCharAtlas implements IDisposable {
     }
   }
 
-  public beginFrame(): boolean {
+  beginFrame(): boolean {
     if (this._currentRowY > TEXTURE_CAPACITY) {
       this._cacheCtx.clearRect(0, 0, TEXTURE_WIDTH, TEXTURE_HEIGHT);
       this._cacheMap = {};
@@ -126,7 +126,7 @@ export class WebglCharAtlas implements IDisposable {
     return false;
   }
 
-  public getRasterizedGlyphCombinedChar(chars: string, bg: number, fg: number): IRasterizedGlyph {
+  getRasterizedGlyphCombinedChar(chars: string, bg: number, fg: number): IRasterizedGlyph {
     let rasterizedGlyphSet = this._cacheMapCombined[chars];
     if (!rasterizedGlyphSet) {
       rasterizedGlyphSet = {};
@@ -150,7 +150,7 @@ export class WebglCharAtlas implements IDisposable {
   /**
    * Gets the glyphs texture coords, drawing the texture if it's not already
    */
-  public getRasterizedGlyph(code: number, bg: number, fg: number): IRasterizedGlyph {
+  getRasterizedGlyph(code: number, bg: number, fg: number): IRasterizedGlyph {
     let rasterizedGlyphSet = this._cacheMap[code];
     if (!rasterizedGlyphSet) {
       rasterizedGlyphSet = {};

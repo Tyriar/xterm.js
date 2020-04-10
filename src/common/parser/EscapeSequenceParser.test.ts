@@ -25,16 +25,16 @@ function r(a: number, b: number): string[] {
 
 class MockOscPutParser implements IOscParser {
   private _fallback: OscFallbackHandlerType = () => {};
-  public data = '';
-  public reset(): void {
+  data = '';
+  reset(): void {
     this.data = '';
   }
-  public put(data: Uint32Array, start: number, end: number): void {
+  put(data: Uint32Array, start: number, end: number): void {
     this.data += utf32ToString(data, start, end);
   }
-  public dispose(): void { }
-  public start(): void { }
-  public end(success: boolean): void {
+  dispose(): void { }
+  start(): void { }
+  end(success: boolean): void {
     this.data += `, success: ${success}`;
     const id = parseInt(this.data.slice(0, this.data.indexOf(';')));
     if (!isNaN(id)) {
@@ -58,38 +58,38 @@ const oscPutParser = new MockOscPutParser();
 
 // derived parser with access to internal states
 class TestEscapeSequenceParser extends EscapeSequenceParser {
-  public get transitions(): TransitionTable {
+  get transitions(): TransitionTable {
     return this._transitions;
   }
-  public get osc(): string {
+  get osc(): string {
     return (this._oscParser as MockOscPutParser).data;
   }
-  public set osc(value: string) {
+  set osc(value: string) {
     (this._oscParser as MockOscPutParser).data = value;
   }
-  public get params(): ParamsArray {
+  get params(): ParamsArray {
     return this._params.toArray();
   }
-  public set params(value: ParamsArray) {
+  set params(value: ParamsArray) {
     this._params = Params.fromArray(value);
   }
-  public get realParams(): IParams {
+  get realParams(): IParams {
     return this._params;
   }
-  public get collect(): string {
+  get collect(): string {
     return this.identToString(this._collect);
   }
-  public set collect(value: string) {
+  set collect(value: string) {
     this._collect = 0;
     for (let i = 0; i < value.length; ++i) {
       this._collect <<= 8;
       this._collect |= value.charCodeAt(i);
     }
   }
-  public mockOscParser(): void {
+  mockOscParser(): void {
     this._oscParser = oscPutParser;
   }
-  public identifier(id: IFunctionIdentifier): number {
+  identifier(id: IFunctionIdentifier): number {
     return this._identifier(id);
   }
 }

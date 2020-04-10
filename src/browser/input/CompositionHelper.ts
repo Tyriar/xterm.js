@@ -50,7 +50,7 @@ export class CompositionHelper {
   /**
    * Handles the compositionstart event, activating the composition view.
    */
-  public compositionstart(): void {
+  compositionstart(): void {
     this._isComposing = true;
     this._compositionPosition.start = this._textarea.value.length;
     this._compositionView.textContent = '';
@@ -61,7 +61,7 @@ export class CompositionHelper {
    * Handles the compositionupdate event, updating the composition view.
    * @param ev The event.
    */
-  public compositionupdate(ev: CompositionEvent): void {
+  compositionupdate(ev: CompositionEvent): void {
     this._compositionView.textContent = ev.data;
     this.updateCompositionElements();
     setTimeout(() => {
@@ -73,7 +73,7 @@ export class CompositionHelper {
    * Handles the compositionend event, hiding the composition view and sending the composition to
    * the handler.
    */
-  public compositionend(): void {
+  compositionend(): void {
     this._finalizeComposition(true);
   }
 
@@ -82,7 +82,7 @@ export class CompositionHelper {
    * @param ev The keydown event.
    * @return Whether the Terminal should continue processing the keydown event.
    */
-  public keydown(ev: KeyboardEvent): boolean {
+  keydown(ev: KeyboardEvent): boolean {
     if (this._isComposing || this._isSendingComposition) {
       if (ev.keyCode === 229) {
         // Continue composing if the keyCode is the "composition character"
@@ -188,7 +188,7 @@ export class CompositionHelper {
    * @param dontRecurse Whether to use setTimeout to recursively trigger another update, this is
    *   necessary as the IME events across browsers are not consistently triggered.
    */
-  public updateCompositionElements(dontRecurse?: boolean): void {
+  updateCompositionElements(dontRecurse?: boolean): void {
     if (!this._isComposing) {
       return;
     }

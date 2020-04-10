@@ -23,7 +23,7 @@ export class AttachAddon implements ITerminalAddon {
     this._bidirectional = (options && options.bidirectional === false) ? false : true;
   }
 
-  public activate(terminal: Terminal): void {
+  activate(terminal: Terminal): void {
     this._disposables.push(
       addSocketListener(this._socket, 'message', ev => {
         const data: ArrayBuffer | string = ev.data;
@@ -40,7 +40,7 @@ export class AttachAddon implements ITerminalAddon {
     this._disposables.push(addSocketListener(this._socket, 'error', () => this.dispose()));
   }
 
-  public dispose(): void {
+  dispose(): void {
     this._disposables.forEach(d => d.dispose());
   }
 

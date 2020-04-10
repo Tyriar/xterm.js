@@ -39,20 +39,20 @@ export class SelectionRenderLayer extends BaseRenderLayer {
     };
   }
 
-  public resize(dim: IRenderDimensions): void {
+  resize(dim: IRenderDimensions): void {
     super.resize(dim);
     // Resizing the canvas discards the contents of the canvas so clear state
     this._clearState();
   }
 
-  public reset(): void {
+  reset(): void {
     if (this._state.start && this._state.end) {
       this._clearState();
       this._clearAll();
     }
   }
 
-  public onSelectionChanged(start: [number, number], end: [number, number], columnSelectMode: boolean): void {
+  onSelectionChanged(start: [number, number], end: [number, number], columnSelectMode: boolean): void {
     // Selection has not changed
     if (!this._didStateChange(start, end, columnSelectMode, this._bufferService.buffer.ydisp)) {
       return;

@@ -27,7 +27,7 @@ const enum TableAccess {
  * Transition table for EscapeSequenceParser.
  */
 export class TransitionTable {
-  public table: Uint8Array;
+  table: Uint8Array;
 
   constructor(length: number) {
     this.table = new Uint8Array(length);
@@ -38,7 +38,7 @@ export class TransitionTable {
    * @param action default action
    * @param next default next state
    */
-  public setDefault(action: ParserAction, next: ParserState): void {
+  setDefault(action: ParserAction, next: ParserState): void {
     fill(this.table, action << TableAccess.TRANSITION_ACTION_SHIFT | next);
   }
 
@@ -49,7 +49,7 @@ export class TransitionTable {
    * @param action parser action to be done
    * @param next next parser state
    */
-  public add(code: number, state: ParserState, action: ParserAction, next: ParserState): void {
+  add(code: number, state: ParserState, action: ParserAction, next: ParserState): void {
     this.table[state << TableAccess.INDEX_STATE_SHIFT | code] = action << TableAccess.TRANSITION_ACTION_SHIFT | next;
   }
 
@@ -60,7 +60,7 @@ export class TransitionTable {
    * @param action parser action to be done
    * @param next next parser state
    */
-  public addMany(codes: number[], state: ParserState, action: ParserAction, next: ParserState): void {
+  addMany(codes: number[], state: ParserState, action: ParserAction, next: ParserState): void {
     for (let i = 0; i < codes.length; i++) {
       this.table[state << TableAccess.INDEX_STATE_SHIFT | codes[i]] = action << TableAccess.TRANSITION_ACTION_SHIFT | next;
     }
@@ -229,9 +229,9 @@ export const VT500_TRANSITION_TABLE = (function (): TransitionTable {
  * TODO: implement error recovery hook via error handler return values
  */
 export class EscapeSequenceParser extends Disposable implements IEscapeSequenceParser {
-  public initialState: number;
-  public currentState: number;
-  public precedingCodepoint: number;
+  initialState: number;
+  currentState: number;
+  precedingCodepoint: number;
 
   // buffers over several parse calls
   protected _params: Params;
@@ -320,7 +320,7 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
     return res;
   }
 
-  public identToString(ident: number): string {
+  identToString(ident: number): string {
     const res: string[] = [];
     while (ident) {
       res.push(String.fromCharCode(ident & 0xFF));
@@ -329,7 +329,7 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
     return res.reverse().join('');
   }
 
-  public dispose(): void {
+  dispose(): void {
     this._csiHandlers = Object.create(null);
     this._executeHandlers = Object.create(null);
     this._escHandlers = Object.create(null);
@@ -337,14 +337,14 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
     this._dcsParser.dispose();
   }
 
-  public setPrintHandler(handler: PrintHandlerType): void {
+  setPrintHandler(handler: PrintHandlerType): void {
     this._printHandler = handler;
   }
-  public clearPrintHandler(): void {
+  clearPrintHandler(): void {
     this._printHandler = this._printHandlerFb;
   }
 
-  public addEscHandler(id: IFunctionIdentifier, handler: EscHandlerType): IDisposable {
+  addEscHandler(id: IFunctionIdentifier, handler: EscHandlerType): IDisposable {
     const ident = this._identifier(id, [0x30, 0x7e]);
     if (this._escHandlers[ident] === undefined) {
       this._escHandlers[ident] = [];
@@ -360,27 +360,27 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
       }
     };
   }
-  public setEscHandler(id: IFunctionIdentifier, handler: EscHandlerType): void {
+  setEscHandler(id: IFunctionIdentifier, handler: EscHandlerType): void {
     this._escHandlers[this._identifier(id, [0x30, 0x7e])] = [handler];
   }
-  public clearEscHandler(id: IFunctionIdentifier): void {
+  clearEscHandler(id: IFunctionIdentifier): void {
     if (this._escHandlers[this._identifier(id, [0x30, 0x7e])]) delete this._escHandlers[this._identifier(id, [0x30, 0x7e])];
   }
-  public setEscHandlerFallback(handler: EscFallbackHandlerType): void {
+  setEscHandlerFallback(handler: EscFallbackHandlerType): void {
     this._escHandlerFb = handler;
   }
 
-  public setExecuteHandler(flag: string, handler: ExecuteHandlerType): void {
+  setExecuteHandler(flag: string, handler: ExecuteHandlerType): void {
     this._executeHandlers[flag.charCodeAt(0)] = handler;
   }
-  public clearExecuteHandler(flag: string): void {
+  clearExecuteHandler(flag: string): void {
     if (this._executeHandlers[flag.charCodeAt(0)]) delete this._executeHandlers[flag.charCodeAt(0)];
   }
-  public setExecuteHandlerFallback(handler: ExecuteFallbackHandlerType): void {
+  setExecuteHandlerFallback(handler: ExecuteFallbackHandlerType): void {
     this._executeHandlerFb = handler;
   }
 
-  public addCsiHandler(id: IFunctionIdentifier, handler: CsiHandlerType): IDisposable {
+  addCsiHandler(id: IFunctionIdentifier, handler: CsiHandlerType): IDisposable {
     const ident = this._identifier(id);
     if (this._csiHandlers[ident] === undefined) {
       this._csiHandlers[ident] = [];
@@ -396,50 +396,50 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
       }
     };
   }
-  public setCsiHandler(id: IFunctionIdentifier, handler: CsiHandlerType): void {
+  setCsiHandler(id: IFunctionIdentifier, handler: CsiHandlerType): void {
     this._csiHandlers[this._identifier(id)] = [handler];
   }
-  public clearCsiHandler(id: IFunctionIdentifier): void {
+  clearCsiHandler(id: IFunctionIdentifier): void {
     if (this._csiHandlers[this._identifier(id)]) delete this._csiHandlers[this._identifier(id)];
   }
-  public setCsiHandlerFallback(callback: (ident: number, params: IParams) => void): void {
+  setCsiHandlerFallback(callback: (ident: number, params: IParams) => void): void {
     this._csiHandlerFb = callback;
   }
 
-  public addDcsHandler(id: IFunctionIdentifier, handler: IDcsHandler): IDisposable {
+  addDcsHandler(id: IFunctionIdentifier, handler: IDcsHandler): IDisposable {
     return this._dcsParser.addHandler(this._identifier(id), handler);
   }
-  public setDcsHandler(id: IFunctionIdentifier, handler: IDcsHandler): void {
+  setDcsHandler(id: IFunctionIdentifier, handler: IDcsHandler): void {
     this._dcsParser.setHandler(this._identifier(id), handler);
   }
-  public clearDcsHandler(id: IFunctionIdentifier): void {
+  clearDcsHandler(id: IFunctionIdentifier): void {
     this._dcsParser.clearHandler(this._identifier(id));
   }
-  public setDcsHandlerFallback(handler: DcsFallbackHandlerType): void {
+  setDcsHandlerFallback(handler: DcsFallbackHandlerType): void {
     this._dcsParser.setHandlerFallback(handler);
   }
 
-  public addOscHandler(ident: number, handler: IOscHandler): IDisposable {
+  addOscHandler(ident: number, handler: IOscHandler): IDisposable {
     return this._oscParser.addHandler(ident, handler);
   }
-  public setOscHandler(ident: number, handler: IOscHandler): void {
+  setOscHandler(ident: number, handler: IOscHandler): void {
     this._oscParser.setHandler(ident, handler);
   }
-  public clearOscHandler(ident: number): void {
+  clearOscHandler(ident: number): void {
     this._oscParser.clearHandler(ident);
   }
-  public setOscHandlerFallback(handler: OscFallbackHandlerType): void {
+  setOscHandlerFallback(handler: OscFallbackHandlerType): void {
     this._oscParser.setHandlerFallback(handler);
   }
 
-  public setErrorHandler(callback: (state: IParsingState) => IParsingState): void {
+  setErrorHandler(callback: (state: IParsingState) => IParsingState): void {
     this._errorHandler = callback;
   }
-  public clearErrorHandler(): void {
+  clearErrorHandler(): void {
     this._errorHandler = this._errorHandlerFb;
   }
 
-  public reset(): void {
+  reset(): void {
     this.currentState = this.initialState;
     this._oscParser.reset();
     this._dcsParser.reset();
@@ -465,7 +465,7 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
    * - OSC_STRING:OSC_PUT
    * - DCS_PASSTHROUGH:DCS_PUT
    */
-  public parse(data: Uint32Array, length: number): void {
+  parse(data: Uint32Array, length: number): void {
     let code = 0;
     let transition = 0;
     let currentState = this.currentState;

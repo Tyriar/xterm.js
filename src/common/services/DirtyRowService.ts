@@ -11,8 +11,8 @@ export class DirtyRowService implements IDirtyRowService {
   private _start!: number;
   private _end!: number;
 
-  public get start(): number { return this._start; }
-  public get end(): number { return this._end; }
+  get start(): number { return this._start; }
+  get end(): number { return this._end; }
 
   constructor(
     @IBufferService private readonly _bufferService: IBufferService
@@ -20,12 +20,12 @@ export class DirtyRowService implements IDirtyRowService {
     this.clearRange();
   }
 
-  public clearRange(): void {
+  clearRange(): void {
     this._start = this._bufferService.buffer.y;
     this._end = this._bufferService.buffer.y;
   }
 
-  public markDirty(y: number): void {
+  markDirty(y: number): void {
     if (y < this._start) {
       this._start = y;
     } else if (y > this._end) {
@@ -33,7 +33,7 @@ export class DirtyRowService implements IDirtyRowService {
     }
   }
 
-  public markRangeDirty(y1: number, y2: number): void {
+  markRangeDirty(y1: number, y2: number): void {
     if (y1 > y2) {
       const temp = y1;
       y1 = y2;
@@ -47,7 +47,7 @@ export class DirtyRowService implements IDirtyRowService {
     }
   }
 
-  public markAllDirty(): void {
+  markAllDirty(): void {
     this.markRangeDirty(0, this._bufferService.rows - 1);
   }
 }

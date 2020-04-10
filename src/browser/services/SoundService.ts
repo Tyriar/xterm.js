@@ -28,7 +28,7 @@ export class SoundService implements ISoundService {
   ) {
   }
 
-  public playBellSound(): void {
+  playBellSound(): void {
     const ctx = SoundService.audioContext;
     if (!ctx) {
       return;

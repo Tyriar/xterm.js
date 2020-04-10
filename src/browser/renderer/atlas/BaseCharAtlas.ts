@@ -9,13 +9,13 @@ import { IDisposable } from 'common/Types';
 export abstract class BaseCharAtlas implements IDisposable {
   private _didWarmUp: boolean = false;
 
-  public dispose(): void { }
+  dispose(): void { }
 
   /**
    * Perform any work needed to warm the cache before it can be used. May be called multiple times.
    * Implement _doWarmUp instead if you only want to get called once.
    */
-  public warmUp(): void {
+  warmUp(): void {
     if (!this._didWarmUp) {
       this._doWarmUp();
       this._didWarmUp = true;
@@ -35,7 +35,7 @@ export abstract class BaseCharAtlas implements IDisposable {
    * Renderer instead, but we need to make Renderer the source-of-truth for the char atlas, instead
    * of BaseRenderLayer.
    */
-  public beginFrame(): void { }
+  beginFrame(): void { }
 
   /**
    * May be called before warmUp finishes, however it is okay for the implementation to

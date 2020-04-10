@@ -18,16 +18,16 @@ const DEFAULT_DEC_PRIVATE_MODES: IDecPrivateModes = Object.freeze({
 export class CoreService implements ICoreService {
   serviceBrand: any;
 
-  public isCursorInitialized: boolean = false;
-  public isCursorHidden: boolean = false;
-  public decPrivateModes: IDecPrivateModes;
+  isCursorInitialized: boolean = false;
+  isCursorHidden: boolean = false;
+  decPrivateModes: IDecPrivateModes;
 
   private _onData = new EventEmitter<string>();
-  public get onData(): IEvent<string> { return this._onData.event; }
+  get onData(): IEvent<string> { return this._onData.event; }
   private _onUserInput = new EventEmitter<void>();
-  public get onUserInput(): IEvent<void> { return this._onUserInput.event; }
+  get onUserInput(): IEvent<void> { return this._onUserInput.event; }
   private _onBinary = new EventEmitter<string>();
-  public get onBinary(): IEvent<string> { return this._onBinary.event; }
+  get onBinary(): IEvent<string> { return this._onBinary.event; }
 
   constructor(
     // TODO: Move this into a service
@@ -39,11 +39,11 @@ export class CoreService implements ICoreService {
     this.decPrivateModes = clone(DEFAULT_DEC_PRIVATE_MODES);
   }
 
-  public reset(): void {
+  reset(): void {
     this.decPrivateModes = clone(DEFAULT_DEC_PRIVATE_MODES);
   }
 
-  public triggerDataEvent(data: string, wasUserInput: boolean = false): void {
+  triggerDataEvent(data: string, wasUserInput: boolean = false): void {
     // Prevents all events to pty process if stdin is disabled
     if (this._optionsService.options.disableStdin) {
       return;
@@ -65,7 +65,7 @@ export class CoreService implements ICoreService {
     this._onData.fire(data);
   }
 
-  public triggerBinaryEvent(data: string): void {
+  triggerBinaryEvent(data: string): void {
     if (this._optionsService.options.disableStdin) {
       return;
     }

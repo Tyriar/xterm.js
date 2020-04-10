@@ -163,11 +163,11 @@ export class SerializeAddon implements ITerminalAddon {
 
   constructor() { }
 
-  public activate(terminal: Terminal): void {
+  activate(terminal: Terminal): void {
     this._terminal = terminal;
   }
 
-  public serialize(rows?: number): string {
+  serialize(rows?: number): string {
     // TODO: Add re-position cursor support
     // TODO: Add word wrap mode support
     // TODO: Add combinedData support
@@ -183,5 +183,5 @@ export class SerializeAddon implements ITerminalAddon {
     return handler.serialize(maxRows - rows, maxRows);
   }
 
-  public dispose(): void { }
+  dispose(): void { }
 }

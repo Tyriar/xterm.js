@@ -101,7 +101,7 @@ export class AccessibilityManager extends Disposable {
     this.register(addDisposableDomListener(window, 'resize', () => this._refreshRowsDimensions()));
   }
 
-  public dispose(): void {
+  dispose(): void {
     super.dispose();
     this._terminal.element.removeChild(this._accessibilityTreeRoot);
     this._rowElements.length = 0;

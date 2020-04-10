@@ -193,7 +193,7 @@ function bisearch(ucs: number, data: number[][]): boolean {
 
 
 export class UnicodeV11 implements IUnicodeVersionProvider {
-  public readonly version = '11';
+  readonly version = '11';
 
   constructor() {
     if (!table) {
@@ -211,7 +211,7 @@ export class UnicodeV11 implements IUnicodeVersionProvider {
     }
   }
 
-  public wcwidth(num: number): CharWidth {
+  wcwidth(num: number): CharWidth {
     if (num < 32) return 0;
     if (num < 127) return 1;
     if (num < 65536) return table[num] as CharWidth;

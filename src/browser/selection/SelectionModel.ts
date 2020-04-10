@@ -13,24 +13,24 @@ export class SelectionModel {
   /**
    * Whether select all is currently active.
    */
-  public isSelectAllActive: boolean = false;
+  isSelectAllActive: boolean = false;
 
   /**
    * The minimal length of the selection from the start position. When double
    * clicking on a word, the word will be selected which makes the selection
    * start at the start of the word and makes this variable the length.
    */
-  public selectionStartLength: number = 0;
+  selectionStartLength: number = 0;
 
   /**
    * The [x, y] position the selection starts at.
    */
-  public selectionStart: [number, number] | undefined;
+  selectionStart: [number, number] | undefined;
 
   /**
    * The [x, y] position the selection ends at.
    */
-  public selectionEnd: [number, number] | undefined;
+  selectionEnd: [number, number] | undefined;
 
   constructor(
     private _bufferService: IBufferService
@@ -40,7 +40,7 @@ export class SelectionModel {
   /**
    * Clears the current selection.
    */
-  public clearSelection(): void {
+  clearSelection(): void {
     this.selectionStart = undefined;
     this.selectionEnd = undefined;
     this.isSelectAllActive = false;
@@ -50,7 +50,7 @@ export class SelectionModel {
   /**
    * The final selection start, taking into consideration select all.
    */
-  public get finalSelectionStart(): [number, number] | undefined {
+  get finalSelectionStart(): [number, number] | undefined {
     if (this.isSelectAllActive) {
       return [0, 0];
     }
@@ -66,7 +66,7 @@ export class SelectionModel {
    * The final selection end, taking into consideration select all, double click
    * word selection and triple click line selection.
    */
-  public get finalSelectionEnd(): [number, number] | undefined {
+  get finalSelectionEnd(): [number, number] | undefined {
     if (this.isSelectAllActive) {
       return [this._bufferService.cols, this._bufferService.buffer.ybase + this._bufferService.rows - 1];
     }
@@ -97,7 +97,7 @@ export class SelectionModel {
   /**
    * Returns whether the selection start and end are reversed.
    */
-  public areSelectionValuesReversed(): boolean {
+  areSelectionValuesReversed(): boolean {
     const start = this.selectionStart;
     const end = this.selectionEnd;
     if (!start || !end) {
@@ -111,7 +111,7 @@ export class SelectionModel {
    * @param amount The amount the buffer is being trimmed.
    * @return Whether a refresh is necessary.
    */
-  public onTrim(amount: number): boolean {
+  onTrim(amount: number): boolean {
     // Adjust the selection position based on the trimmed amount.
     if (this.selectionStart) {
       this.selectionStart[1] -= amount;

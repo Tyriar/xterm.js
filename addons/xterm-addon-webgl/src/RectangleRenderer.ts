@@ -123,7 +123,7 @@ export class RectangleRenderer {
     this._updateCachedColors();
   }
 
-  public render(): void {
+  render(): void {
     const gl = this._gl;
 
     gl.useProgram(this._program);
@@ -144,11 +144,11 @@ export class RectangleRenderer {
     gl.drawElementsInstanced(this._gl.TRIANGLES, 6, gl.UNSIGNED_BYTE, 0, 3);
   }
 
-  public onResize(): void {
+  onResize(): void {
     this._updateViewportRectangle();
   }
 
-  public setColors(): void {
+  setColors(): void {
     this._updateCachedColors();
     this._updateViewportRectangle();
   }
@@ -171,7 +171,7 @@ export class RectangleRenderer {
     );
   }
 
-  public updateSelection(model: ISelectionRenderModel, columnSelectMode: boolean): void {
+  updateSelection(model: ISelectionRenderModel, columnSelectMode: boolean): void {
     const terminal = this._terminal;
 
     if (!model.hasSelection) {
@@ -238,7 +238,7 @@ export class RectangleRenderer {
     }
   }
 
-  public updateBackgrounds(model: IRenderModel): void {
+  updateBackgrounds(model: IRenderModel): void {
     const terminal = this._terminal;
     const vertices = this._vertices;
 

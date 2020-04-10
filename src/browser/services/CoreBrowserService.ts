@@ -13,7 +13,7 @@ export class CoreBrowserService implements ICoreBrowserService {
   ) {
   }
 
-  public get isFocused(): boolean {
+  get isFocused(): boolean {
     return document.activeElement === this._textarea && document.hasFocus();
   }
 }

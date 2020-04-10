@@ -36,11 +36,11 @@ export class Linkifier implements ILinkifier {
   private _rowsToLinkify: { start: number | undefined, end: number | undefined };
 
   private _onLinkHover = new EventEmitter<ILinkifierEvent>();
-  public get onLinkHover(): IEvent<ILinkifierEvent> { return this._onLinkHover.event; }
+  get onLinkHover(): IEvent<ILinkifierEvent> { return this._onLinkHover.event; }
   private _onLinkLeave = new EventEmitter<ILinkifierEvent>();
-  public get onLinkLeave(): IEvent<ILinkifierEvent> { return this._onLinkLeave.event; }
+  get onLinkLeave(): IEvent<ILinkifierEvent> { return this._onLinkLeave.event; }
   private _onLinkTooltip = new EventEmitter<ILinkifierEvent>();
-  public get onLinkTooltip(): IEvent<ILinkifierEvent> { return this._onLinkTooltip.event; }
+  get onLinkTooltip(): IEvent<ILinkifierEvent> { return this._onLinkTooltip.event; }
 
   constructor(
     protected readonly _bufferService: IBufferService,
@@ -58,7 +58,7 @@ export class Linkifier implements ILinkifier {
    * Attaches the linkifier to the DOM, enabling linkification.
    * @param mouseZoneManager The mouse zone manager to register link zones with.
    */
-  public attachToDom(element: HTMLElement, mouseZoneManager: IMouseZoneManager): void {
+  attachToDom(element: HTMLElement, mouseZoneManager: IMouseZoneManager): void {
     this._element = element;
     this._mouseZoneManager = mouseZoneManager;
   }
@@ -68,7 +68,7 @@ export class Linkifier implements ILinkifier {
    * @param start The row to linkify from (inclusive).
    * @param end The row to linkify to (inclusive).
    */
-  public linkifyRows(start: number, end: number): void {
+  linkifyRows(start: number, end: number): void {
     // Don't attempt linkify if not yet attached to DOM
     if (!this._mouseZoneManager) {
       return;
@@ -148,7 +148,7 @@ export class Linkifier implements ILinkifier {
    * @param options Options for the link matcher.
    * @return The ID of the new matcher, this can be used to deregister.
    */
-  public registerLinkMatcher(regex: RegExp, handler: LinkMatcherHandler, options: ILinkMatcherOptions = {}): number {
+  registerLinkMatcher(regex: RegExp, handler: LinkMatcherHandler, options: ILinkMatcherOptions = {}): number {
     if (!handler) {
       throw new Error('handler must be defined');
     }
@@ -194,7 +194,7 @@ export class Linkifier implements ILinkifier {
    * @param matcherId The link matcher's ID (returned after register)
    * @return Whether a link matcher was found and deregistered.
    */
-  public deregisterLinkMatcher(matcherId: number): boolean {
+  deregisterLinkMatcher(matcherId: number): boolean {
     for (let i = 0; i < this._linkMatchers.length; i++) {
       if (this._linkMatchers[i].id === matcherId) {
         this._linkMatchers.splice(i, 1);

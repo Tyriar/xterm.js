@@ -39,11 +39,11 @@ export class SearchAddon implements ITerminalAddon {
   private _cursorMoveListener: IDisposable | undefined;
   private _resizeListener: IDisposable | undefined;
 
-  public activate(terminal: Terminal): void {
+  activate(terminal: Terminal): void {
     this._terminal = terminal;
   }
 
-  public dispose(): void { }
+  dispose(): void { }
 
   /**
    * Find the next instance of the term, then scroll to and select it. If it
@@ -52,7 +52,7 @@ export class SearchAddon implements ITerminalAddon {
    * @param searchOptions Search options.
    * @return Whether a result was found.
    */
-  public findNext(term: string, searchOptions?: ISearchOptions): boolean {
+  findNext(term: string, searchOptions?: ISearchOptions): boolean {
     if (!this._terminal) {
       throw new Error('Cannot use addon until it has been loaded');
     }
@@ -124,7 +124,7 @@ export class SearchAddon implements ITerminalAddon {
    * @param searchOptions Search options.
    * @return Whether a result was found.
    */
-  public findPrevious(term: string, searchOptions?: ISearchOptions): boolean {
+  findPrevious(term: string, searchOptions?: ISearchOptions): boolean {
     if (!this._terminal) {
       throw new Error('Cannot use addon until it has been loaded');
     }

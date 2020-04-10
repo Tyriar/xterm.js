@@ -8,7 +8,7 @@ import { AddonManager, ILoadedAddon } from './AddonManager';
 import { ITerminalAddon } from 'xterm';
 
 class TestAddonManager extends AddonManager {
-  public get addons(): ILoadedAddon[] {
+  get addons(): ILoadedAddon[] {
     return this._addons;
   }
 }

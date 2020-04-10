@@ -13,11 +13,11 @@ export const MINIMUM_ROWS = 1;
 export class BufferService implements IBufferService {
   serviceBrand: any;
 
-  public cols: number;
-  public rows: number;
-  public buffers: IBufferSet;
+  cols: number;
+  rows: number;
+  buffers: IBufferSet;
 
-  public get buffer(): IBuffer { return this.buffers.active; }
+  get buffer(): IBuffer { return this.buffers.active; }
 
   constructor(
     @IOptionsService private _optionsService: IOptionsService
@@ -27,12 +27,12 @@ export class BufferService implements IBufferService {
     this.buffers = new BufferSet(_optionsService, this);
   }
 
-  public resize(cols: number, rows: number): void {
+  resize(cols: number, rows: number): void {
     this.cols = cols;
     this.rows = rows;
   }
 
-  public reset(): void {
+  reset(): void {
     this.buffers = new BufferSet(this._optionsService, this);
   }
 }

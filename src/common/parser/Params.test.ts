@@ -7,10 +7,10 @@ import { Params } from 'common/parser/Params';
 import { ParamsArray } from 'common/parser/Types';
 
 class TestParams extends Params {
-  public get subParams(): Int32Array {
+  get subParams(): Int32Array {
     return this._subParams;
   }
-  public get subParamsLength(): number {
+  get subParamsLength(): number {
     return this._subParamsLength;
   }
 }

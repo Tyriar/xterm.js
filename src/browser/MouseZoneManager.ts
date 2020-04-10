@@ -49,19 +49,19 @@ export class MouseZoneManager extends Disposable implements IMouseZoneManager {
     this._clickListener = e => this._onClick(e);
   }
 
-  public dispose(): void {
+  dispose(): void {
     super.dispose();
     this._deactivate();
   }
 
-  public add(zone: IMouseZone): void {
+  add(zone: IMouseZone): void {
     this._zones.push(zone);
     if (this._zones.length === 1) {
       this._activate();
     }
   }
 
-  public clearAll(start?: number, end?: number): void {
+  clearAll(start?: number, end?: number): void {
     // Exit if there's nothing to clear
     if (this._zones.length === 0) {
       return;

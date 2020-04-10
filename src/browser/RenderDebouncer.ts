@@ -19,14 +19,14 @@ export class RenderDebouncer implements IDisposable {
   ) {
   }
 
-  public dispose(): void {
+  dispose(): void {
     if (this._animationFrame) {
       window.cancelAnimationFrame(this._animationFrame);
       this._animationFrame = undefined;
     }
   }
 
-  public refresh(rowStart: number, rowEnd: number, rowCount: number): void {
+  refresh(rowStart: number, rowEnd: number, rowCount: number): void {
     this._rowCount = rowCount;
     // Get the min/max row start/end for the arg values
     rowStart = rowStart !== undefined ? rowStart : 0;

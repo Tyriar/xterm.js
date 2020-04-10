@@ -18,7 +18,7 @@ export class AttributeData implements IAttributeData {
     return (value[0] & 255) << Attributes.RED_SHIFT | (value[1] & 255) << Attributes.GREEN_SHIFT | value[2] & 255;
   }
 
-  public clone(): IAttributeData {
+  clone(): IAttributeData {
     const newObj = new AttributeData();
     newObj.fg = this.fg;
     newObj.bg = this.bg;
@@ -26,31 +26,31 @@ export class AttributeData implements IAttributeData {
   }
 
   // data
-  public fg: number = 0;
-  public bg: number = 0;
+  fg: number = 0;
+  bg: number = 0;
 
   // flags
-  public isInverse(): number   { return this.fg & FgFlags.INVERSE; }
-  public isBold(): number      { return this.fg & FgFlags.BOLD; }
-  public isUnderline(): number { return this.fg & FgFlags.UNDERLINE; }
-  public isBlink(): number     { return this.fg & FgFlags.BLINK; }
-  public isInvisible(): number { return this.fg & FgFlags.INVISIBLE; }
-  public isItalic(): number    { return this.bg & BgFlags.ITALIC; }
-  public isDim(): number       { return this.bg & BgFlags.DIM; }
+  isInverse(): number   { return this.fg & FgFlags.INVERSE; }
+  isBold(): number      { return this.fg & FgFlags.BOLD; }
+  isUnderline(): number { return this.fg & FgFlags.UNDERLINE; }
+  isBlink(): number     { return this.fg & FgFlags.BLINK; }
+  isInvisible(): number { return this.fg & FgFlags.INVISIBLE; }
+  isItalic(): number    { return this.bg & BgFlags.ITALIC; }
+  isDim(): number       { return this.bg & BgFlags.DIM; }
 
   // color modes
-  public getFgColorMode(): number { return this.fg & Attributes.CM_MASK; }
-  public getBgColorMode(): number { return this.bg & Attributes.CM_MASK; }
-  public isFgRGB(): boolean       { return (this.fg & Attributes.CM_MASK) === Attributes.CM_RGB; }
-  public isBgRGB(): boolean       { return (this.bg & Attributes.CM_MASK) === Attributes.CM_RGB; }
-  public isFgPalette(): boolean   { return (this.fg & Attributes.CM_MASK) === Attributes.CM_P16 || (this.fg & Attributes.CM_MASK) === Attributes.CM_P256; }
-  public isBgPalette(): boolean   { return (this.bg & Attributes.CM_MASK) === Attributes.CM_P16 || (this.bg & Attributes.CM_MASK) === Attributes.CM_P256; }
-  public isFgDefault(): boolean   { return (this.fg & Attributes.CM_MASK) === 0; }
-  public isBgDefault(): boolean   { return (this.bg & Attributes.CM_MASK) === 0; }
-  public isAttributeDefault(): boolean { return this.fg === 0 && this.bg === 0; }
+  getFgColorMode(): number { return this.fg & Attributes.CM_MASK; }
+  getBgColorMode(): number { return this.bg & Attributes.CM_MASK; }
+  isFgRGB(): boolean       { return (this.fg & Attributes.CM_MASK) === Attributes.CM_RGB; }
+  isBgRGB(): boolean       { return (this.bg & Attributes.CM_MASK) === Attributes.CM_RGB; }
+  isFgPalette(): boolean   { return (this.fg & Attributes.CM_MASK) === Attributes.CM_P16 || (this.fg & Attributes.CM_MASK) === Attributes.CM_P256; }
+  isBgPalette(): boolean   { return (this.bg & Attributes.CM_MASK) === Attributes.CM_P16 || (this.bg & Attributes.CM_MASK) === Attributes.CM_P256; }
+  isFgDefault(): boolean   { return (this.fg & Attributes.CM_MASK) === 0; }
+  isBgDefault(): boolean   { return (this.bg & Attributes.CM_MASK) === 0; }
+  isAttributeDefault(): boolean { return this.fg === 0 && this.bg === 0; }
 
   // colors
-  public getFgColor(): number {
+  getFgColor(): number {
     switch (this.fg & Attributes.CM_MASK) {
       case Attributes.CM_P16:
       case Attributes.CM_P256:  return this.fg & Attributes.PCOLOR_MASK;
@@ -58,7 +58,7 @@ export class AttributeData implements IAttributeData {
       default:                  return -1;  // CM_DEFAULT defaults to -1
     }
   }
-  public getBgColor(): number {
+  getBgColor(): number {
     switch (this.bg & Attributes.CM_MASK) {
       case Attributes.CM_P16:
       case Attributes.CM_P256:  return this.bg & Attributes.PCOLOR_MASK;

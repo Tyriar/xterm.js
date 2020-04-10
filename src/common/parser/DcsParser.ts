@@ -17,12 +17,12 @@ export class DcsParser implements IDcsParser {
   private _ident: number = 0;
   private _handlerFb: DcsFallbackHandlerType = () => {};
 
-  public dispose(): void {
+  dispose(): void {
     this._handlers = Object.create(null);
     this._handlerFb = () => {};
   }
 
-  public addHandler(ident: number, handler: IDcsHandler): IDisposable {
+  addHandler(ident: number, handler: IDcsHandler): IDisposable {
     if (this._handlers[ident] === undefined) {
       this._handlers[ident] = [];
     }
@@ -38,19 +38,19 @@ export class DcsParser implements IDcsParser {
     };
   }
 
-  public setHandler(ident: number, handler: IDcsHandler): void {
+  setHandler(ident: number, handler: IDcsHandler): void {
     this._handlers[ident] = [handler];
   }
 
-  public clearHandler(ident: number): void {
+  clearHandler(ident: number): void {
     if (this._handlers[ident]) delete this._handlers[ident];
   }
 
-  public setHandlerFallback(handler: DcsFallbackHandlerType): void {
+  setHandlerFallback(handler: DcsFallbackHandlerType): void {
     this._handlerFb = handler;
   }
 
-  public reset(): void {
+  reset(): void {
     if (this._active.length) {
       this.unhook(false);
     }
@@ -58,7 +58,7 @@ export class DcsParser implements IDcsParser {
     this._ident = 0;
   }
 
-  public hook(ident: number, params: IParams): void {
+  hook(ident: number, params: IParams): void {
     // always reset leftover handlers
     this.reset();
     this._ident = ident;
@@ -72,7 +72,7 @@ export class DcsParser implements IDcsParser {
     }
   }
 
-  public put(data: Uint32Array, start: number, end: number): void {
+  put(data: Uint32Array, start: number, end: number): void {
     if (!this._active.length) {
       this._handlerFb(this._ident, 'PUT', utf32ToString(data, start, end));
     } else {
@@ -82,7 +82,7 @@ export class DcsParser implements IDcsParser {
     }
   }
 
-  public unhook(success: boolean): void {
+  unhook(success: boolean): void {
     if (!this._active.length) {
       this._handlerFb(this._ident, 'UNHOOK', success);
     } else {
@@ -114,13 +114,13 @@ export class DcsHandler implements IDcsHandler {
 
   constructor(private _handler: (data: string, params: IParams) => any) {}
 
-  public hook(params: IParams): void {
+  hook(params: IParams): void {
     this._params = params.clone();
     this._data = '';
     this._hitLimit = false;
   }
 
-  public put(data: Uint32Array, start: number, end: number): void {
+  put(data: Uint32Array, start: number, end: number): void {
     if (this._hitLimit) {
       return;
     }
@@ -131,7 +131,7 @@ export class DcsHandler implements IDcsHandler {
     }
   }
 
-  public unhook(success: boolean): any {
+  unhook(success: boolean): any {
     let ret;
     if (this._hitLimit) {
       ret = false;

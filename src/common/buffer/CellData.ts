@@ -13,26 +13,26 @@ import { AttributeData } from 'common/buffer/AttributeData';
  */
 export class CellData extends AttributeData implements ICellData {
   /** Helper to create CellData from CharData. */
-  public static fromCharData(value: CharData): CellData {
+  static fromCharData(value: CharData): CellData {
     const obj = new CellData();
     obj.setFromCharData(value);
     return obj;
   }
   /** Primitives from terminal buffer. */
-  public content: number = 0;
-  public fg: number = 0;
-  public bg: number = 0;
-  public combinedData: string = '';
+  content: number = 0;
+  fg: number = 0;
+  bg: number = 0;
+  combinedData: string = '';
   /** Whether cell contains a combined string. */
-  public isCombined(): number {
+  isCombined(): number {
     return this.content & Content.IS_COMBINED_MASK;
   }
   /** Width of the cell. */
-  public getWidth(): number {
+  getWidth(): number {
     return this.content >> Content.WIDTH_SHIFT;
   }
   /** JS string of the content. */
-  public getChars(): string {
+  getChars(): string {
     if (this.content & Content.IS_COMBINED_MASK) {
       return this.combinedData;
     }
@@ -47,13 +47,13 @@ export class CellData extends AttributeData implements ICellData {
    * if content is a combined string it returns the codepoint
    * of the last char in string to be in line with code in CharData.
    * */
-  public getCode(): number {
+  getCode(): number {
     return (this.isCombined())
       ? this.combinedData.charCodeAt(this.combinedData.length - 1)
       : this.content & Content.CODEPOINT_MASK;
   }
   /** Set data from CharData */
-  public setFromCharData(value: CharData): void {
+  setFromCharData(value: CharData): void {
     this.fg = value[CHAR_DATA_ATTR_INDEX];
     this.bg = 0;
     let combined = false;
@@ -87,7 +87,7 @@ export class CellData extends AttributeData implements ICellData {
     }
   }
   /** Get data as CharData. */
-  public getAsCharData(): CharData {
+  getAsCharData(): CharData {
     return [this.fg, this.getChars(), this.getWidth(), this.getCode()];
   }
 }

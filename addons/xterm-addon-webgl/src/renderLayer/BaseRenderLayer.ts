@@ -38,7 +38,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     this._container.appendChild(this._canvas);
   }
 
-  public dispose(): void {
+  dispose(): void {
     this._container.removeChild(this._canvas);
     if (this._charAtlas) {
       this._charAtlas.dispose();
@@ -53,14 +53,14 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     }
   }
 
-  public onOptionsChanged(terminal: Terminal): void {}
-  public onBlur(terminal: Terminal): void {}
-  public onFocus(terminal: Terminal): void {}
-  public onCursorMove(terminal: Terminal): void {}
-  public onGridChanged(terminal: Terminal, startRow: number, endRow: number): void {}
-  public onSelectionChanged(terminal: Terminal, start: [number, number], end: [number, number], columnSelectMode: boolean = false): void {}
+  onOptionsChanged(terminal: Terminal): void {}
+  onBlur(terminal: Terminal): void {}
+  onFocus(terminal: Terminal): void {}
+  onCursorMove(terminal: Terminal): void {}
+  onGridChanged(terminal: Terminal, startRow: number, endRow: number): void {}
+  onSelectionChanged(terminal: Terminal, start: [number, number], end: [number, number], columnSelectMode: boolean = false): void {}
 
-  public setColors(terminal: Terminal, colorSet: IColorSet): void {
+  setColors(terminal: Terminal, colorSet: IColorSet): void {
     this._refreshCharAtlas(terminal, colorSet);
   }
 
@@ -96,7 +96,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     this._charAtlas.warmUp();
   }
 
-  public resize(terminal: Terminal, dim: IRenderDimensions): void {
+  resize(terminal: Terminal, dim: IRenderDimensions): void {
     this._scaledCellWidth = dim.scaledCellWidth;
     this._scaledCellHeight = dim.scaledCellHeight;
     this._scaledCharWidth = dim.scaledCharWidth;

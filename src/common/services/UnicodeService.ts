@@ -12,7 +12,7 @@ export class UnicodeService implements IUnicodeService {
   private _active: string = '';
   private _activeProvider: IUnicodeVersionProvider;
   private _onChange = new EventEmitter<string>();
-  public get onChange(): IEvent<string> { return this._onChange.event; }
+  get onChange(): IEvent<string> { return this._onChange.event; }
 
   constructor() {
     const defaultProvider = new UnicodeV6();
@@ -21,15 +21,15 @@ export class UnicodeService implements IUnicodeService {
     this._activeProvider = defaultProvider;
   }
 
-  public get versions(): string[] {
+  get versions(): string[] {
     return Object.keys(this._providers);
   }
 
-  public get activeVersion(): string {
+  get activeVersion(): string {
     return this._active;
   }
 
-  public set activeVersion(version: string) {
+  set activeVersion(version: string) {
     if (!this._providers[version]) {
       throw new Error(`unknown Unicode version "${version}"`);
     }
@@ -38,18 +38,18 @@ export class UnicodeService implements IUnicodeService {
     this._onChange.fire(version);
   }
 
-  public register(provider: IUnicodeVersionProvider): void {
+  register(provider: IUnicodeVersionProvider): void {
     this._providers[provider.version] = provider;
   }
 
   /**
    * Unicode version dependent interface.
    */
-  public wcwidth(num: number): number {
+  wcwidth(num: number): number {
     return this._activeProvider.wcwidth(num);
   }
 
-  public getStringCellWidth(s: string): number {
+  getStringCellWidth(s: string): number {
     let result = 0;
     const length = s.length;
     for (let i = 0; i < length; ++i) {

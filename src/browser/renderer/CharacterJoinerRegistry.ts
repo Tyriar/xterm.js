@@ -14,10 +14,10 @@ export class JoinedCellData extends AttributeData implements ICellData {
   private _width: number;
   // .content carries no meaning for joined CellData, simply nullify it
   // thus we have to overload all other .content accessors
-  public content: number = 0;
-  public fg: number;
-  public bg: number;
-  public combinedData: string = '';
+  content: number = 0;
+  fg: number;
+  bg: number;
+  combinedData: string = '';
 
   constructor(firstCell: ICellData, chars: string, width: number) {
     super();
@@ -27,30 +27,30 @@ export class JoinedCellData extends AttributeData implements ICellData {
     this._width = width;
   }
 
-  public isCombined(): number {
+  isCombined(): number {
     // always mark joined cell data as combined
     return Content.IS_COMBINED_MASK;
   }
 
-  public getWidth(): number {
+  getWidth(): number {
     return this._width;
   }
 
-  public getChars(): string {
+  getChars(): string {
     return this.combinedData;
   }
 
-  public getCode(): number {
+  getCode(): number {
     // code always gets the highest possible fake codepoint (read as -1)
     // this is needed as code is used by caches as identifier
     return 0x1FFFFF;
   }
 
-  public setFromCharData(value: CharData): void {
+  setFromCharData(value: CharData): void {
     throw new Error('not implemented');
   }
 
-  public getAsCharData(): CharData {
+  getAsCharData(): CharData {
     return [this.fg, this.getChars(), this.getWidth(), this.getCode()];
   }
 }
@@ -63,7 +63,7 @@ export class CharacterJoinerRegistry implements ICharacterJoinerRegistry {
 
   constructor(private _bufferService: IBufferService) { }
 
-  public registerCharacterJoiner(handler: (text: string) => [number, number][]): number {
+  registerCharacterJoiner(handler: (text: string) => [number, number][]): number {
     const joiner: ICharacterJoiner = {
       id: this._nextCharacterJoinerId++,
       handler
@@ -73,7 +73,7 @@ export class CharacterJoinerRegistry implements ICharacterJoinerRegistry {
     return joiner.id;
   }
 
-  public deregisterCharacterJoiner(joinerId: number): boolean {
+  deregisterCharacterJoiner(joinerId: number): boolean {
     for (let i = 0; i < this._characterJoiners.length; i++) {
       if (this._characterJoiners[i].id === joinerId) {
         this._characterJoiners.splice(i, 1);
@@ -84,7 +84,7 @@ export class CharacterJoinerRegistry implements ICharacterJoinerRegistry {
     return false;
   }
 
-  public getJoinedCharacters(row: number): [number, number][] {
+  getJoinedCharacters(row: number): [number, number][] {
     if (this._characterJoiners.length === 0) {
       return [];
     }

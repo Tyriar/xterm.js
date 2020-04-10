@@ -59,7 +59,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     this._container.appendChild(this._canvas);
   }
 
-  public dispose(): void {
+  dispose(): void {
     this._container.removeChild(this._canvas);
     this._charAtlas?.dispose();
   }
@@ -72,14 +72,14 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     }
   }
 
-  public onOptionsChanged(): void {}
-  public onBlur(): void {}
-  public onFocus(): void {}
-  public onCursorMove(): void {}
-  public onGridChanged(startRow: number, endRow: number): void {}
-  public onSelectionChanged(start: [number, number], end: [number, number], columnSelectMode: boolean = false): void {}
+  onOptionsChanged(): void {}
+  onBlur(): void {}
+  onFocus(): void {}
+  onCursorMove(): void {}
+  onGridChanged(startRow: number, endRow: number): void {}
+  onSelectionChanged(start: [number, number], end: [number, number], columnSelectMode: boolean = false): void {}
 
-  public setColors(colorSet: IColorSet): void {
+  setColors(colorSet: IColorSet): void {
     this._refreshCharAtlas(colorSet);
   }
 
@@ -114,7 +114,7 @@ export abstract class BaseRenderLayer implements IRenderLayer {
     this._charAtlas.warmUp();
   }
 
-  public resize(dim: IRenderDimensions): void {
+  resize(dim: IRenderDimensions): void {
     this._scaledCellWidth = dim.scaledCellWidth;
     this._scaledCellHeight = dim.scaledCellHeight;
     this._scaledCharWidth = dim.scaledCharWidth;

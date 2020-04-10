@@ -44,7 +44,7 @@ export class TextRenderLayer extends BaseRenderLayer {
     this._characterJoinerRegistry = characterJoinerRegistry;
   }
 
-  public resize(dim: IRenderDimensions): void {
+  resize(dim: IRenderDimensions): void {
     super.resize(dim);
 
     // Clear the character width cache if the font or width has changed
@@ -59,7 +59,7 @@ export class TextRenderLayer extends BaseRenderLayer {
     this._state.resize(this._bufferService.cols, this._bufferService.rows);
   }
 
-  public reset(): void {
+  reset(): void {
     this._state.clear();
     this._clearAll();
   }
@@ -253,7 +253,7 @@ export class TextRenderLayer extends BaseRenderLayer {
     });
   }
 
-  public onGridChanged(firstRow: number, lastRow: number): void {
+  onGridChanged(firstRow: number, lastRow: number): void {
     // Resize has not been called yet
     if (this._state.cache.length === 0) {
       return;
@@ -268,7 +268,7 @@ export class TextRenderLayer extends BaseRenderLayer {
     this._drawForeground(firstRow, lastRow);
   }
 
-  public onOptionsChanged(): void {
+  onOptionsChanged(): void {
     this._setTransparency(this._optionsService.options.allowTransparency);
   }
 

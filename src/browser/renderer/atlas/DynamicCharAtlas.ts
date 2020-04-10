@@ -108,18 +108,18 @@ export class DynamicCharAtlas extends BaseCharAtlas {
     // document.body.appendChild(this._cacheCanvas);
   }
 
-  public dispose(): void {
+  dispose(): void {
     if (this._bitmapCommitTimeout !== null) {
       window.clearTimeout(this._bitmapCommitTimeout);
       this._bitmapCommitTimeout = null;
     }
   }
 
-  public beginFrame(): void {
+  beginFrame(): void {
     this._drawToCacheCount = 0;
   }
 
-  public draw(
+  draw(
     ctx: CanvasRenderingContext2D,
     glyph: IGlyphIdentifier,
     x: number,
@@ -342,7 +342,7 @@ export class NoneCharAtlas extends BaseCharAtlas {
     super();
   }
 
-  public draw(
+  draw(
     ctx: CanvasRenderingContext2D,
     glyph: IGlyphIdentifier,
     x: number,

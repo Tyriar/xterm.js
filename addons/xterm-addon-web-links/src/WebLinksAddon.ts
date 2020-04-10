@@ -49,7 +49,7 @@ export class WebLinksAddon implements ITerminalAddon {
     this._options.matchIndex = 1;
   }
 
-  public activate(terminal: Terminal): void {
+  activate(terminal: Terminal): void {
     this._terminal = terminal;
 
     if (this._useLinkProvider && 'registerLinkProvider' in this._terminal) {
@@ -60,7 +60,7 @@ export class WebLinksAddon implements ITerminalAddon {
     }
   }
 
-  public dispose(): void {
+  dispose(): void {
     if (this._linkMatcherId !== undefined && this._terminal !== undefined) {
       this._terminal.deregisterLinkMatcher(this._linkMatcherId);
     }

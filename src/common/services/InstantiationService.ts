@@ -48,15 +48,15 @@ export class InstantiationService implements IInstantiationService {
     this._services.set(IInstantiationService, this);
   }
 
-  public setService<T>(id: IServiceIdentifier<T>, instance: T): void {
+  setService<T>(id: IServiceIdentifier<T>, instance: T): void {
     this._services.set(id, instance);
   }
 
-  public getService<T>(id: IServiceIdentifier<T>): T | undefined {
+  getService<T>(id: IServiceIdentifier<T>): T | undefined {
     return this._services.get(id);
   }
 
-  public createInstance<T>(ctor: any, ...args: any[]): T {
+  createInstance<T>(ctor: any, ...args: any[]): T {
     const serviceDependencies = getServiceDependencies(ctor).sort((a, b) => a.index - b.index);
 
     const serviceArgs: any[] = [];

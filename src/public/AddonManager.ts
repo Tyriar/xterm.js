@@ -17,13 +17,13 @@ export class AddonManager implements IDisposable {
   constructor() {
   }
 
-  public dispose(): void {
+  dispose(): void {
     for (let i = this._addons.length - 1; i >= 0; i--) {
       this._addons[i].instance.dispose();
     }
   }
 
-  public loadAddon(terminal: Terminal, instance: ITerminalAddon): void {
+  loadAddon(terminal: Terminal, instance: ITerminalAddon): void {
     const loadedAddon: ILoadedAddon = {
       instance,
       dispose: instance.dispose,

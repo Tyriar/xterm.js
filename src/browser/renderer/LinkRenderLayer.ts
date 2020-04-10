@@ -31,13 +31,13 @@ export class LinkRenderLayer extends BaseRenderLayer {
     linkifier2.onLinkLeave(e => this._onLinkLeave(e));
   }
 
-  public resize(dim: IRenderDimensions): void {
+  resize(dim: IRenderDimensions): void {
     super.resize(dim);
     // Resizing the canvas discards the contents of the canvas so clear state
     this._state = undefined;
   }
 
-  public reset(): void {
+  reset(): void {
     this._clearCurrentLink();
   }
 

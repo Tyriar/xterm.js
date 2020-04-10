@@ -72,9 +72,9 @@ const document = (typeof window !== 'undefined') ? window.document : null;
 
 
 export class Terminal extends Disposable implements ITerminal, IDisposable, IInputHandlingTerminal {
-  public textarea: HTMLTextAreaElement;
-  public element: HTMLElement;
-  public screenElement: HTMLElement;
+  textarea: HTMLTextAreaElement;
+  element: HTMLElement;
+  screenElement: HTMLElement;
 
   private _document: Document;
   private _viewportScrollArea: HTMLElement;
@@ -84,10 +84,10 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
 
   private _visualBellTimer: number;
 
-  public browser: IBrowser = <any>Browser;
+  browser: IBrowser = <any>Browser;
 
   // TODO: We should remove options once components adopt optionsService
-  public get options(): ITerminalOptions { return this.optionsService.options; }
+  get options(): ITerminalOptions { return this.optionsService.options; }
 
   private _customKeyEventHandler: CustomKeyEventHandler;
 
@@ -99,8 +99,8 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
   private _dirtyRowService: IDirtyRowService;
   private _instantiationService: IInstantiationService;
   private _logService: ILogService;
-  public optionsService: IOptionsService;
-  public unicodeService: IUnicodeService;
+  optionsService: IOptionsService;
+  unicodeService: IUnicodeService;
 
   // browser services
   private _charSizeService: ICharSizeService;
@@ -110,12 +110,12 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
   private _soundService: ISoundService;
 
   // modes
-  public insertMode: boolean;
-  public bracketedPasteMode: boolean;
+  insertMode: boolean;
+  bracketedPasteMode: boolean;
 
   // mouse properties
-  public mouseEvents: CoreMouseEventType = CoreMouseEventType.NONE;
-  public sendFocus: boolean;
+  mouseEvents: CoreMouseEventType = CoreMouseEventType.NONE;
+  sendFocus: boolean;
 
   // write buffer
   private _writeBuffer: WriteBuffer;
@@ -131,9 +131,9 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
   private _keyDownHandled: boolean = false;
 
   private _inputHandler: InputHandler;
-  public linkifier: ILinkifier;
-  public linkifier2: ILinkifier2;
-  public viewport: IViewport;
+  linkifier: ILinkifier;
+  linkifier2: ILinkifier2;
+  viewport: IViewport;
   private _compositionHelper: ICompositionHelper;
   private _mouseZoneManager: IMouseZoneManager;
   private _accessibilityManager: AccessibilityManager;
@@ -144,38 +144,38 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
   // bufferline to clone/copy from for new blank lines
   private _blankLine: IBufferLine = null;
 
-  public get cols(): number { return this._bufferService.cols; }
-  public get rows(): number { return this._bufferService.rows; }
+  get cols(): number { return this._bufferService.cols; }
+  get rows(): number { return this._bufferService.rows; }
 
   private _onCursorMove = new EventEmitter<void>();
-  public get onCursorMove(): IEvent<void> { return this._onCursorMove.event; }
+  get onCursorMove(): IEvent<void> { return this._onCursorMove.event; }
   private _onData = new EventEmitter<string>();
-  public get onData(): IEvent<string> { return this._onData.event; }
+  get onData(): IEvent<string> { return this._onData.event; }
   private _onBinary = new EventEmitter<string>();
-  public get onBinary(): IEvent<string> { return this._onBinary.event; }
+  get onBinary(): IEvent<string> { return this._onBinary.event; }
   private _onKey = new EventEmitter<{ key: string, domEvent: KeyboardEvent }>();
-  public get onKey(): IEvent<{ key: string, domEvent: KeyboardEvent }> { return this._onKey.event; }
+  get onKey(): IEvent<{ key: string, domEvent: KeyboardEvent }> { return this._onKey.event; }
   private _onLineFeed = new EventEmitter<void>();
-  public get onLineFeed(): IEvent<void> { return this._onLineFeed.event; }
+  get onLineFeed(): IEvent<void> { return this._onLineFeed.event; }
   private _onRender = new EventEmitter<{ start: number, end: number }>();
-  public get onRender(): IEvent<{ start: number, end: number }> { return this._onRender.event; }
+  get onRender(): IEvent<{ start: number, end: number }> { return this._onRender.event; }
   private _onResize = new EventEmitter<{ cols: number, rows: number }>();
-  public get onResize(): IEvent<{ cols: number, rows: number }> { return this._onResize.event; }
+  get onResize(): IEvent<{ cols: number, rows: number }> { return this._onResize.event; }
   private _onScroll = new EventEmitter<number>();
-  public get onScroll(): IEvent<number> { return this._onScroll.event; }
+  get onScroll(): IEvent<number> { return this._onScroll.event; }
   private _onSelectionChange = new EventEmitter<void>();
-  public get onSelectionChange(): IEvent<void> { return this._onSelectionChange.event; }
+  get onSelectionChange(): IEvent<void> { return this._onSelectionChange.event; }
   private _onTitleChange = new EventEmitter<string>();
-  public get onTitleChange(): IEvent<string> { return this._onTitleChange.event; }
+  get onTitleChange(): IEvent<string> { return this._onTitleChange.event; }
 
   private _onFocus = new EventEmitter<void>();
-  public get onFocus(): IEvent<void> { return this._onFocus.event; }
+  get onFocus(): IEvent<void> { return this._onFocus.event; }
   private _onBlur = new EventEmitter<void>();
-  public get onBlur(): IEvent<void> { return this._onBlur.event; }
-  public onA11yCharEmitter = new EventEmitter<string>();
-  public get onA11yChar(): IEvent<string> { return this.onA11yCharEmitter.event; }
-  public onA11yTabEmitter = new EventEmitter<number>();
-  public get onA11yTab(): IEvent<number> { return this.onA11yTabEmitter.event; }
+  get onBlur(): IEvent<void> { return this._onBlur.event; }
+  onA11yCharEmitter = new EventEmitter<string>();
+  get onA11yChar(): IEvent<string> { return this.onA11yCharEmitter.event; }
+  onA11yTabEmitter = new EventEmitter<number>();
+  get onA11yTab(): IEvent<number> { return this.onA11yTabEmitter.event; }
 
   /**
    * Creates a new `Terminal` object.
@@ -221,7 +221,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
     this._writeBuffer = new WriteBuffer(data => this._inputHandler.parse(data));
   }
 
-  public dispose(): void {
+  dispose(): void {
     if (this._isDisposed) {
       return;
     }
@@ -287,18 +287,18 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
   /**
    * Convenience property to active buffer.
    */
-  public get buffer(): IBuffer {
+  get buffer(): IBuffer {
     return this.buffers.active;
   }
 
-  public get buffers(): IBufferSet {
+  get buffers(): IBufferSet {
     return this._bufferService.buffers;
   }
 
   /**
    * Focus the terminal. Delegates focus handling to the terminal's DOM element.
    */
-  public focus(): void {
+  focus(): void {
     if (this.textarea) {
       this.textarea.focus({ preventScroll: true });
     }
@@ -385,7 +385,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
    * Blur the terminal, calling the blur function on the terminal's underlying
    * textarea.
    */
-  public blur(): void {
+  blur(): void {
     return this.textarea.blur();
   }
 
@@ -470,7 +470,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
    *
    * @param parent The element to create the terminal within.
    */
-  public open(parent: HTMLElement): void {
+  open(parent: HTMLElement): void {
     if (!parent) {
       throw new Error('Terminal requires a parent element.');
     }
@@ -657,7 +657,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
    *
    * TODO: Move mouse event code into its own file.
    */
-  public bindMouse(): void {
+  bindMouse(): void {
     const self = this;
     const el = this.element;
 
@@ -903,7 +903,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
    * @param start The row to start from (between 0 and this.rows - 1).
    * @param end The row to end at (between start and this.rows - 1).
    */
-  public refresh(start: number, end: number): void {
+  refresh(start: number, end: number): void {
     this._renderService?.refreshRows(start, end);
   }
 
@@ -919,7 +919,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
   /**
    * Change the cursor style for different selection modes
    */
-  public updateCursorStyle(ev: KeyboardEvent): void {
+  updateCursorStyle(ev: KeyboardEvent): void {
     if (this._selectionService && this._selectionService.shouldColumnSelect(ev)) {
       this.element.classList.add('column-select');
     } else {
@@ -930,7 +930,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
   /**
    * Display the cursor element
    */
-  public showCursor(): void {
+  showCursor(): void {
     if (!this._coreService.isCursorInitialized) {
       this._coreService.isCursorInitialized = true;
       this.refresh(this.buffer.y, this.buffer.y);
@@ -941,7 +941,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
    * Scroll the terminal down 1 row, creating a blank line.
    * @param isWrapped Whether the new line is wrapped from the previous line.
    */
-  public scroll(eraseAttr: IAttributeData, isWrapped: boolean = false): void {
+  scroll(eraseAttr: IAttributeData, isWrapped: boolean = false): void {
     let newLine: IBufferLine;
     newLine = this._blankLine;
     if (!newLine || newLine.length !== this.cols || newLine.getFg(0) !== eraseAttr.fg || newLine.getBg(0) !== eraseAttr.bg) {
@@ -1009,7 +1009,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
    * to avoid unwanted events being handled by the viewport when the event was triggered from the
    * viewport originally.
    */
-  public scrollLines(disp: number, suppressScrollEvent?: boolean): void {
+  scrollLines(disp: number, suppressScrollEvent?: boolean): void {
     if (disp < 0) {
       if (this.buffer.ydisp === 0) {
         return;
@@ -1038,32 +1038,32 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
    * Scroll the display of the terminal by a number of pages.
    * @param pageCount The number of pages to scroll (negative scrolls up).
    */
-  public scrollPages(pageCount: number): void {
+  scrollPages(pageCount: number): void {
     this.scrollLines(pageCount * (this.rows - 1));
   }
 
   /**
    * Scrolls the display of the terminal to the top.
    */
-  public scrollToTop(): void {
+  scrollToTop(): void {
     this.scrollLines(-this.buffer.ydisp);
   }
 
   /**
    * Scrolls the display of the terminal to the bottom.
    */
-  public scrollToBottom(): void {
+  scrollToBottom(): void {
     this.scrollLines(this.buffer.ybase - this.buffer.ydisp);
   }
 
-  public scrollToLine(line: number): void {
+  scrollToLine(line: number): void {
     const scrollAmount = line - this.buffer.ydisp;
     if (scrollAmount !== 0) {
       this.scrollLines(scrollAmount);
     }
   }
 
-  public paste(data: string): void {
+  paste(data: string): void {
     paste(data, this.textarea, this.bracketedPasteMode, this._coreService);
   }
 
@@ -1076,26 +1076,26 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
    * propagation and/or prevent the default action. The function returns whether
    * the event should be processed by xterm.js.
    */
-  public attachCustomKeyEventHandler(customKeyEventHandler: CustomKeyEventHandler): void {
+  attachCustomKeyEventHandler(customKeyEventHandler: CustomKeyEventHandler): void {
     this._customKeyEventHandler = customKeyEventHandler;
   }
 
   /** Add handler for ESC escape sequence. See xterm.d.ts for details. */
-  public addEscHandler(id: IFunctionIdentifier, callback: () => boolean): IDisposable {
+  addEscHandler(id: IFunctionIdentifier, callback: () => boolean): IDisposable {
     return this._inputHandler.addEscHandler(id, callback);
   }
 
   /** Add handler for DCS escape sequence. See xterm.d.ts for details. */
-  public addDcsHandler(id: IFunctionIdentifier, callback: (data: string, param: IParams) => boolean): IDisposable {
+  addDcsHandler(id: IFunctionIdentifier, callback: (data: string, param: IParams) => boolean): IDisposable {
     return this._inputHandler.addDcsHandler(id, callback);
   }
 
   /** Add handler for CSI escape sequence. See xterm.d.ts for details. */
-  public addCsiHandler(id: IFunctionIdentifier, callback: (params: IParams) => boolean): IDisposable {
+  addCsiHandler(id: IFunctionIdentifier, callback: (params: IParams) => boolean): IDisposable {
     return this._inputHandler.addCsiHandler(id, callback);
   }
   /** Add handler for OSC escape sequence. See xterm.d.ts for details. */
-  public addOscHandler(ident: number, callback: (data: string) => boolean): IDisposable {
+  addOscHandler(ident: number, callback: (data: string) => boolean): IDisposable {
     return this._inputHandler.addOscHandler(ident, callback);
   }
 
@@ -1109,7 +1109,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
    * @param options Options for the link matcher.
    * @return The ID of the new matcher, this can be used to deregister.
    */
-  public registerLinkMatcher(regex: RegExp, handler: LinkMatcherHandler, options?: ILinkMatcherOptions): number {
+  registerLinkMatcher(regex: RegExp, handler: LinkMatcherHandler, options?: ILinkMatcherOptions): number {
     const matcherId = this.linkifier.registerLinkMatcher(regex, handler, options);
     this.refresh(0, this.rows - 1);
     return matcherId;
@@ -1119,33 +1119,33 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
    * Deregisters a link matcher if it has been registered.
    * @param matcherId The link matcher's ID (returned after register)
    */
-  public deregisterLinkMatcher(matcherId: number): void {
+  deregisterLinkMatcher(matcherId: number): void {
     if (this.linkifier.deregisterLinkMatcher(matcherId)) {
       this.refresh(0, this.rows - 1);
     }
   }
 
-  public registerLinkProvider(linkProvider: ILinkProvider): IDisposable {
+  registerLinkProvider(linkProvider: ILinkProvider): IDisposable {
     return this.linkifier2.registerLinkProvider(linkProvider);
   }
 
-  public registerCharacterJoiner(handler: CharacterJoinerHandler): number {
+  registerCharacterJoiner(handler: CharacterJoinerHandler): number {
     const joinerId = this._renderService.registerCharacterJoiner(handler);
     this.refresh(0, this.rows - 1);
     return joinerId;
   }
 
-  public deregisterCharacterJoiner(joinerId: number): void {
+  deregisterCharacterJoiner(joinerId: number): void {
     if (this._renderService.deregisterCharacterJoiner(joinerId)) {
       this.refresh(0, this.rows - 1);
     }
   }
 
-  public get markers(): IMarker[] {
+  get markers(): IMarker[] {
     return this.buffer.markers;
   }
 
-  public addMarker(cursorYOffset: number): IMarker {
+  addMarker(cursorYOffset: number): IMarker {
     // Disallow markers on the alt buffer
     if (this.buffer !== this.buffers.normal) {
       return;
@@ -1157,7 +1157,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
   /**
    * Gets whether the terminal has an active selection.
    */
-  public hasSelection(): boolean {
+  hasSelection(): boolean {
     return this._selectionService ? this._selectionService.hasSelection : false;
   }
 
@@ -1167,7 +1167,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
    * @param row The row the selection starts at.
    * @param length The length of the selection.
    */
-  public select(column: number, row: number, length: number): void {
+  select(column: number, row: number, length: number): void {
     this._selectionService.setSelection(column, row, length);
   }
 
@@ -1175,11 +1175,11 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
    * Gets the terminal's current selection, this is useful for implementing copy
    * behavior outside of xterm.js.
    */
-  public getSelection(): string {
+  getSelection(): string {
     return this._selectionService ? this._selectionService.selectionText : '';
   }
 
-  public getSelectionPosition(): ISelectionPosition | undefined {
+  getSelectionPosition(): ISelectionPosition | undefined {
     if (!this._selectionService.hasSelection) {
       return undefined;
     }
@@ -1195,18 +1195,18 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
   /**
    * Clears the current terminal selection.
    */
-  public clearSelection(): void {
+  clearSelection(): void {
     this._selectionService?.clearSelection();
   }
 
   /**
    * Selects all text within the terminal.
    */
-  public selectAll(): void {
+  selectAll(): void {
     this._selectionService?.selectAll();
   }
 
-  public selectLines(start: number, end: number): void {
+  selectLines(start: number, end: number): void {
     this._selectionService?.selectLines(start, end);
   }
 
@@ -1352,7 +1352,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
    * Ring the bell.
    * Note: We could do sweet things with webaudio here
    */
-  public bell(): void {
+  bell(): void {
     if (this._soundBell()) {
       this._soundService.playBellSound();
     }
@@ -1372,7 +1372,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
    * @param x The number of columns to resize to.
    * @param y The number of rows to resize to.
    */
-  public resize(x: number, y: number): void {
+  resize(x: number, y: number): void {
     if (isNaN(x) || isNaN(y)) {
       return;
     }
@@ -1406,7 +1406,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
   /**
    * Clear the entire buffer, making the prompt line the new first line.
    */
-  public clear(): void {
+  clear(): void {
     if (this.buffer.ybase === 0 && this.buffer.y === 0) {
       // Don't clear if it's already clear
       return;
@@ -1427,7 +1427,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
    * Evaluate if the current terminal is the given argument.
    * @param term The terminal name to evaluate
    */
-  public is(term: string): boolean {
+  is(term: string): boolean {
     return (this.options.termName + '').indexOf(term) === 0;
   }
 
@@ -1457,7 +1457,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
    * Emit the 'title' event and populate the given title.
    * @param title The title to populate in the event.
    */
-  public handleTitle(title: string): void {
+  handleTitle(title: string): void {
     this._onTitleChange.fire(title);
   }
 
@@ -1469,7 +1469,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
    * If you need in band reset (synchronous with input data) consider
    * using DECSTR (soft reset, CSI ! p) or RIS instead (hard reset, ESC c).
    */
-  public reset(): void {
+  reset(): void {
     /**
      * Since _setup handles a full terminal creation, we have to carry forward
      * a few things that should not reset.
@@ -1496,7 +1496,7 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
   }
 
   // TODO: Remove cancel function and cancelEvents option
-  public cancel(ev: Event, force?: boolean): boolean {
+  cancel(ev: Event, force?: boolean): boolean {
     if (!this.options.cancelEvents && !force) {
       return;
     }
@@ -1517,11 +1517,11 @@ export class Terminal extends Disposable implements ITerminal, IDisposable, IInp
     //     this.options.bellStyle === 'both';
   }
 
-  public write(data: string | Uint8Array, callback?: () => void): void {
+  write(data: string | Uint8Array, callback?: () => void): void {
     this._writeBuffer.write(data, callback);
   }
 
-  public writeSync(data: string | Uint8Array): void {
+  writeSync(data: string | Uint8Array): void {
     this._writeBuffer.writeSync(data);
   }
 }

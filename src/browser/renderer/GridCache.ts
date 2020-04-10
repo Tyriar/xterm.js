@@ -4,13 +4,13 @@
  */
 
 export class GridCache<T> {
-  public cache: (T | undefined)[][];
+  cache: (T | undefined)[][];
 
-  public constructor() {
+  constructor() {
     this.cache = [];
   }
 
-  public resize(width: number, height: number): void {
+  resize(width: number, height: number): void {
     for (let x = 0; x < width; x++) {
       if (this.cache.length <= x) {
         this.cache.push([]);
@@ -23,7 +23,7 @@ export class GridCache<T> {
     this.cache.length = width;
   }
 
-  public clear(): void {
+  clear(): void {
     for (let x = 0; x < this.cache.length; x++) {
       for (let y = 0; y < this.cache[x].length; y++) {
         this.cache[x][y] = undefined;

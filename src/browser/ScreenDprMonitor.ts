@@ -23,7 +23,7 @@ export class ScreenDprMonitor extends Disposable {
   private _listener: ScreenDprListener | undefined;
   private _resolutionMediaMatchList: MediaQueryList | undefined;
 
-  public setListener(listener: ScreenDprListener): void {
+  setListener(listener: ScreenDprListener): void {
     if (this._listener) {
       this.clearListener();
     }
@@ -38,7 +38,7 @@ export class ScreenDprMonitor extends Disposable {
     this._updateDpr();
   }
 
-  public dispose(): void {
+  dispose(): void {
     super.dispose();
     this.clearListener();
   }
@@ -57,7 +57,7 @@ export class ScreenDprMonitor extends Disposable {
     this._resolutionMediaMatchList.addListener(this._outerListener);
   }
 
-  public clearListener(): void {
+  clearListener(): void {
     if (!this._resolutionMediaMatchList || !this._listener || !this._outerListener) {
       return;
     }

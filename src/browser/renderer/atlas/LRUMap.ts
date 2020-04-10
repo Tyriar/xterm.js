@@ -15,7 +15,7 @@ export class LRUMap<T> {
   private _head: ILinkedListNode<T> | null = null;
   private _tail: ILinkedListNode<T> | null = null;
   private _nodePool: ILinkedListNode<T>[] = [];
-  public size: number = 0;
+  size: number = 0;
 
   constructor(public capacity: number) { }
 
@@ -56,7 +56,7 @@ export class LRUMap<T> {
    * Each empty object only consumes about 60 bytes of memory, so this is pretty cheap, even for
    * large maps.
    */
-  public prealloc(count: number): void {
+  prealloc(count: number): void {
     const nodePool = this._nodePool;
     for (let i = 0; i < count; i++) {
       nodePool.push({
@@ -68,7 +68,7 @@ export class LRUMap<T> {
     }
   }
 
-  public get(key: number): T | null {
+  get(key: number): T | null {
     // This is unsafe: We're assuming our keyspace doesn't overlap with Object.prototype. However,
     // it's faster than calling hasOwnProperty, and in our case, it would never overlap.
     const node = this._map[key];
@@ -83,7 +83,7 @@ export class LRUMap<T> {
   /**
    * Gets a value from a key without marking it as the most recently used item.
    */
-  public peekValue(key: number): T | null {
+  peekValue(key: number): T | null {
     const node = this._map[key];
     if (node !== undefined) {
       return node.value;
@@ -91,12 +91,12 @@ export class LRUMap<T> {
     return null;
   }
 
-  public peek(): T | null {
+  peek(): T | null {
     const head = this._head;
     return head === null ? null : head.value;
   }
 
-  public set(key: number, value: T): void {
+  set(key: number, value: T): void {
     // This is unsafe: See note above.
     let node = this._map[key];
     if (node !== undefined) {

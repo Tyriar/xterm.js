@@ -20,9 +20,9 @@ export class Linkifier2 implements ILinkifier2 {
   private _lastBufferCell: IBufferCellPosition | undefined;
 
   private _onLinkHover = new EventEmitter<ILinkifierEvent>();
-  public get onLinkHover(): IEvent<ILinkifierEvent> { return this._onLinkHover.event; }
+  get onLinkHover(): IEvent<ILinkifierEvent> { return this._onLinkHover.event; }
   private _onLinkLeave = new EventEmitter<ILinkifierEvent>();
-  public get onLinkLeave(): IEvent<ILinkifierEvent> { return this._onLinkLeave.event; }
+  get onLinkLeave(): IEvent<ILinkifierEvent> { return this._onLinkLeave.event; }
 
   constructor(
     private readonly _bufferService: IBufferService
@@ -30,7 +30,7 @@ export class Linkifier2 implements ILinkifier2 {
 
   }
 
-  public registerLinkProvider(linkProvider: ILinkProvider): IDisposable {
+  registerLinkProvider(linkProvider: ILinkProvider): IDisposable {
     this._linkProviders.push(linkProvider);
     return {
       dispose: () => {
@@ -44,7 +44,7 @@ export class Linkifier2 implements ILinkifier2 {
     };
   }
 
-  public attachToDom(element: HTMLElement, mouseService: IMouseService, renderService: IRenderService): void {
+  attachToDom(element: HTMLElement, mouseService: IMouseService, renderService: IRenderService): void {
     this._element = element;
     this._mouseService = mouseService;
     this._renderService = renderService;

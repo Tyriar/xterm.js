@@ -180,19 +180,19 @@ export class CoreMouseService implements ICoreMouseService {
     this.reset();
   }
 
-  public addProtocol(name: string, protocol: ICoreMouseProtocol): void {
+  addProtocol(name: string, protocol: ICoreMouseProtocol): void {
     this._protocols[name] = protocol;
   }
 
-  public addEncoding(name: string, encoding: CoreMouseEncoding): void {
+  addEncoding(name: string, encoding: CoreMouseEncoding): void {
     this._encodings[name] = encoding;
   }
 
-  public get activeProtocol(): string {
+  get activeProtocol(): string {
     return this._activeProtocol;
   }
 
-  public set activeProtocol(name: string) {
+  set activeProtocol(name: string) {
     if (!this._protocols[name]) {
       throw new Error(`unknown protocol "${name}"`);
     }
@@ -200,18 +200,18 @@ export class CoreMouseService implements ICoreMouseService {
     this._onProtocolChange.fire(this._protocols[name].events);
   }
 
-  public get activeEncoding(): string {
+  get activeEncoding(): string {
     return this._activeEncoding;
   }
 
-  public set activeEncoding(name: string) {
+  set activeEncoding(name: string) {
     if (!this._encodings[name]) {
       throw new Error(`unknown encoding "${name}"`);
     }
     this._activeEncoding = name;
   }
 
-  public reset(): void {
+  reset(): void {
     this.activeProtocol = 'NONE';
     this.activeEncoding = 'DEFAULT';
     this._lastEvent = null;
@@ -220,7 +220,7 @@ export class CoreMouseService implements ICoreMouseService {
   /**
    * Event to announce changes in mouse tracking.
    */
-  public get onProtocolChange(): IEvent<CoreMouseEventType> {
+  get onProtocolChange(): IEvent<CoreMouseEventType> {
     return this._onProtocolChange.event;
   }
 
@@ -234,7 +234,7 @@ export class CoreMouseService implements ICoreMouseService {
    * Note: The method will change values of the given event object
    * to fullfill protocol and encoding restrictions.
    */
-  public triggerMouseEvent(e: ICoreMouseEvent): boolean {
+  triggerMouseEvent(e: ICoreMouseEvent): boolean {
     // range check for col/row
     if (e.col < 0 || e.col >= this._bufferService.cols
         || e.row < 0 || e.row >= this._bufferService.rows) {
@@ -282,7 +282,7 @@ export class CoreMouseService implements ICoreMouseService {
     return true;
   }
 
-  public explainEvents(events: CoreMouseEventType): {[event: string]: boolean} {
+  explainEvents(events: CoreMouseEventType): {[event: string]: boolean} {
     return {
       down: !!(events & CoreMouseEventType.DOWN),
       up: !!(events & CoreMouseEventType.UP),

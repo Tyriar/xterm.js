@@ -52,7 +52,7 @@ export class StringToUtf32 {
   /**
    * Clears interim and resets decoder to clean state.
    */
-  public clear(): void {
+  clear(): void {
     this._interim = 0;
   }
 
@@ -115,12 +115,12 @@ export class StringToUtf32 {
  * Utf8Decoder - decodes UTF8 byte sequences into UTF32 codepoints.
  */
 export class Utf8ToUtf32 {
-  public interim: Uint8Array = new Uint8Array(3);
+  interim: Uint8Array = new Uint8Array(3);
 
   /**
    * Clears interim bytes and resets decoder to clean state.
    */
-  public clear(): void {
+  clear(): void {
     this.interim.fill(0);
   }
 

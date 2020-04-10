@@ -25,10 +25,10 @@ export class Renderer extends Disposable implements IRenderer {
   private _devicePixelRatio: number;
   private _characterJoinerRegistry: ICharacterJoinerRegistry;
 
-  public dimensions: IRenderDimensions;
+  dimensions: IRenderDimensions;
 
   private _onRequestRefreshRows = new EventEmitter<IRequestRefreshRowsEvent>();
-  public get onRequestRefreshRows(): IEvent<IRequestRefreshRowsEvent> { return this._onRequestRefreshRows.event; }
+  get onRequestRefreshRows(): IEvent<IRequestRefreshRowsEvent> { return this._onRequestRefreshRows.event; }
 
   constructor(
     private _colors: IColorSet,
@@ -70,13 +70,13 @@ export class Renderer extends Disposable implements IRenderer {
     this.onOptionsChanged();
   }
 
-  public dispose(): void {
+  dispose(): void {
     super.dispose();
     this._renderLayers.forEach(l => l.dispose());
     removeTerminalFromCache(this._id);
   }
 
-  public onDevicePixelRatioChange(): void {
+  onDevicePixelRatioChange(): void {
     // If the device pixel ratio changed, the char atlas needs to be regenerated
     // and the terminal needs to refreshed
     if (this._devicePixelRatio !== window.devicePixelRatio) {
@@ -85,7 +85,7 @@ export class Renderer extends Disposable implements IRenderer {
     }
   }
 
-  public setColors(colors: IColorSet): void {
+  setColors(colors: IColorSet): void {
     this._colors = colors;
 
     // Clear layers and force a full render
@@ -95,7 +95,7 @@ export class Renderer extends Disposable implements IRenderer {
     });
   }
 
-  public onResize(cols: number, rows: number): void {
+  onResize(cols: number, rows: number): void {
     // Update character and canvas dimensions
     this._updateDimensions();
 
@@ -107,31 +107,31 @@ export class Renderer extends Disposable implements IRenderer {
     this._screenElement.style.height = `${this.dimensions.canvasHeight}px`;
   }
 
-  public onCharSizeChanged(): void {
+  onCharSizeChanged(): void {
     this.onResize(this._bufferService.cols, this._bufferService.rows);
   }
 
-  public onBlur(): void {
+  onBlur(): void {
     this._runOperation(l => l.onBlur());
   }
 
-  public onFocus(): void {
+  onFocus(): void {
     this._runOperation(l => l.onFocus());
   }
 
-  public onSelectionChanged(start: [number, number], end: [number, number], columnSelectMode: boolean = false): void {
+  onSelectionChanged(start: [number, number], end: [number, number], columnSelectMode: boolean = false): void {
     this._runOperation(l => l.onSelectionChanged(start, end, columnSelectMode));
   }
 
-  public onCursorMove(): void {
+  onCursorMove(): void {
     this._runOperation(l => l.onCursorMove());
   }
 
-  public onOptionsChanged(): void {
+  onOptionsChanged(): void {
     this._runOperation(l => l.onOptionsChanged());
   }
 
-  public clear(): void {
+  clear(): void {
     this._runOperation(l => l.reset());
   }
 
@@ -143,7 +143,7 @@ export class Renderer extends Disposable implements IRenderer {
    * Performs the refresh loop callback, calling refresh only if a refresh is
    * necessary before queueing up the next one.
    */
-  public renderRows(start: number, end: number): void {
+  renderRows(start: number, end: number): void {
     this._renderLayers.forEach(l => l.onGridChanged(start, end));
   }
 
@@ -205,11 +205,11 @@ export class Renderer extends Disposable implements IRenderer {
     this.dimensions.actualCellWidth = this.dimensions.canvasWidth / this._bufferService.cols;
   }
 
-  public registerCharacterJoiner(handler: CharacterJoinerHandler): number {
+  registerCharacterJoiner(handler: CharacterJoinerHandler): number {
     return this._characterJoinerRegistry.registerCharacterJoiner(handler);
   }
 
-  public deregisterCharacterJoiner(joinerId: number): boolean {
+  deregisterCharacterJoiner(joinerId: number): boolean {
     return this._characterJoinerRegistry.deregisterCharacterJoiner(joinerId);
   }
 }

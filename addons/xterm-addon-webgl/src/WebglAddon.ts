@@ -16,7 +16,7 @@ export class WebglAddon implements ITerminalAddon {
     private _preserveDrawingBuffer?: boolean
   ) {}
 
-  public activate(terminal: Terminal): void {
+  activate(terminal: Terminal): void {
     if (!terminal.element) {
       throw new Error('Cannot activate WebglAddon before Terminal.open');
     }
@@ -27,7 +27,7 @@ export class WebglAddon implements ITerminalAddon {
     renderService.setRenderer(this._renderer);
   }
 
-  public dispose(): void {
+  dispose(): void {
     if (!this._terminal) {
       throw new Error('Cannot dispose WebglAddon because it is activated');
     }
@@ -37,7 +37,7 @@ export class WebglAddon implements ITerminalAddon {
     this._renderer = undefined;
   }
 
-  public get textureAtlas(): HTMLCanvasElement | undefined {
+  get textureAtlas(): HTMLCanvasElement | undefined {
     return this._renderer?.textureAtlas;
   }
 }

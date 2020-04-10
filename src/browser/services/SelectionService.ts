@@ -106,11 +106,11 @@ export class SelectionService implements ISelectionService {
   private _mouseDownTimeStamp: number = 0;
 
   private _onLinuxMouseSelection = new EventEmitter<string>();
-  public get onLinuxMouseSelection(): IEvent<string> { return this._onLinuxMouseSelection.event; }
+  get onLinuxMouseSelection(): IEvent<string> { return this._onLinuxMouseSelection.event; }
   private _onRedrawRequest = new EventEmitter<ISelectionRedrawRequestEvent>();
-  public get onRedrawRequest(): IEvent<ISelectionRedrawRequestEvent> { return this._onRedrawRequest.event; }
+  get onRedrawRequest(): IEvent<ISelectionRedrawRequestEvent> { return this._onRedrawRequest.event; }
   private _onSelectionChange = new EventEmitter<void>();
-  public get onSelectionChange(): IEvent<void> { return this._onSelectionChange.event; }
+  get onSelectionChange(): IEvent<void> { return this._onSelectionChange.event; }
 
   constructor(
     private readonly _scrollLines: (amount: number, suppressEvent: boolean) => void,
@@ -139,11 +139,11 @@ export class SelectionService implements ISelectionService {
     this._activeSelectionMode = SelectionMode.NORMAL;
   }
 
-  public dispose(): void {
+  dispose(): void {
     this._removeMouseDownListeners();
   }
 
-  public reset(): void {
+  reset(): void {
     this.clearSelection();
   }
 
@@ -151,7 +151,7 @@ export class SelectionService implements ISelectionService {
    * Disables the selection manager. This is useful for when terminal mouse
    * are enabled.
    */
-  public disable(): void {
+  disable(): void {
     this.clearSelection();
     this._enabled = false;
   }
@@ -159,17 +159,17 @@ export class SelectionService implements ISelectionService {
   /**
    * Enable the selection manager.
    */
-  public enable(): void {
+  enable(): void {
     this._enabled = true;
   }
 
-  public get selectionStart(): [number, number] | undefined { return this._model.finalSelectionStart; }
-  public get selectionEnd(): [number, number] | undefined { return this._model.finalSelectionEnd; }
+  get selectionStart(): [number, number] | undefined { return this._model.finalSelectionStart; }
+  get selectionEnd(): [number, number] | undefined { return this._model.finalSelectionEnd; }
 
   /**
    * Gets whether there is an active text selection.
    */
-  public get hasSelection(): boolean {
+  get hasSelection(): boolean {
     const start = this._model.finalSelectionStart;
     const end = this._model.finalSelectionEnd;
     if (!start || !end) {
@@ -181,7 +181,7 @@ export class SelectionService implements ISelectionService {
   /**
    * Gets the text currently selected.
    */
-  public get selectionText(): string {
+  get selectionText(): string {
     const start = this._model.finalSelectionStart;
     const end = this._model.finalSelectionEnd;
     if (!start || !end) {
@@ -241,7 +241,7 @@ export class SelectionService implements ISelectionService {
   /**
    * Clears the current terminal selection.
    */
-  public clearSelection(): void {
+  clearSelection(): void {
     this._model.clearSelection();
     this._removeMouseDownListeners();
     this.refresh();
@@ -253,7 +253,7 @@ export class SelectionService implements ISelectionService {
    * @param isLinuxMouseSelection Whether the selection should be registered as a new
    * selection on Linux.
    */
-  public refresh(isLinuxMouseSelection?: boolean): void {
+  refresh(isLinuxMouseSelection?: boolean): void {
     // Queue the refresh for the renderer
     if (!this._refreshAnimationFrame) {
       this._refreshAnimationFrame = window.requestAnimationFrame(() => this._refresh());
@@ -286,7 +286,7 @@ export class SelectionService implements ISelectionService {
    * Checks if the current click was inside the current selection
    * @param event The mouse event
    */
-  public isClickInSelection(event: MouseEvent): boolean {
+  isClickInSelection(event: MouseEvent): boolean {
     const coords = this._getMouseBufferCoords(event);
     const start = this._model.finalSelectionStart;
     const end = this._model.finalSelectionEnd;
@@ -309,7 +309,7 @@ export class SelectionService implements ISelectionService {
    * Selects word at the current mouse event coordinates.
    * @param event The mouse event.
    */
-  public selectWordAtCursor(event: MouseEvent): void {
+  selectWordAtCursor(event: MouseEvent): void {
     const coords = this._getMouseBufferCoords(event);
     if (coords) {
       this._selectWordAt(coords, false);
@@ -321,13 +321,13 @@ export class SelectionService implements ISelectionService {
   /**
    * Selects all text within the terminal.
    */
-  public selectAll(): void {
+  selectAll(): void {
     this._model.isSelectAllActive = true;
     this.refresh();
     this._onSelectionChange.fire();
   }
 
-  public selectLines(start: number, end: number): void {
+  selectLines(start: number, end: number): void {
     this._model.clearSelection();
     start = Math.max(start, 0);
     end = Math.min(end, this._bufferService.buffer.lines.length - 1);
@@ -392,7 +392,7 @@ export class SelectionService implements ISelectionService {
    * whether the terminal is in mouse events mode.
    * @param event The mouse event.
    */
-  public shouldForceSelection(event: MouseEvent): boolean {
+  shouldForceSelection(event: MouseEvent): boolean {
     if (Browser.isMac) {
       return event.altKey && this._optionsService.options.macOptionClickForcesSelection;
     }
@@ -404,7 +404,7 @@ export class SelectionService implements ISelectionService {
    * Handles te mousedown event, setting up for a new selection.
    * @param event The mousedown event.
    */
-  public onMouseDown(event: MouseEvent): void {
+  onMouseDown(event: MouseEvent): void {
     this._mouseDownTimeStamp = event.timeStamp;
     // If we have selection, we want the context menu on right click even if the
     // terminal is in mouse mode.
@@ -548,7 +548,7 @@ export class SelectionService implements ISelectionService {
    * Returns whether the selection manager should operate in column select mode
    * @param event the mouse or keyboard event
    */
-  public shouldColumnSelect(event: KeyboardEvent | MouseEvent): boolean {
+  shouldColumnSelect(event: KeyboardEvent | MouseEvent): boolean {
     return event.altKey && !(Browser.isMac && this._optionsService.options.macOptionClickForcesSelection);
   }
 
@@ -715,7 +715,7 @@ export class SelectionService implements ISelectionService {
     return charIndex;
   }
 
-  public setSelection(col: number, row: number, length: number): void {
+  setSelection(col: number, row: number, length: number): void {
     this._model.clearSelection();
     this._removeMouseDownListeners();
     this._model.selectionStart = [col, row];

@@ -25,12 +25,12 @@ export class CircularList<T> implements ICircularList<T> {
   private _startIndex: number;
   private _length: number;
 
-  public onDeleteEmitter = new EventEmitter<IDeleteEvent>();
-  public get onDelete(): IEvent<IDeleteEvent> { return this.onDeleteEmitter.event; }
-  public onInsertEmitter = new EventEmitter<IInsertEvent>();
-  public get onInsert(): IEvent<IInsertEvent> { return this.onInsertEmitter.event; }
-  public onTrimEmitter = new EventEmitter<number>();
-  public get onTrim(): IEvent<number> { return this.onTrimEmitter.event; }
+  onDeleteEmitter = new EventEmitter<IDeleteEvent>();
+  get onDelete(): IEvent<IDeleteEvent> { return this.onDeleteEmitter.event; }
+  onInsertEmitter = new EventEmitter<IInsertEvent>();
+  get onInsert(): IEvent<IInsertEvent> { return this.onInsertEmitter.event; }
+  onTrimEmitter = new EventEmitter<number>();
+  get onTrim(): IEvent<number> { return this.onTrimEmitter.event; }
 
   constructor(
     private _maxLength: number
@@ -40,11 +40,11 @@ export class CircularList<T> implements ICircularList<T> {
     this._length = 0;
   }
 
-  public get maxLength(): number {
+  get maxLength(): number {
     return this._maxLength;
   }
 
-  public set maxLength(newMaxLength: number) {
+  set maxLength(newMaxLength: number) {
     // There was no change in maxLength, return early.
     if (this._maxLength === newMaxLength) {
       return;
@@ -61,11 +61,11 @@ export class CircularList<T> implements ICircularList<T> {
     this._startIndex = 0;
   }
 
-  public get length(): number {
+  get length(): number {
     return this._length;
   }
 
-  public set length(newLength: number) {
+  set length(newLength: number) {
     if (newLength > this._length) {
       for (let i = this._length; i < newLength; i++) {
         this._array[i] = undefined;
@@ -82,7 +82,7 @@ export class CircularList<T> implements ICircularList<T> {
    * @param index The index of the value to get.
    * @return The value corresponding to the index.
    */
-  public get(index: number): T | undefined {
+  get(index: number): T | undefined {
     return this._array[this._getCyclicIndex(index)];
   }
 
@@ -94,7 +94,7 @@ export class CircularList<T> implements ICircularList<T> {
    * @param index The index to set.
    * @param value The value to set.
    */
-  public set(index: number, value: T | undefined): void {
+  set(index: number, value: T | undefined): void {
     this._array[this._getCyclicIndex(index)] = value;
   }
 
@@ -103,7 +103,7 @@ export class CircularList<T> implements ICircularList<T> {
    * if the maximum length is reached.
    * @param value The value to push onto the list.
    */
-  public push(value: T): void {
+  push(value: T): void {
     this._array[this._getCyclicIndex(this._length)] = value;
     if (this._length === this._maxLength) {
       this._startIndex = ++this._startIndex % this._maxLength;
@@ -118,7 +118,7 @@ export class CircularList<T> implements ICircularList<T> {
    * Note: The buffer must be full for this method to work.
    * @throws When the buffer is not full.
    */
-  public recycle(): T {
+  recycle(): T {
     if (this._length !== this._maxLength) {
       throw new Error('Can only recycle when the buffer is full');
     }
@@ -130,7 +130,7 @@ export class CircularList<T> implements ICircularList<T> {
   /**
    * Ringbuffer is at max length.
    */
-  public get isFull(): boolean {
+  get isFull(): boolean {
     return this._length === this._maxLength;
   }
 
@@ -138,7 +138,7 @@ export class CircularList<T> implements ICircularList<T> {
    * Removes and returns the last value on the list.
    * @return The popped value.
    */
-  public pop(): T | undefined {
+  pop(): T | undefined {
     return this._array[this._getCyclicIndex(this._length-- - 1)];
   }
 
@@ -151,7 +151,7 @@ export class CircularList<T> implements ICircularList<T> {
    * @param deleteCount The number of elements to delete.
    * @param items The items to insert.
    */
-  public splice(start: number, deleteCount: number, ...items: T[]): void {
+  splice(start: number, deleteCount: number, ...items: T[]): void {
     // Delete items
     if (deleteCount) {
       for (let i = start; i < this._length - deleteCount; i++) {
@@ -183,7 +183,7 @@ export class CircularList<T> implements ICircularList<T> {
    * Trims a number of items from the start of the list.
    * @param count The number of items to remove.
    */
-  public trimStart(count: number): void {
+  trimStart(count: number): void {
     if (count > this._length) {
       count = this._length;
     }
@@ -192,7 +192,7 @@ export class CircularList<T> implements ICircularList<T> {
     this.onTrimEmitter.fire(count);
   }
 
-  public shiftElements(start: number, count: number, offset: number): void {
+  shiftElements(start: number, count: number, offset: number): void {
     if (count <= 0) {
       return;
     }

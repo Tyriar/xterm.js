@@ -19,15 +19,15 @@ class TestLinkifier extends Linkifier {
     Linkifier._timeBeforeLatency = 0;
   }
 
-  public get linkMatchers(): IRegisteredLinkMatcher[] { return this._linkMatchers; }
-  public linkifyRows(): void { super.linkifyRows(0, this._bufferService.buffer.lines.length - 1); }
+  get linkMatchers(): IRegisteredLinkMatcher[] { return this._linkMatchers; }
+  linkifyRows(): void { super.linkifyRows(0, this._bufferService.buffer.lines.length - 1); }
 }
 
 class TestMouseZoneManager implements IMouseZoneManager {
   dispose(): void {
   }
-  public clears: number = 0;
-  public zones: IMouseZone[] = [];
+  clears: number = 0;
+  zones: IMouseZone[] = [];
   add(zone: IMouseZone): void {
     this.zones.push(zone);
   }

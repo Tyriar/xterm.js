@@ -19,7 +19,7 @@ export abstract class Disposable implements IDisposable {
   /**
    * Disposes the object, triggering the `dispose` method on all registered IDisposables.
    */
-  public dispose(): void {
+  dispose(): void {
     this._isDisposed = true;
     this._disposables.forEach(d => d.dispose());
     this._disposables.length = 0;
@@ -29,7 +29,7 @@ export abstract class Disposable implements IDisposable {
    * Registers a disposable object.
    * @param d The disposable to register.
    */
-  public register<T extends IDisposable>(d: T): void {
+  register<T extends IDisposable>(d: T): void {
     this._disposables.push(d);
   }
 
@@ -38,7 +38,7 @@ export abstract class Disposable implements IDisposable {
    * nothing.
    * @param d The disposable to unregister.
    */
-  public unregister<T extends IDisposable>(d: T): void {
+  unregister<T extends IDisposable>(d: T): void {
     const index = this._disposables.indexOf(d);
     if (index !== -1) {
       this._disposables.splice(index, 1);

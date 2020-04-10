@@ -37,10 +37,10 @@ export class DomRenderer extends Disposable implements IRenderer {
   private _rowElements: HTMLElement[] = [];
   private _selectionContainer: HTMLElement;
 
-  public dimensions: IRenderDimensions;
+  dimensions: IRenderDimensions;
 
   private _onRequestRefreshRows = new EventEmitter<IRequestRefreshRowsEvent>();
-  public get onRequestRefreshRows(): IEvent<IRequestRefreshRowsEvent> { return this._onRequestRefreshRows.event; }
+  get onRequestRefreshRows(): IEvent<IRequestRefreshRowsEvent> { return this._onRequestRefreshRows.event; }
 
   constructor(
     private _colors: IColorSet,
@@ -94,7 +94,7 @@ export class DomRenderer extends Disposable implements IRenderer {
     this._linkifier2.onLinkLeave(e => this._onLinkLeave(e));
   }
 
-  public dispose(): void {
+  dispose(): void {
     this._element.classList.remove(TERMINAL_CLASS_PREFIX + this._terminalClass);
     this._screenElement.removeChild(this._rowContainer);
     this._screenElement.removeChild(this._selectionContainer);
@@ -145,7 +145,7 @@ export class DomRenderer extends Disposable implements IRenderer {
     this._screenElement.style.height = `${this.dimensions.canvasHeight}px`;
   }
 
-  public setColors(colors: IColorSet): void {
+  setColors(colors: IColorSet): void {
     this._colors = colors;
     this._injectCss();
   }
@@ -240,7 +240,7 @@ export class DomRenderer extends Disposable implements IRenderer {
     this._themeStyleElement.innerHTML = styles;
   }
 
-  public onDevicePixelRatioChange(): void {
+  onDevicePixelRatioChange(): void {
     this._updateDimensions();
   }
 
@@ -257,24 +257,24 @@ export class DomRenderer extends Disposable implements IRenderer {
     }
   }
 
-  public onResize(cols: number, rows: number): void {
+  onResize(cols: number, rows: number): void {
     this._refreshRowElements(cols, rows);
     this._updateDimensions();
   }
 
-  public onCharSizeChanged(): void {
+  onCharSizeChanged(): void {
     this._updateDimensions();
   }
 
-  public onBlur(): void {
+  onBlur(): void {
     this._rowContainer.classList.remove(FOCUS_CLASS);
   }
 
-  public onFocus(): void {
+  onFocus(): void {
     this._rowContainer.classList.add(FOCUS_CLASS);
   }
 
-  public onSelectionChanged(start: [number, number], end: [number, number], columnSelectMode: boolean): void {
+  onSelectionChanged(start: [number, number], end: [number, number], columnSelectMode: boolean): void {
     // Remove all selections
     while (this._selectionContainer.children.length) {
       this._selectionContainer.removeChild(this._selectionContainer.children[0]);
@@ -336,21 +336,21 @@ export class DomRenderer extends Disposable implements IRenderer {
     return element;
   }
 
-  public onCursorMove(): void {
+  onCursorMove(): void {
     // No-op, the cursor is drawn when rows are drawn
   }
 
-  public onOptionsChanged(): void {
+  onOptionsChanged(): void {
     // Force a refresh
     this._updateDimensions();
     this._injectCss();
   }
 
-  public clear(): void {
+  clear(): void {
     this._rowElements.forEach(e => e.innerHTML = '');
   }
 
-  public renderRows(start: number, end: number): void {
+  renderRows(start: number, end: number): void {
     const cursorAbsoluteY = this._bufferService.buffer.ybase + this._bufferService.buffer.y;
     const cursorX = Math.min(this._bufferService.buffer.x, this._bufferService.cols - 1);
     const cursorBlink = this._optionsService.options.cursorBlink;
@@ -370,8 +370,8 @@ export class DomRenderer extends Disposable implements IRenderer {
     return `.${TERMINAL_CLASS_PREFIX}${this._terminalClass}`;
   }
 
-  public registerCharacterJoiner(handler: CharacterJoinerHandler): number { return -1; }
-  public deregisterCharacterJoiner(joinerId: number): boolean { return false; }
+  registerCharacterJoiner(handler: CharacterJoinerHandler): number { return -1; }
+  deregisterCharacterJoiner(joinerId: number): boolean { return false; }
 
   private _onLinkHover(e: ILinkifierEvent): void {
     this._setCellUnderline(e.x1, e.x2, e.y1, e.y2, e.cols, true);

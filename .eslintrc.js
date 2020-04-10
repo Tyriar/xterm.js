@@ -43,6 +43,12 @@ module.exports = {
         "allowExpressions": true
       }
     ],
+    "@typescript-eslint/explicit-member-accessibility": [
+      "error",
+      {
+        accessibility: "no-public"
+      }
+    ],
     "@typescript-eslint/indent": [
       "error",
       2

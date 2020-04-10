@@ -16,7 +16,7 @@ const FALLBACK_SCROLL_BAR_WIDTH = 15;
  * Logic for the virtual scroll bar is included in this object.
  */
 export class Viewport extends Disposable implements IViewport {
-  public scrollBarWidth: number = 0;
+  scrollBarWidth: number = 0;
   private _currentRowHeight: number = 0;
   private _lastRecordedBufferLength: number = 0;
   private _lastRecordedViewportHeight: number = 0;
@@ -53,7 +53,7 @@ export class Viewport extends Disposable implements IViewport {
     setTimeout(() => this.syncScrollArea(), 0);
   }
 
-  public onThemeChange(colors: IColorSet): void {
+  onThemeChange(colors: IColorSet): void {
     this._viewportElement.style.backgroundColor = colors.background.css;
   }
 
@@ -99,7 +99,7 @@ export class Viewport extends Disposable implements IViewport {
   /**
    * Updates dimensions and synchronizes the scroll area if necessary.
    */
-  public syncScrollArea(immediate: boolean = false): void {
+  syncScrollArea(immediate: boolean = false): void {
     // If buffer height changed
     if (this._lastRecordedBufferLength !== this._bufferService.buffer.lines.length) {
       this._lastRecordedBufferLength = this._bufferService.buffer.lines.length;
@@ -182,7 +182,7 @@ export class Viewport extends Disposable implements IViewport {
    * `Viewport`.
    * @param ev The mouse wheel event.
    */
-  public onWheel(ev: WheelEvent): boolean {
+  onWheel(ev: WheelEvent): boolean {
     const amount = this._getPixelsScrolled(ev);
     if (amount === 0) {
       return false;
@@ -212,7 +212,7 @@ export class Viewport extends Disposable implements IViewport {
    * is being used.
    * @param ev The mouse wheel event.
    */
-  public getLinesScrolled(ev: WheelEvent): number {
+  getLinesScrolled(ev: WheelEvent): number {
     // Do nothing if it's not a vertical scroll event
     if (ev.deltaY === 0) {
       return 0;
@@ -247,7 +247,7 @@ export class Viewport extends Disposable implements IViewport {
    * Handles the touchstart event, recording the touch occurred.
    * @param ev The touch event.
    */
-  public onTouchStart(ev: TouchEvent): void {
+  onTouchStart(ev: TouchEvent): void {
     this._lastTouchY = ev.touches[0].pageY;
   }
 
@@ -255,7 +255,7 @@ export class Viewport extends Disposable implements IViewport {
    * Handles the touchmove event, scrolling the viewport if the position shifted.
    * @param ev The touch event.
    */
-  public onTouchMove(ev: TouchEvent): boolean {
+  onTouchMove(ev: TouchEvent): boolean {
     const deltaY = this._lastTouchY - ev.touches[0].pageY;
     this._lastTouchY = ev.touches[0].pageY;
     if (deltaY === 0) {

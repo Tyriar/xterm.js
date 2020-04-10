@@ -34,13 +34,13 @@ export class WebglRenderer extends Disposable implements IRenderer {
   private _rectangleRenderer: RectangleRenderer;
   private _glyphRenderer: GlyphRenderer;
 
-  public dimensions: IRenderDimensions;
+  dimensions: IRenderDimensions;
 
   private _core: ITerminal;
   private _isAttached: boolean;
 
   private _onRequestRefreshRows = new EventEmitter<IRequestRefreshRowsEvent>();
-  public get onRequestRefreshRows(): IEvent<IRequestRefreshRowsEvent> { return this._onRequestRefreshRows.event; }
+  get onRequestRefreshRows(): IEvent<IRequestRefreshRowsEvent> { return this._onRequestRefreshRows.event; }
 
   constructor(
     private _terminal: Terminal,
@@ -94,17 +94,17 @@ export class WebglRenderer extends Disposable implements IRenderer {
     this._isAttached = document.body.contains(this._core.screenElement);
   }
 
-  public dispose(): void {
+  dispose(): void {
     this._renderLayers.forEach(l => l.dispose());
     this._core.screenElement.removeChild(this._canvas);
     super.dispose();
   }
 
-  public get textureAtlas(): HTMLCanvasElement | undefined {
+  get textureAtlas(): HTMLCanvasElement | undefined {
     return this._charAtlas?.cacheCanvas;
   }
 
-  public setColors(colors: IColorSet): void {
+  setColors(colors: IColorSet): void {
     this._colors = colors;
     // Clear layers and force a full render
     this._renderLayers.forEach(l => {
@@ -121,7 +121,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
     this._model.clear();
   }
 
-  public onDevicePixelRatioChange(): void {
+  onDevicePixelRatioChange(): void {
     // If the device pixel ratio changed, the char atlas needs to be regenerated
     // and the terminal needs to refreshed
     if (this._devicePixelRatio !== window.devicePixelRatio) {
@@ -130,7 +130,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
     }
   }
 
-  public onResize(cols: number, rows: number): void {
+  onResize(cols: number, rows: number): void {
     // Update character and canvas dimensions
     this._updateDimensions();
 
@@ -158,19 +158,19 @@ export class WebglRenderer extends Disposable implements IRenderer {
     this._model.clear();
   }
 
-  public onCharSizeChanged(): void {
+  onCharSizeChanged(): void {
     this.onResize(this._terminal.cols, this._terminal.rows);
   }
 
-  public onBlur(): void {
+  onBlur(): void {
     this._renderLayers.forEach(l => l.onBlur(this._terminal));
   }
 
-  public onFocus(): void {
+  onFocus(): void {
     this._renderLayers.forEach(l => l.onFocus(this._terminal));
   }
 
-  public onSelectionChanged(start: [number, number], end: [number, number], columnSelectMode: boolean): void {
+  onSelectionChanged(start: [number, number], end: [number, number], columnSelectMode: boolean): void {
     this._renderLayers.forEach(l => l.onSelectionChanged(this._terminal, start, end, columnSelectMode));
 
     this._updateSelectionModel(start, end);
@@ -181,11 +181,11 @@ export class WebglRenderer extends Disposable implements IRenderer {
     this._onRequestRefreshRows.fire({ start: 0, end: this._terminal.rows - 1 });
   }
 
-  public onCursorMove(): void {
+  onCursorMove(): void {
     this._renderLayers.forEach(l => l.onCursorMove(this._terminal));
   }
 
-  public onOptionsChanged(): void {
+  onOptionsChanged(): void {
     this._renderLayers.forEach(l => l.onOptionsChanged(this._terminal));
     this._updateDimensions();
     this._refreshCharAtlas();
@@ -212,19 +212,19 @@ export class WebglRenderer extends Disposable implements IRenderer {
     this._glyphRenderer.setAtlas(this._charAtlas);
   }
 
-  public clear(): void {
+  clear(): void {
     this._renderLayers.forEach(l => l.reset(this._terminal));
   }
 
-  public registerCharacterJoiner(handler: (text: string) => [number, number][]): number {
+  registerCharacterJoiner(handler: (text: string) => [number, number][]): number {
     return -1;
   }
 
-  public deregisterCharacterJoiner(joinerId: number): boolean {
+  deregisterCharacterJoiner(joinerId: number): boolean {
     return false;
   }
 
-  public renderRows(start: number, end: number): void {
+  renderRows(start: number, end: number): void {
     if (!this._isAttached) {
       if (document.body.contains(this._core.screenElement) && (this._core as any)._charSizeService.width && (this._core as any)._charSizeService.height) {
         this._updateDimensions();

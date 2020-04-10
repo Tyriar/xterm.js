@@ -24,20 +24,20 @@ export const MAX_BUFFER_SIZE = 4294967295; // 2^32 - 1
  *   - scroll position
  */
 export class Buffer implements IBuffer {
-  public lines: CircularList<IBufferLine>;
-  public ydisp: number = 0;
-  public ybase: number = 0;
-  public y: number = 0;
-  public x: number = 0;
-  public scrollBottom: number;
-  public scrollTop: number;
+  lines: CircularList<IBufferLine>;
+  ydisp: number = 0;
+  ybase: number = 0;
+  y: number = 0;
+  x: number = 0;
+  scrollBottom: number;
+  scrollTop: number;
   // TODO: Type me
-  public tabs: any;
-  public savedY: number = 0;
-  public savedX: number = 0;
-  public savedCurAttrData = DEFAULT_ATTR_DATA.clone();
-  public savedCharset: ICharset | null = DEFAULT_CHARSET;
-  public markers: Marker[] = [];
+  tabs: any;
+  savedY: number = 0;
+  savedX: number = 0;
+  savedCurAttrData = DEFAULT_ATTR_DATA.clone();
+  savedCharset: ICharset | null = DEFAULT_CHARSET;
+  markers: Marker[] = [];
   private _nullCell: ICellData = CellData.fromCharData([0, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]);
   private _whitespaceCell: ICellData = CellData.fromCharData([0, WHITESPACE_CELL_CHAR, WHITESPACE_CELL_WIDTH, WHITESPACE_CELL_CODE]);
   private _cols: number;
@@ -56,7 +56,7 @@ export class Buffer implements IBuffer {
     this.setupTabStops();
   }
 
-  public getNullCell(attr?: IAttributeData): ICellData {
+  getNullCell(attr?: IAttributeData): ICellData {
     if (attr) {
       this._nullCell.fg = attr.fg;
       this._nullCell.bg = attr.bg;
@@ -67,7 +67,7 @@ export class Buffer implements IBuffer {
     return this._nullCell;
   }
 
-  public getWhitespaceCell(attr?: IAttributeData): ICellData {
+  getWhitespaceCell(attr?: IAttributeData): ICellData {
     if (attr) {
       this._whitespaceCell.fg = attr.fg;
       this._whitespaceCell.bg = attr.bg;
@@ -78,15 +78,15 @@ export class Buffer implements IBuffer {
     return this._whitespaceCell;
   }
 
-  public getBlankLine(attr: IAttributeData, isWrapped?: boolean): IBufferLine {
+  getBlankLine(attr: IAttributeData, isWrapped?: boolean): IBufferLine {
     return new BufferLine(this._bufferService.cols, this.getNullCell(attr), isWrapped);
   }
 
-  public get hasScrollback(): boolean {
+  get hasScrollback(): boolean {
     return this._hasScrollback && this.lines.maxLength > this._rows;
   }
 
-  public get isCursorInViewport(): boolean {
+  get isCursorInViewport(): boolean {
     const absoluteY = this.ybase + this.y;
     const relativeY = absoluteY - this.ydisp;
     return (relativeY >= 0 && relativeY < this._rows);
@@ -110,7 +110,7 @@ export class Buffer implements IBuffer {
   /**
    * Fills the buffer's viewport with blank lines.
    */
-  public fillViewportRows(fillAttr?: IAttributeData): void {
+  fillViewportRows(fillAttr?: IAttributeData): void {
     if (this.lines.length === 0) {
       if (fillAttr === undefined) {
         fillAttr = DEFAULT_ATTR_DATA;
@@ -125,7 +125,7 @@ export class Buffer implements IBuffer {
   /**
    * Clears the buffer to it's initial state, discarding all previous data.
    */
-  public clear(): void {
+  clear(): void {
     this.ydisp = 0;
     this.ybase = 0;
     this.y = 0;
@@ -141,7 +141,7 @@ export class Buffer implements IBuffer {
    * @param newCols The new number of columns.
    * @param newRows The new number of rows.
    */
-  public resize(newCols: number, newRows: number): void {
+  resize(newCols: number, newRows: number): void {
     // store reference to null cell with default attrs
     const nullCell = this.getNullCell(DEFAULT_ATTR_DATA);
 
@@ -477,7 +477,7 @@ export class Buffer implements IBuffer {
    * @param stringIndex index within the string
    * @param startCol column offset the string was retrieved from
    */
-  public stringIndexToBufferIndex(lineIndex: number, stringIndex: number, trimRight: boolean = false): BufferIndex {
+  stringIndexToBufferIndex(lineIndex: number, stringIndex: number, trimRight: boolean = false): BufferIndex {
     while (stringIndex) {
       const line = this.lines.get(lineIndex);
       if (!line) {
@@ -509,7 +509,7 @@ export class Buffer implements IBuffer {
    * @param startCol The column to start at.
    * @param endCol The column to end at.
    */
-  public translateBufferLineToString(lineIndex: number, trimRight: boolean, startCol: number = 0, endCol?: number): string {
+  translateBufferLineToString(lineIndex: number, trimRight: boolean, startCol: number = 0, endCol?: number): string {
     const line = this.lines.get(lineIndex);
     if (!line) {
       return '';
@@ -517,7 +517,7 @@ export class Buffer implements IBuffer {
     return line.translateToString(trimRight, startCol, endCol);
   }
 
-  public getWrappedRangeForLine(y: number): { first: number, last: number } {
+  getWrappedRangeForLine(y: number): { first: number, last: number } {
     let first = y;
     let last = y;
     // Scan upwards for wrapped lines
@@ -535,7 +535,7 @@ export class Buffer implements IBuffer {
    * Setup the tab stops.
    * @param i The index to start setting up tab stops from.
    */
-  public setupTabStops(i?: number): void {
+  setupTabStops(i?: number): void {
     if (i !== null && i !== undefined) {
       if (!this.tabs[i]) {
         i = this.prevStop(i);
@@ -554,7 +554,7 @@ export class Buffer implements IBuffer {
    * Move the cursor to the previous tab stop from the given position (default is current).
    * @param x The position to move the cursor to the previous tab stop.
    */
-  public prevStop(x?: number): number {
+  prevStop(x?: number): number {
     if (x === null || x === undefined) {
       x = this.x;
     }
@@ -566,7 +566,7 @@ export class Buffer implements IBuffer {
    * Move the cursor one tab stop forward from the given position (default is current).
    * @param x The position to move the cursor one tab stop forward.
    */
-  public nextStop(x?: number): number {
+  nextStop(x?: number): number {
     if (x === null || x === undefined) {
       x = this.x;
     }
@@ -574,7 +574,7 @@ export class Buffer implements IBuffer {
     return x >= this._cols ? this._cols - 1 : x < 0 ? 0 : x;
   }
 
-  public addMarker(y: number): Marker {
+  addMarker(y: number): Marker {
     const marker = new Marker(y);
     this.markers.push(marker);
     marker.register(this.lines.onTrim(amount => {
@@ -608,7 +608,7 @@ export class Buffer implements IBuffer {
     this.markers.splice(this.markers.indexOf(marker), 1);
   }
 
-  public iterator(trimRight: boolean, startIndex?: number, endIndex?: number, startOverscan?: number, endOverscan?: number): IBufferStringIterator {
+  iterator(trimRight: boolean, startIndex?: number, endIndex?: number, startOverscan?: number, endOverscan?: number): IBufferStringIterator {
     return new BufferStringIterator(this, trimRight, startIndex, endIndex, startOverscan, endOverscan);
   }
 }
@@ -645,11 +645,11 @@ export class BufferStringIterator implements IBufferStringIterator {
     this._current = this._startIndex;
   }
 
-  public hasNext(): boolean {
+  hasNext(): boolean {
     return this._current < this._endIndex;
   }
 
-  public next(): IBufferStringIteratorResult {
+  next(): IBufferStringIteratorResult {
     const range = this._buffer.getWrappedRangeForLine(this._current);
     // limit search window to overscan value at both borders
     if (range.first < this._startIndex - this._startOverscan) {

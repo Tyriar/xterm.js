@@ -25,13 +25,13 @@ export class FitAddon implements ITerminalAddon {
 
   constructor() {}
 
-  public activate(terminal: Terminal): void {
+  activate(terminal: Terminal): void {
     this._terminal = terminal;
   }
 
-  public dispose(): void {}
+  dispose(): void {}
 
-  public fit(): void {
+  fit(): void {
     const dims = this.proposeDimensions();
     if (!dims || !this._terminal) {
       return;
@@ -47,7 +47,7 @@ export class FitAddon implements ITerminalAddon {
     }
   }
 
-  public proposeDimensions(): ITerminalDimensions | undefined {
+  proposeDimensions(): ITerminalDimensions | undefined {
     if (!this._terminal) {
       return undefined;
     }

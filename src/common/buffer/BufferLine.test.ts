@@ -9,11 +9,11 @@ import { CellData } from 'common/buffer/CellData';
 import { CharData, IBufferLine } from '../Types';
 
 class TestBufferLine extends BufferLine {
-  public get combined(): {[index: number]: string} {
+  get combined(): {[index: number]: string} {
     return this._combined;
   }
 
-  public toArray(): CharData[] {
+  toArray(): CharData[] {
     const result = [];
     for (let i = 0; i < this.length; ++i) {
       result.push(this.loadCell(i, new CellData()).getAsCharData());

@@ -52,7 +52,7 @@ export class CursorRenderLayer extends BaseRenderLayer {
     // TODO: Consider initial options? Maybe onOptionsChanged should be called at the end of open?
   }
 
-  public resize(terminal: Terminal, dim: IRenderDimensions): void {
+  resize(terminal: Terminal, dim: IRenderDimensions): void {
     super.resize(terminal, dim);
     // Resizing the canvas discards the contents of the canvas so clear state
     this._state = {
@@ -64,7 +64,7 @@ export class CursorRenderLayer extends BaseRenderLayer {
     };
   }
 
-  public reset(terminal: Terminal): void {
+  reset(terminal: Terminal): void {
     this._clearCursor();
     if (this._cursorBlinkStateManager) {
       this._cursorBlinkStateManager.dispose();
@@ -72,14 +72,14 @@ export class CursorRenderLayer extends BaseRenderLayer {
     }
   }
 
-  public onBlur(terminal: Terminal): void {
+  onBlur(terminal: Terminal): void {
     if (this._cursorBlinkStateManager) {
       this._cursorBlinkStateManager.pause();
     }
     this._onRequestRefreshRowsEvent.fire({ start: terminal.buffer.cursorY, end: terminal.buffer.cursorY });
   }
 
-  public onFocus(terminal: Terminal): void {
+  onFocus(terminal: Terminal): void {
     if (this._cursorBlinkStateManager) {
       this._cursorBlinkStateManager.resume(terminal);
     } else {
@@ -87,7 +87,7 @@ export class CursorRenderLayer extends BaseRenderLayer {
     }
   }
 
-  public onOptionsChanged(terminal: Terminal): void {
+  onOptionsChanged(terminal: Terminal): void {
     if (terminal.getOption('cursorBlink')) {
       if (!this._cursorBlinkStateManager) {
         this._cursorBlinkStateManager = new CursorBlinkStateManager(terminal, () => {
@@ -103,13 +103,13 @@ export class CursorRenderLayer extends BaseRenderLayer {
     this._onRequestRefreshRowsEvent.fire({ start: terminal.buffer.cursorY, end: terminal.buffer.cursorY });
   }
 
-  public onCursorMove(terminal: Terminal): void {
+  onCursorMove(terminal: Terminal): void {
     if (this._cursorBlinkStateManager) {
       this._cursorBlinkStateManager.restartBlinkAnimation(terminal);
     }
   }
 
-  public onGridChanged(terminal: Terminal, startRow: number, endRow: number): void {
+  onGridChanged(terminal: Terminal, startRow: number, endRow: number): void {
     if (!this._cursorBlinkStateManager || this._cursorBlinkStateManager.isPaused) {
       this._render(terminal, false);
     } else {
@@ -236,7 +236,7 @@ export class CursorRenderLayer extends BaseRenderLayer {
 }
 
 class CursorBlinkStateManager {
-  public isCursorVisible: boolean;
+  isCursorVisible: boolean;
 
   private _animationFrame: number | undefined;
   private _blinkStartTimeout: number | undefined;
@@ -259,9 +259,9 @@ class CursorBlinkStateManager {
     }
   }
 
-  public get isPaused(): boolean { return !(this._blinkStartTimeout || this._blinkInterval); }
+  get isPaused(): boolean { return !(this._blinkStartTimeout || this._blinkInterval); }
 
-  public dispose(): void {
+  dispose(): void {
     if (this._blinkInterval) {
       window.clearInterval(this._blinkInterval);
       this._blinkInterval = undefined;
@@ -276,7 +276,7 @@ class CursorBlinkStateManager {
     }
   }
 
-  public restartBlinkAnimation(terminal: Terminal): void {
+  restartBlinkAnimation(terminal: Terminal): void {
     if (this.isPaused) {
       return;
     }
@@ -343,7 +343,7 @@ class CursorBlinkStateManager {
     }, timeToStart);
   }
 
-  public pause(): void {
+  pause(): void {
     this.isCursorVisible = true;
     if (this._blinkInterval) {
       window.clearInterval(this._blinkInterval);
@@ -359,7 +359,7 @@ class CursorBlinkStateManager {
     }
   }
 
-  public resume(terminal: Terminal): void {
+  resume(terminal: Terminal): void {
     // Clear out any existing timers just in case
     this.pause();
 

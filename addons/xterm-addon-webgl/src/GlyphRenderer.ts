@@ -163,11 +163,11 @@ export class GlyphRenderer {
     this.onResize();
   }
 
-  public beginFrame(): boolean {
+  beginFrame(): boolean {
     return this._atlas ? this._atlas.beginFrame() : true;
   }
 
-  public updateCell(x: number, y: number, code: number, bg: number, fg: number, chars: string): void {
+  updateCell(x: number, y: number, code: number, bg: number, fg: number, chars: string): void {
     this._updateCell(this._vertices.attributes, x, y, code, bg, fg, chars);
   }
 
@@ -213,7 +213,7 @@ export class GlyphRenderer {
     // a_cellpos only changes on resize
   }
 
-  public updateSelection(model: IRenderModel, columnSelectMode: boolean): void {
+  updateSelection(model: IRenderModel, columnSelectMode: boolean): void {
     const terminal = this._terminal;
 
     this._vertices.selectionAttributes = slice(this._vertices.attributes, 0);
@@ -298,7 +298,7 @@ export class GlyphRenderer {
     return this._colors.ansi[idx];
   }
 
-  public onResize(): void {
+  onResize(): void {
     const terminal = this._terminal;
     const gl = this._gl;
 
@@ -324,10 +324,10 @@ export class GlyphRenderer {
     }
   }
 
-  public setColors(): void {
+  setColors(): void {
   }
 
-  public render(renderModel: IRenderModel, isSelectionVisible: boolean): void {
+  render(renderModel: IRenderModel, isSelectionVisible: boolean): void {
     if (!this._atlas) {
       return;
     }
@@ -378,7 +378,7 @@ export class GlyphRenderer {
     gl.drawElementsInstanced(gl.TRIANGLES, 6, gl.UNSIGNED_BYTE, 0, bufferLength / INDICES_PER_CELL);
   }
 
-  public setAtlas(atlas: WebglCharAtlas): void {
+  setAtlas(atlas: WebglCharAtlas): void {
     const gl = this._gl;
     this._atlas = atlas;
 
@@ -387,7 +387,7 @@ export class GlyphRenderer {
     gl.generateMipmap(gl.TEXTURE_2D);
   }
 
-  public setDimensions(dimensions: IRenderDimensions): void {
+  setDimensions(dimensions: IRenderDimensions): void {
     this._dimensions = dimensions;
   }
 }

@@ -14,8 +14,8 @@ import { UnicodeV6 } from 'common/input/UnicodeV6';
 
 export class MockBufferService implements IBufferService {
   serviceBrand: any;
-  public get buffer(): IBuffer { return this.buffers.active; }
-  public buffers: IBufferSet = {} as any;
+  get buffer(): IBuffer { return this.buffers.active; }
+  buffers: IBufferSet = {} as any;
   constructor(
     public cols: number,
     public rows: number,

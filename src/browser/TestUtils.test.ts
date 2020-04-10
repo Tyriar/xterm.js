@@ -16,11 +16,11 @@ export class MockCharSizeService implements ICharSizeService {
 
 export class MockMouseService implements IMouseService {
   serviceBrand: any;
-  public getCoords(event: {clientX: number, clientY: number}, element: HTMLElement, colCount: number, rowCount: number, isSelection?: boolean): [number, number] | undefined {
+  getCoords(event: {clientX: number, clientY: number}, element: HTMLElement, colCount: number, rowCount: number, isSelection?: boolean): [number, number] | undefined {
     throw new Error('Not implemented');
   }
 
-  public getRawByteCoords(event: MouseEvent, element: HTMLElement, colCount: number, rowCount: number): { x: number, y: number } | undefined {
+  getRawByteCoords(event: MouseEvent, element: HTMLElement, colCount: number, rowCount: number): { x: number, y: number } | undefined {
     throw new Error('Not implemented');
   }
 }

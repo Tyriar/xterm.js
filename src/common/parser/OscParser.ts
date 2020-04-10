@@ -15,7 +15,7 @@ export class OscParser implements IOscParser {
   private _handlers: IHandlerCollection<IOscHandler> = Object.create(null);
   private _handlerFb: OscFallbackHandlerType = () => { };
 
-  public addHandler(ident: number, handler: IOscHandler): IDisposable {
+  addHandler(ident: number, handler: IOscHandler): IDisposable {
     if (this._handlers[ident] === undefined) {
       this._handlers[ident] = [];
     }
@@ -30,22 +30,22 @@ export class OscParser implements IOscParser {
       }
     };
   }
-  public setHandler(ident: number, handler: IOscHandler): void {
+  setHandler(ident: number, handler: IOscHandler): void {
     this._handlers[ident] = [handler];
   }
-  public clearHandler(ident: number): void {
+  clearHandler(ident: number): void {
     if (this._handlers[ident]) delete this._handlers[ident];
   }
-  public setHandlerFallback(handler: OscFallbackHandlerType): void {
+  setHandlerFallback(handler: OscFallbackHandlerType): void {
     this._handlerFb = handler;
   }
 
-  public dispose(): void {
+  dispose(): void {
     this._handlers = Object.create(null);
     this._handlerFb = () => {};
   }
 
-  public reset(): void {
+  reset(): void {
     // cleanup handlers if payload was already sent
     if (this._state === OscState.PAYLOAD) {
       this.end(false);
@@ -98,7 +98,7 @@ export class OscParser implements IOscParser {
     }
   }
 
-  public start(): void {
+  start(): void {
     // always reset leftover handlers
     this.reset();
     this._id = -1;
@@ -112,7 +112,7 @@ export class OscParser implements IOscParser {
    * Payload chunks are not further processed and get
    * directly passed to the handlers.
    */
-  public put(data: Uint32Array, start: number, end: number): void {
+  put(data: Uint32Array, start: number, end: number): void {
     if (this._state === OscState.ABORT) {
       return;
     }
@@ -144,7 +144,7 @@ export class OscParser implements IOscParser {
    * Whether the OSC got aborted or finished normally
    * is indicated by `success`.
    */
-  public end(success: boolean): void {
+  end(success: boolean): void {
     if (this._state === OscState.START) {
       return;
     }
@@ -173,12 +173,12 @@ export class OscHandler implements IOscHandler {
 
   constructor(private _handler: (data: string) => any) {}
 
-  public start(): void {
+  start(): void {
     this._data = '';
     this._hitLimit = false;
   }
 
-  public put(data: Uint32Array, start: number, end: number): void {
+  put(data: Uint32Array, start: number, end: number): void {
     if (this._hitLimit) {
       return;
     }
@@ -189,7 +189,7 @@ export class OscHandler implements IOscHandler {
     }
   }
 
-  public end(success: boolean): any {
+  end(success: boolean): any {
     let ret;
     if (this._hitLimit) {
       ret = false;

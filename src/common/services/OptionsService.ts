@@ -62,10 +62,10 @@ const CONSTRUCTOR_ONLY_OPTIONS = ['cols', 'rows'];
 export class OptionsService implements IOptionsService {
   serviceBrand: any;
 
-  public options: ITerminalOptions;
+  options: ITerminalOptions;
 
   private _onOptionChange = new EventEmitter<string>();
-  public get onOptionChange(): IEvent<string> { return this._onOptionChange.event; }
+  get onOptionChange(): IEvent<string> { return this._onOptionChange.event; }
 
   constructor(options: IPartialTerminalOptions) {
     this.options = clone(DEFAULT_OPTIONS);
@@ -77,7 +77,7 @@ export class OptionsService implements IOptionsService {
     });
   }
 
-  public setOption(key: string, value: any): void {
+  setOption(key: string, value: any): void {
     if (!(key in DEFAULT_OPTIONS)) {
       throw new Error('No option with key "' + key + '"');
     }
@@ -139,7 +139,7 @@ export class OptionsService implements IOptionsService {
     return value;
   }
 
-  public getOption(key: string): any {
+  getOption(key: string): any {
     if (!(key in DEFAULT_OPTIONS)) {
       throw new Error(`No option with key "${key}"`);
     }

@@ -15,7 +15,7 @@ export class MouseService implements IMouseService {
   ) {
   }
 
-  public getCoords(event: {clientX: number, clientY: number}, element: HTMLElement, colCount: number, rowCount: number, isSelection?: boolean): [number, number] | undefined {
+  getCoords(event: {clientX: number, clientY: number}, element: HTMLElement, colCount: number, rowCount: number, isSelection?: boolean): [number, number] | undefined {
     return getCoords(
       event,
       element,
@@ -28,7 +28,7 @@ export class MouseService implements IMouseService {
     );
   }
 
-  public getRawByteCoords(event: MouseEvent, element: HTMLElement, colCount: number, rowCount: number): { x: number, y: number } | undefined {
+  getRawByteCoords(event: MouseEvent, element: HTMLElement, colCount: number, rowCount: number): { x: number, y: number } | undefined {
     const coords = this.getCoords(event, element, colCount, rowCount);
     return getRawByteCoords(coords);
   }

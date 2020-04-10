@@ -10,14 +10,14 @@ import { ICharSizeService } from 'browser/services/Services';
 export class CharSizeService implements ICharSizeService {
   serviceBrand: any;
 
-  public width: number = 0;
-  public height: number = 0;
+  width: number = 0;
+  height: number = 0;
   private _measureStrategy: IMeasureStrategy;
 
-  public get hasValidSize(): boolean { return this.width > 0 && this.height > 0; }
+  get hasValidSize(): boolean { return this.width > 0 && this.height > 0; }
 
   private _onCharSizeChange = new EventEmitter<void>();
-  public get onCharSizeChange(): IEvent<void> { return this._onCharSizeChange.event; }
+  get onCharSizeChange(): IEvent<void> { return this._onCharSizeChange.event; }
 
   constructor(
     readonly document: Document,
@@ -27,7 +27,7 @@ export class CharSizeService implements ICharSizeService {
     this._measureStrategy = new DomMeasureStrategy(document, parentElement, this._optionsService);
   }
 
-  public measure(): void {
+  measure(): void {
     const result = this._measureStrategy.measure();
     if (result.width !== this.width || result.height !== this.height) {
       this.width = result.width;
@@ -68,7 +68,7 @@ class DomMeasureStrategy implements IMeasureStrategy {
     this._parentElement.appendChild(this._measureElement);
   }
 
-  public measure(): IReadonlyMeasureResult {
+  measure(): IReadonlyMeasureResult {
     this._measureElement.style.fontFamily = this._optionsService.options.fontFamily;
     this._measureElement.style.fontSize = `${this._optionsService.options.fontSize}px`;
 

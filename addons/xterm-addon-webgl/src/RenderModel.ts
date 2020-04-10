@@ -13,9 +13,9 @@ export const RENDER_MODEL_FG_OFFSET = 2;
 export const COMBINED_CHAR_BIT_MASK = 0x80000000;
 
 export class RenderModel implements IRenderModel {
-  public cells: Uint32Array;
-  public lineLengths: Uint32Array;
-  public selection: ISelectionRenderModel;
+  cells: Uint32Array;
+  lineLengths: Uint32Array;
+  selection: ISelectionRenderModel;
 
   constructor() {
     this.cells = new Uint32Array(0);
@@ -31,7 +31,7 @@ export class RenderModel implements IRenderModel {
     };
   }
 
-  public resize(cols: number, rows: number): void {
+  resize(cols: number, rows: number): void {
     const indexCount = cols * rows * RENDER_MODEL_INDICIES_PER_CELL;
     if (indexCount !== this.cells.length) {
       this.cells = new Uint32Array(indexCount);
@@ -39,13 +39,13 @@ export class RenderModel implements IRenderModel {
     }
   }
 
-  public clear(): void {
+  clear(): void {
     fill(this.cells, 0, 0);
     fill(this.lineLengths, 0, 0);
     this.clearSelection();
   }
 
-  public clearSelection(): void {
+  clearSelection(): void {
     this.selection.hasSelection = false;
     this.selection.viewportStartRow = 0;
     this.selection.viewportEndRow = 0;

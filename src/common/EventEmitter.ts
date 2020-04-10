@@ -24,7 +24,7 @@ export class EventEmitter<T, U = void> implements IEventEmitter<T, U> {
   private _event?: IEvent<T, U>;
   private _disposed: boolean = false;
 
-  public get event(): IEvent<T, U> {
+  get event(): IEvent<T, U> {
     if (!this._event) {
       this._event = (listener: (arg1: T, arg2: U) => any) => {
         this._listeners.push(listener);
@@ -46,7 +46,7 @@ export class EventEmitter<T, U = void> implements IEventEmitter<T, U> {
     return this._event;
   }
 
-  public fire(arg1: T, arg2: U): void {
+  fire(arg1: T, arg2: U): void {
     const queue: IListener<T, U>[] = [];
     for (let i = 0; i < this._listeners.length; i++) {
       queue.push(this._listeners[i]);
@@ -56,7 +56,7 @@ export class EventEmitter<T, U = void> implements IEventEmitter<T, U> {
     }
   }
 
-  public dispose(): void {
+  dispose(): void {
     if (this._listeners) {
       this._listeners.length = 0;
     }

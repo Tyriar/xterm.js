@@ -14,11 +14,11 @@ class TestLinkifier2 extends Linkifier2 {
     super(bufferService);
   }
 
-  public linkHover(element: HTMLElement, link: ILink, event: MouseEvent): void {
+  linkHover(element: HTMLElement, link: ILink, event: MouseEvent): void {
     this._linkHover(element, link, event);
   }
 
-  public linkLeave(element: HTMLElement, link: ILink, event: MouseEvent): void {
+  linkLeave(element: HTMLElement, link: ILink, event: MouseEvent): void {
     this._linkLeave(element, link, event);
   }
 }
