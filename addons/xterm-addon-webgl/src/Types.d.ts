@@ -34,6 +34,7 @@ export interface IRasterizedGlyph {
    * The width and height of the glyph in the texture in clip space coordinates.
    */
   sizeClipSpace: IVector;
+  background: Float32Array;
 }
 
 export interface IVector {

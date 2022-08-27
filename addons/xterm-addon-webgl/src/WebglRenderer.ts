@@ -37,7 +37,6 @@ export class WebglRenderer extends Disposable implements IRenderer {
 
   private _canvas: HTMLCanvasElement;
   private _gl: IWebGL2RenderingContext;
-  private _rectangleRenderer: RectangleRenderer;
   private _glyphRenderer: GlyphRenderer;
 
   public dimensions: IRenderDimensions;
@@ -104,7 +103,6 @@ export class WebglRenderer extends Disposable implements IRenderer {
 
     this._core.screenElement!.appendChild(this._canvas);
 
-    this._rectangleRenderer = this.register(new RectangleRenderer(this._terminal, this._colors, this._gl, this.dimensions));
     this._glyphRenderer = this.register(new GlyphRenderer(this._terminal, this._colors, this._gl, this.dimensions));
 
     // Update dimensions and acquire char atlas
@@ -134,7 +132,6 @@ export class WebglRenderer extends Disposable implements IRenderer {
       l.reset(this._terminal);
     }
 
-    this._rectangleRenderer.setColors();
     this._glyphRenderer.setColors();
 
     this._refreshCharAtlas();
@@ -173,7 +170,6 @@ export class WebglRenderer extends Disposable implements IRenderer {
     this._core.screenElement!.style.width = `${this.dimensions.canvasWidth}px`;
     this._core.screenElement!.style.height = `${this.dimensions.canvasHeight}px`;
 
-    this._rectangleRenderer.onResize();
     this._glyphRenderer.setDimensions(this.dimensions);
     this._glyphRenderer.onResize();
 
@@ -298,7 +294,6 @@ export class WebglRenderer extends Disposable implements IRenderer {
     this._updateModel(start, end);
 
     // Render
-    this._rectangleRenderer.render();
     this._glyphRenderer.render(this._model);
   }
 
@@ -391,7 +386,6 @@ export class WebglRenderer extends Disposable implements IRenderer {
         }
       }
     }
-    this._rectangleRenderer.updateBackgrounds(this._model);
   }
 
   /**

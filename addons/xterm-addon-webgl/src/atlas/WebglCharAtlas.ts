@@ -41,7 +41,8 @@ const NULL_RASTERIZED_GLYPH: IRasterizedGlyph = {
   texturePosition: { x: 0, y: 0 },
   texturePositionClipSpace: { x: 0, y: 0 },
   size: { x: 0, y: 0 },
-  sizeClipSpace: { x: 0, y: 0 }
+  sizeClipSpace: { x: 0, y: 0 },
+  background: new Float32Array([0, 0, 0, 0])
 };
 
 const TMP_CANVAS_GLYPH_PADDING = 2;
@@ -57,6 +58,8 @@ export class WebglCharAtlas implements IDisposable {
 
   private _cacheMap: { [code: number]: IRasterizedGlyphSet } = {};
   private _cacheMapCombined: { [chars: string]: IRasterizedGlyphSet } = {};
+
+  private _nullBgGlyphs: Map<number, IRasterizedGlyph> = new Map();
 
   // The texture that the atlas is drawn to
   public cacheCanvas: HTMLCanvasElement;
@@ -628,7 +631,7 @@ export class WebglCharAtlas implements IDisposable {
 
     // Handle empty glyphs
     if (isEmpty) {
-      return NULL_RASTERIZED_GLYPH;
+      return this._getNullGlyph(backgroundColor);
     }
 
     const rasterizedGlyph = this._findGlyphBoundingBox(imageData, this._workBoundingBox, allowedWidth, restrictedPowerlineGlyph, customGlyph, padding);
@@ -689,6 +692,12 @@ export class WebglCharAtlas implements IDisposable {
     rasterizedGlyph.texturePosition.y = activeRow.y;
     rasterizedGlyph.texturePositionClipSpace.x = activeRow.x / TEXTURE_WIDTH;
     rasterizedGlyph.texturePositionClipSpace.y = activeRow.y / TEXTURE_HEIGHT;
+
+    // Record glyph background
+    rasterizedGlyph.background[0] = (backgroundColor.rgba >>> 24       ) / 0xFF;
+    rasterizedGlyph.background[1] = (backgroundColor.rgba >>> 16 & 0xFF) / 0xFF;
+    rasterizedGlyph.background[2] = (backgroundColor.rgba >>>  8 & 0xFF) / 0xFF;
+    rasterizedGlyph.background[3] = (backgroundColor.rgba        & 0xFF) / 0xFF;
 
     // Update atlas current row, for fixed rows the glyph height will never be larger than the row
     // height
@@ -785,7 +794,8 @@ export class WebglCharAtlas implements IDisposable {
       offset: {
         x: -boundingBox.left + padding + ((restrictedGlyph || customGlyph) ? Math.floor((this._config.scaledCellWidth - this._config.scaledCharWidth) / 2) : 0),
         y: -boundingBox.top + padding + ((restrictedGlyph || customGlyph) ? this._config.lineHeight === 1 ? 0 : Math.round((this._config.scaledCellHeight - this._config.scaledCharHeight) / 2) : 0)
-      }
+      },
+      background: new Float32Array(4)
     };
   }
 
@@ -804,6 +814,23 @@ export class WebglCharAtlas implements IDisposable {
       }
     }
     return new ImageData(clippedData, width, height);
+  }
+
+  private _getNullGlyph(backgroundColor: IColor): IRasterizedGlyph {
+    let glyph: IRasterizedGlyph | undefined = this._nullBgGlyphs.get(backgroundColor.rgba);
+    if (!glyph) {
+      glyph = {
+        ...NULL_RASTERIZED_GLYPH,
+        background: new Float32Array([
+          (backgroundColor.rgba >>> 24       ) / 0xFF,
+          (backgroundColor.rgba >>> 16 & 0xFF) / 0xFF,
+          (backgroundColor.rgba >>>  8 & 0xFF) / 0xFF,
+          (backgroundColor.rgba        & 0xFF) / 0xFF
+        ])
+      };
+      this._nullBgGlyphs.set(backgroundColor.rgba, glyph);
+    }
+    return glyph;
   }
 }
 

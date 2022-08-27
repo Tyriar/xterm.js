@@ -31,7 +31,8 @@ const enum VertexAttribLocations {
   OFFSET = 2,
   SIZE = 3,
   TEXCOORD = 4,
-  TEXSIZE = 5
+  TEXSIZE = 5,
+  BACKGROUND = 6
 }
 
 const vertexShaderSource = `#version 300 es
@@ -66,7 +67,36 @@ void main() {
   outColor = texture(u_texture, v_texcoord);
 }`;
 
-const INDICES_PER_CELL = 10;
+
+const vertexShaderSource2 = `#version 300 es
+layout (location = ${VertexAttribLocations.UNIT_QUAD}) in vec2 a_unitquad;
+layout (location = ${VertexAttribLocations.CELL_POSITION}) in vec2 a_cellpos;
+layout (location = ${VertexAttribLocations.BACKGROUND}) in vec4 a_bg;
+
+uniform mat4 u_projection;
+uniform vec2 u_resolution;
+uniform vec2 u_cellsize;
+
+out vec4 v_bg;
+
+void main() {
+  vec2 zeroToOne = a_cellpos + (a_unitquad * (u_cellsize / u_resolution));
+  gl_Position = u_projection * vec4(zeroToOne, 0.0, 1.0);
+  v_bg = a_bg;
+}`;
+
+const fragmentShaderSource2 = `#version 300 es
+precision lowp float;
+
+in vec4 v_bg;
+
+out vec4 outColor;
+
+void main() {
+  outColor = v_bg; //vec4(255, 0, 0, .5);
+}`;
+
+const INDICES_PER_CELL = 14;
 const BYTES_PER_CELL = INDICES_PER_CELL * Float32Array.BYTES_PER_ELEMENT;
 const CELL_POSITION_INDICES = 2;
 
@@ -74,10 +104,14 @@ export class GlyphRenderer  extends Disposable {
   private _atlas: WebglCharAtlas | undefined;
 
   private _program: WebGLProgram;
+  private _program2: WebGLProgram;
   private _vertexArrayObject: IWebGLVertexArrayObject;
   private _projectionLocation: WebGLUniformLocation;
   private _resolutionLocation: WebGLUniformLocation;
   private _textureLocation: WebGLUniformLocation;
+  private _projectionLocation2: WebGLUniformLocation;
+  private _resolutionLocation2: WebGLUniformLocation;
+  private _cellSizeLocation2: WebGLUniformLocation;
   private _atlasTexture: WebGLTexture;
   private _attributesBuffer: WebGLBuffer;
   private _activeBuffer: number = 0;
@@ -100,13 +134,20 @@ export class GlyphRenderer  extends Disposable {
     super();
 
     const gl = this._gl;
+
     this._program = throwIfFalsy(createProgram(gl, vertexShaderSource, fragmentShaderSource));
     this.register(toDisposable(() => gl.deleteProgram(this._program)));
+    this._program2 = throwIfFalsy(createProgram(gl, vertexShaderSource2, fragmentShaderSource2));
+    this.register(toDisposable(() => gl.deleteProgram(this._program2)));
 
     // Uniform locations
     this._projectionLocation = throwIfFalsy(gl.getUniformLocation(this._program, 'u_projection'));
     this._resolutionLocation = throwIfFalsy(gl.getUniformLocation(this._program, 'u_resolution'));
     this._textureLocation = throwIfFalsy(gl.getUniformLocation(this._program, 'u_texture'));
+
+    this._projectionLocation2 = throwIfFalsy(gl.getUniformLocation(this._program2, 'u_projection'));
+    this._resolutionLocation2 = throwIfFalsy(gl.getUniformLocation(this._program2, 'u_resolution'));
+    this._cellSizeLocation2 = throwIfFalsy(gl.getUniformLocation(this._program2, 'u_cellsize'));
 
     // Create and set the vertex array object
     this._vertexArrayObject = gl.createVertexArray();
@@ -145,8 +186,11 @@ export class GlyphRenderer  extends Disposable {
     gl.enableVertexAttribArray(VertexAttribLocations.TEXSIZE);
     gl.vertexAttribPointer(VertexAttribLocations.TEXSIZE, 2, gl.FLOAT, false, BYTES_PER_CELL, 6 * Float32Array.BYTES_PER_ELEMENT);
     gl.vertexAttribDivisor(VertexAttribLocations.TEXSIZE, 1);
+    gl.enableVertexAttribArray(VertexAttribLocations.BACKGROUND);
+    gl.vertexAttribPointer(VertexAttribLocations.BACKGROUND, 4, gl.FLOAT, false, BYTES_PER_CELL, 8 * Float32Array.BYTES_PER_ELEMENT);
+    gl.vertexAttribDivisor(VertexAttribLocations.BACKGROUND, 1);
     gl.enableVertexAttribArray(VertexAttribLocations.CELL_POSITION);
-    gl.vertexAttribPointer(VertexAttribLocations.CELL_POSITION, 2, gl.FLOAT, false, BYTES_PER_CELL, 8 * Float32Array.BYTES_PER_ELEMENT);
+    gl.vertexAttribPointer(VertexAttribLocations.CELL_POSITION, 2, gl.FLOAT, false, BYTES_PER_CELL, 12 * Float32Array.BYTES_PER_ELEMENT);
     gl.vertexAttribDivisor(VertexAttribLocations.CELL_POSITION, 1);
 
     // Setup empty texture atlas
@@ -232,6 +276,8 @@ export class GlyphRenderer  extends Disposable {
       array[i + 6] = rasterizedGlyph.sizeClipSpace.x;
       array[i + 7] = rasterizedGlyph.sizeClipSpace.y;
     }
+    // a_bg
+    array.set(rasterizedGlyph.background, i + 8);
     // a_cellpos only changes on resize
   }
 
@@ -253,8 +299,9 @@ export class GlyphRenderer  extends Disposable {
     let i = 0;
     for (let y = 0; y < terminal.rows; y++) {
       for (let x = 0; x < terminal.cols; x++) {
-        this._vertices.attributes[i + 8] = x / terminal.cols;
-        this._vertices.attributes[i + 9] = y / terminal.rows;
+        // a_cellpos
+        this._vertices.attributes[i + 12] = x / terminal.cols;
+        this._vertices.attributes[i + 13] = y / terminal.rows;
         i += INDICES_PER_CELL;
       }
     }
@@ -276,7 +323,6 @@ export class GlyphRenderer  extends Disposable {
 
     const gl = this._gl;
 
-    gl.useProgram(this._program);
     gl.bindVertexArray(this._vertexArrayObject);
 
     // Alternate buffers each frame as the active buffer gets locked while it's in use by the GPU
@@ -311,6 +357,20 @@ export class GlyphRenderer  extends Disposable {
       gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, this._atlas.cacheCanvas);
       gl.generateMipmap(gl.TEXTURE_2D);
     }
+
+    // Set background program
+    gl.useProgram(this._program2);
+
+    // Set uniforms
+    gl.uniformMatrix4fv(this._projectionLocation2, false, PROJECTION_MATRIX);
+    gl.uniform2f(this._resolutionLocation2, gl.canvas.width, gl.canvas.height);
+    gl.uniform2f(this._cellSizeLocation2, this._dimensions.scaledCellWidth, this._dimensions.scaledCellHeight);
+
+    // Draw the viewport
+    gl.drawElementsInstanced(gl.TRIANGLES, 6, gl.UNSIGNED_BYTE, 0, bufferLength / INDICES_PER_CELL);
+
+    // Set glyph program
+    gl.useProgram(this._program);
 
     // Set uniforms
     gl.uniformMatrix4fv(this._projectionLocation, false, PROJECTION_MATRIX);
