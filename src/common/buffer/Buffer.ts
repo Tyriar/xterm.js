@@ -14,7 +14,6 @@ import { Marker } from 'common/buffer/Marker';
 import { IOptionsService, IBufferService } from 'common/services/Services';
 import { DEFAULT_CHARSET } from 'common/data/Charsets';
 import { ExtendedAttrs } from 'common/buffer/AttributeData';
-import { BufferLineCollection } from 'common/buffer/BufferLineCollection';
 
 export const MAX_BUFFER_SIZE = 4294967295; // 2^32 - 1
 
@@ -54,7 +53,7 @@ export class Buffer implements IBuffer {
   ) {
     this._cols = this._bufferService.cols;
     this._rows = this._bufferService.rows;
-    this.lines = new BufferLineCollection(this._getCorrectBufferLength(this._rows), this._cols);
+    this.lines = new CircularList(this._getCorrectBufferLength(this._rows));
     this.scrollTop = 0;
     this.scrollBottom = this._rows - 1;
     this.setupTabStops();

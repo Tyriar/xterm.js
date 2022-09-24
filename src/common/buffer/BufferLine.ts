@@ -8,6 +8,7 @@ import { stringFromCodePoint } from 'common/input/TextDecoder';
 import { CHAR_DATA_CHAR_INDEX, CHAR_DATA_WIDTH_INDEX, CHAR_DATA_ATTR_INDEX, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE, WHITESPACE_CELL_CHAR, Content, BgFlags, FgFlags } from 'common/buffer/Constants';
 import { CellData } from 'common/buffer/CellData';
 import { AttributeData, ExtendedAttrs } from 'common/buffer/AttributeData';
+import { ArrayBufferList, IArrayBufferList } from 'common/buffer/ArrayBufferList';
 
 /**
  * buffer memory layout:
@@ -42,6 +43,9 @@ const w: { startIndex: number } = {
   startIndex: 0
 };
 
+let lineData: IArrayBufferList | undefined;
+let nextIndex = 0;
+
 /**
  * Typed array based bufferline implementation.
  *
@@ -69,7 +73,10 @@ export class BufferLine implements IBufferLine {
     fillCellData?: ICellData,
     public isWrapped: boolean = false
   ) {
-    this._data = new Uint32Array(cols * CELL_SIZE);
+    if (lineData === undefined) {
+      lineData = new ArrayBufferList(cols * 4 * CELL_SIZE, 50000);
+    }
+    this._data = lineData.createUint32ItemView(nextIndex++); // new Uint32Array(cols * CELL_SIZE);
     const cell = fillCellData || CellData.fromCharData([0, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]);
     for (let i = 0; i < cols; ++i) {
       this.setCell(i, cell);
@@ -345,7 +352,9 @@ export class BufferLine implements IBufferLine {
       return;
     }
     if (cols > this.length) {
-      const data = new Uint32Array(cols * CELL_SIZE);
+      lineData!.itemSize = cols * 4 * CELL_SIZE;
+      const data = lineData!.createUint32ItemView(nextIndex++);
+      // const data = new Uint32Array(cols * CELL_SIZE);
       if (this.length) {
         if (cols * CELL_SIZE < this._data.length) {
           data.set(this._data.subarray(0, cols * CELL_SIZE));
@@ -359,9 +368,13 @@ export class BufferLine implements IBufferLine {
       }
     } else {
       if (cols) {
-        const data = new Uint32Array(cols * CELL_SIZE);
-        data.set(this._data.subarray(0, cols * CELL_SIZE));
-        this._data = data;
+        // Resize is handled for us
+        lineData!.itemSize = cols * 4 * CELL_SIZE;
+        // const data = lineData!.createUint32ItemView(nextIndex++);
+        // const data = new Uint32Array(cols * CELL_SIZE);
+        // data.set(this._data.subarray(0, cols * CELL_SIZE));
+        // this._data = data;
+
         // Remove any cut off combined data, FIXME: repeat this for extended attrs
         const keys = Object.keys(this._combined);
         for (let i = 0; i < keys.length; i++) {

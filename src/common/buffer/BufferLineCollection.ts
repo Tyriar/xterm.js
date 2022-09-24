@@ -4,15 +4,19 @@
  */
 
 import { ArrayBufferList, IArrayBufferList } from 'common/buffer/ArrayBufferList';
+import { BufferLine } from 'common/buffer/BufferLine';
 import { CircularList, IDeleteEvent, IInsertEvent } from 'common/CircularList';
 import { IEventEmitter, IEvent } from 'common/EventEmitter';
 import { IBufferService } from 'common/services/Services';
-import { IBufferLine, ICircularList } from 'common/Types';
+import { IBufferLine, ICellData, ICircularList } from 'common/Types';
 
 const enum Constants {
   /** Typed array slots taken by one cell */
   CELL_SIZE = 3
 }
+
+// Instead of this, should ArrayBufferList have a different wrapper that dynamically resizes it?
+// Then new IBufferLine's could request a line, and memory could increase as needed? Then release lines when they're disposed?
 
 /**
  * This is a wrapper around CircularList which hides its internals and knows how to assign and
@@ -20,7 +24,7 @@ const enum Constants {
  */
 export class BufferLineCollection implements ICircularList<IBufferLine> {
   private _data: IArrayBufferList;
-  private _lines: CircularList<IBufferLine>;
+  private _lines: ICircularList<IBufferLine>;
 
   public get length(): number { return this._lines.length; }
   public set length(value: number) {
@@ -57,16 +61,33 @@ export class BufferLineCollection implements ICircularList<IBufferLine> {
     // TODO: Impl
     this._lines.set(index, value);
   }
+
+  public pushNewLine(
+    cols: number,
+    fillCellData?: ICellData,
+    isWrapped?: boolean
+  ): IBufferLine {
+    const line = new BufferLine(cols, fillCellData, isWrapped);
+    this._lines.push(line);
+    return line;
+  }
+
+  public pushBlankLine(): IBufferLine {
+    return null!;
+  }
   public push(value: IBufferLine): void {
     // TODO: Impl
     this._lines.push(value);
   }
+
   public recycle(): IBufferLine {
     return this._lines.recycle();
   }
+
   public pop(): IBufferLine | undefined {
     return this._lines.pop();
   }
+
   public splice(start: number, deleteCount: number, ...items: IBufferLine[]): void {
     return this._lines.splice(start, deleteCount, ...items);
   }

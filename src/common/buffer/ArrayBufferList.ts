@@ -106,7 +106,10 @@ export class ArrayBufferList implements IArrayBufferList {
     const oldData = new Uint8Array(this._data);
     const newData = new Uint8Array(newItemSize * newItemCount);
     for (let i = 0; i < this._actualItemCount; i++) {
-      newData.set(oldData.subarray(i * this._actualItemSize, i * this._actualItemSize + this._virtualItemSize), i * newItemSize);
+      // newData.set(oldData.subarray(i * this._actualItemSize, i * this._actualItemSize + this._virtualItemSize), i * newItemSize);
+      for (let x = 0; x < this._virtualItemSize; x++) {
+        newData[i * this._actualItemSize + x] = i * newItemSize + x;
+      }
     }
 
     // Set the new values
@@ -123,16 +126,17 @@ export class ArrayBufferList implements IArrayBufferList {
 
   private _gcTimeout?: any;
   private _gc(): void {
-    this._cancelGc();
-    this._gcTimeout = setTimeout(() => {
-      this._gcTimeout = undefined;
-      // Don't track this callback as the debouncing will prevent it from being called twice
-      requestIdleCallback(() => this._rebuildBuffer());
-    }, 10000);
+    if (this._gcTimeout === undefined) {
+      this._gcTimeout = setTimeout(() => {
+        this._gcTimeout = undefined;
+        // Don't track this callback as the debouncing will prevent it from being called twice
+        requestIdleCallback(() => this._rebuildBuffer());
+      }, 10000);
+    }
   }
 
   private _cancelGc(): void {
-    if (this._gcTimeout) {
+    if (this._gcTimeout !== undefined) {
       clearTimeout(this._gcTimeout);
     }
   }
