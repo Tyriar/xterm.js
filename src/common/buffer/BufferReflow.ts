@@ -5,7 +5,7 @@
 
 import { BufferLine } from 'common/buffer/BufferLine';
 import { CircularList } from 'common/CircularList';
-import { IBufferLine, ICellData } from 'common/Types';
+import { IBufferLine, ICellData, ICircularList } from 'common/Types';
 
 export interface INewLayoutResult {
   layout: number[];
@@ -18,7 +18,7 @@ export interface INewLayoutResult {
  * @param lines The buffer lines.
  * @param newCols The columns after resize.
  */
-export function reflowLargerGetLinesToRemove(lines: CircularList<IBufferLine>, oldCols: number, newCols: number, bufferAbsoluteY: number, nullCell: ICellData): number[] {
+export function reflowLargerGetLinesToRemove(lines: ICircularList<IBufferLine>, oldCols: number, newCols: number, bufferAbsoluteY: number, nullCell: ICellData): number[] {
   // Gather all BufferLines that need to be removed from the Buffer here so that they can be
   // batched up and only committed once
   const toRemove: number[] = [];
@@ -107,7 +107,7 @@ export function reflowLargerGetLinesToRemove(lines: CircularList<IBufferLine>, o
  * @param lines The buffer lines.
  * @param toRemove The indexes to remove.
  */
-export function reflowLargerCreateNewLayout(lines: CircularList<IBufferLine>, toRemove: number[]): INewLayoutResult {
+export function reflowLargerCreateNewLayout(lines: ICircularList<IBufferLine>, toRemove: number[]): INewLayoutResult {
   const layout: number[] = [];
   // First iterate through the list and get the actual indexes to use for rows
   let nextToRemoveIndex = 0;
@@ -142,7 +142,7 @@ export function reflowLargerCreateNewLayout(lines: CircularList<IBufferLine>, to
  * @param lines The buffer lines.
  * @param newLayout The new layout to apply.
  */
-export function reflowLargerApplyNewLayout(lines: CircularList<IBufferLine>, newLayout: number[]): void {
+export function reflowLargerApplyNewLayout(lines: ICircularList<IBufferLine>, newLayout: number[]): void {
   // Record original lines so they don't get overridden when we rearrange the list
   const newLayoutLines: BufferLine[] = [];
   for (let i = 0; i < newLayout.length; i++) {

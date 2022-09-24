@@ -69,14 +69,15 @@ export const enum ScrollSource {
 export interface ICircularList<T> {
   length: number;
   maxLength: number;
-  isFull: boolean;
 
-  onDeleteEmitter: IEventEmitter<IDeleteEvent>;
-  onDelete: IEvent<IDeleteEvent>;
-  onInsertEmitter: IEventEmitter<IInsertEvent>;
-  onInsert: IEvent<IInsertEvent>;
-  onTrimEmitter: IEventEmitter<number>;
-  onTrim: IEvent<number>;
+  readonly isFull: boolean;
+
+  readonly onDeleteEmitter: IEventEmitter<IDeleteEvent>;
+  readonly onDelete: IEvent<IDeleteEvent>;
+  readonly onInsertEmitter: IEventEmitter<IInsertEvent>;
+  readonly onInsert: IEvent<IInsertEvent>;
+  readonly onTrimEmitter: IEventEmitter<number>;
+  readonly onTrim: IEvent<number>;
 
   get(index: number): T | undefined;
   set(index: number, value: T): void;

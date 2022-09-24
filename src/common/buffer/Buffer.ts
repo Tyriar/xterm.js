@@ -5,7 +5,7 @@
 
 import { CircularList, IInsertEvent } from 'common/CircularList';
 import { IBuffer, BufferIndex, IBufferStringIterator, IBufferStringIteratorResult } from 'common/buffer/Types';
-import { IBufferLine, ICellData, IAttributeData, ICharset } from 'common/Types';
+import { IBufferLine, ICellData, IAttributeData, ICharset, ICircularList } from 'common/Types';
 import { BufferLine, DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
 import { CellData } from 'common/buffer/CellData';
 import { NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE, WHITESPACE_CELL_CHAR, WHITESPACE_CELL_WIDTH, WHITESPACE_CELL_CODE, CHAR_DATA_WIDTH_INDEX, CHAR_DATA_CHAR_INDEX } from 'common/buffer/Constants';
@@ -14,6 +14,7 @@ import { Marker } from 'common/buffer/Marker';
 import { IOptionsService, IBufferService } from 'common/services/Services';
 import { DEFAULT_CHARSET } from 'common/data/Charsets';
 import { ExtendedAttrs } from 'common/buffer/AttributeData';
+import { BufferLineCollection } from 'common/buffer/BufferLineCollection';
 
 export const MAX_BUFFER_SIZE = 4294967295; // 2^32 - 1
 
@@ -25,7 +26,7 @@ export const MAX_BUFFER_SIZE = 4294967295; // 2^32 - 1
  *   - scroll position
  */
 export class Buffer implements IBuffer {
-  public lines: CircularList<IBufferLine>;
+  public lines: ICircularList<IBufferLine>;
   public ydisp: number = 0;
   public ybase: number = 0;
   public y: number = 0;
@@ -39,6 +40,7 @@ export class Buffer implements IBuffer {
   public savedCurAttrData = DEFAULT_ATTR_DATA.clone();
   public savedCharset: ICharset | undefined = DEFAULT_CHARSET;
   public markers: Marker[] = [];
+
   private _nullCell: ICellData = CellData.fromCharData([0, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]);
   private _whitespaceCell: ICellData = CellData.fromCharData([0, WHITESPACE_CELL_CHAR, WHITESPACE_CELL_WIDTH, WHITESPACE_CELL_CODE]);
   private _cols: number;
@@ -52,7 +54,7 @@ export class Buffer implements IBuffer {
   ) {
     this._cols = this._bufferService.cols;
     this._rows = this._bufferService.rows;
-    this.lines = new CircularList<IBufferLine>(this._getCorrectBufferLength(this._rows));
+    this.lines = new BufferLineCollection(this._getCorrectBufferLength(this._rows), this._cols);
     this.scrollTop = 0;
     this.scrollBottom = this._rows - 1;
     this.setupTabStops();

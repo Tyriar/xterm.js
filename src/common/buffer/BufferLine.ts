@@ -58,12 +58,17 @@ const w: { startIndex: number } = {
  * memory allocs / GC pressure can be greatly reduced by reusing the CellData object.
  */
 export class BufferLine implements IBufferLine {
-  protected _data: Uint32Array;
-  protected _combined: {[index: number]: string} = {};
-  protected _extendedAttrs: {[index: number]: IExtendedAttrs | undefined} = {};
   public length: number;
 
-  constructor(cols: number, fillCellData?: ICellData, public isWrapped: boolean = false) {
+  private _data: Uint32Array;
+  protected _combined: {[index: number]: string} = {};
+  protected _extendedAttrs: {[index: number]: IExtendedAttrs | undefined} = {};
+
+  constructor(
+    cols: number,
+    fillCellData?: ICellData,
+    public isWrapped: boolean = false
+  ) {
     this._data = new Uint32Array(cols * CELL_SIZE);
     const cell = fillCellData || CellData.fromCharData([0, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]);
     for (let i = 0; i < cols; ++i) {

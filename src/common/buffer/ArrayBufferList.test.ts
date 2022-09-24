@@ -14,7 +14,7 @@ const {
 
 declare const global: any;
 
-describe.only('ArrayBufferList', () => {
+describe('ArrayBufferList', () => {
   // Monkeypatch setTimeout out to waiting for the gc call to finish the tests
   let originalSetTimeout: unknown;
   before(() => {
