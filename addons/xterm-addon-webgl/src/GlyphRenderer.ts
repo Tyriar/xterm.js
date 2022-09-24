@@ -6,7 +6,6 @@
 import { createProgram, PROJECTION_MATRIX, throwIfFalsy } from './WebglUtils';
 import { WebglCharAtlas } from './atlas/WebglCharAtlas';
 import { IWebGL2RenderingContext, IWebGLVertexArrayObject, IRenderModel, IRasterizedGlyph } from './Types';
-import { fill } from 'common/TypedArrayUtils';
 import { NULL_CELL_CODE } from 'common/buffer/Constants';
 import { Terminal } from 'xterm';
 import { IColorSet } from 'browser/Types';
@@ -191,7 +190,7 @@ export class GlyphRenderer  extends Disposable {
     // Exit early if this is a null character, allow space character to continue as it may have
     // underline/strikethrough styles
     if (code === NULL_CELL_CODE || code === undefined/* This is used for the right side of wide chars */) {
-      fill(array, 0, w.i, w.i + INDICES_PER_CELL - 1 - CELL_POSITION_INDICES);
+      array.fill(0, w.i, w.i + INDICES_PER_CELL - 1 - CELL_POSITION_INDICES);
       return;
     }
 
