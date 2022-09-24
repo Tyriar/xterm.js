@@ -76,6 +76,13 @@ const w: { i: number, glyph: IRasterizedGlyph | undefined, leftCellPadding: numb
   leftCellPadding: 0,
   clippedPixels: 0
 };
+let $term: Terminal | undefined;
+let $rows: number;
+let $cols: number;
+let $newCount: number;
+let $i: number;
+let $y: number;
+let $x: number;
 
 export class GlyphRenderer  extends Disposable {
   private _atlas: WebglCharAtlas | undefined;
@@ -238,29 +245,31 @@ export class GlyphRenderer  extends Disposable {
   }
 
   public clear(): void {
-    const terminal = this._terminal;
-    const newCount = terminal.cols * terminal.rows * INDICES_PER_CELL;
+    $term = this._terminal;
+    $cols = $term.cols;
+    $rows = $term.rows;
+    $newCount = $cols * $rows * INDICES_PER_CELL;
 
     // Clear vertices
-    if (this._vertices.count !== newCount) {
-      this._vertices.attributes = new Float32Array(newCount);
+    if (this._vertices.count !== $newCount) {
+      this._vertices.attributes = new Float32Array($newCount);
     } else {
       this._vertices.attributes.fill(0);
     }
-    for (let i = 0; i < this._vertices.attributesBuffers.length; i++) {
-      if (this._vertices.count !== newCount) {
-        this._vertices.attributesBuffers[i] = new Float32Array(newCount);
+    for ($i = 0; $i < this._vertices.attributesBuffers.length; $i++) {
+      if (this._vertices.count !== $newCount) {
+        this._vertices.attributesBuffers[$i] = new Float32Array($newCount);
       } else {
-        this._vertices.attributesBuffers[i].fill(0);
+        this._vertices.attributesBuffers[$i].fill(0);
       }
     }
-    this._vertices.count = newCount;
-    let i = 0;
-    for (let y = 0; y < terminal.rows; y++) {
-      for (let x = 0; x < terminal.cols; x++) {
-        this._vertices.attributes[i + 8] = x / terminal.cols;
-        this._vertices.attributes[i + 9] = y / terminal.rows;
-        i += INDICES_PER_CELL;
+    this._vertices.count = $newCount;
+    $i = 0;
+    for ($y = 0; $y < $rows; $y++) {
+      for ($x = 0; $x < $cols; $x++) {
+        this._vertices.attributes[$i + 8] = $x / $cols;
+        this._vertices.attributes[$i + 9] = $y / $rows;
+        $i += INDICES_PER_CELL;
       }
     }
   }
