@@ -38,8 +38,16 @@ const enum Cell {
 export const DEFAULT_ATTR_DATA = Object.freeze(new AttributeData());
 
 /** Work variables to avoid garbage collection. */
-const w: { startIndex: number } = {
-  startIndex: 0
+const w: {
+  startIndex: number;
+  key: number;
+  i: number;
+  data?: Uint32Array;
+  keys?: string[];
+} = {
+  startIndex: 0,
+  key: '',
+  i: 0
 };
 
 /**
@@ -340,29 +348,29 @@ export class BufferLine implements IBufferLine {
       return;
     }
     if (cols > this.length) {
-      const data = new Uint32Array(cols * CELL_SIZE);
+      w.data = new Uint32Array(cols * CELL_SIZE);
       if (this.length) {
         if (cols * CELL_SIZE < this._data.length) {
-          data.set(this._data.subarray(0, cols * CELL_SIZE));
+          w.data.set(this._data.subarray(0, cols * CELL_SIZE));
         } else {
-          data.set(this._data);
+          w.data.set(this._data);
         }
       }
-      this._data = data;
-      for (let i = this.length; i < cols; ++i) {
-        this.setCell(i, fillCellData);
+      this._data = w.data;
+      for (w.i = this.length; w.i < cols; ++w.i) {
+        this.setCell(w.i, fillCellData);
       }
     } else {
       if (cols) {
-        const data = new Uint32Array(cols * CELL_SIZE);
-        data.set(this._data.subarray(0, cols * CELL_SIZE));
-        this._data = data;
+        w.data = new Uint32Array(cols * CELL_SIZE);
+        w.data.set(this._data.subarray(0, cols * CELL_SIZE));
+        this._data = w.data;
         // Remove any cut off combined data, FIXME: repeat this for extended attrs
-        const keys = Object.keys(this._combined);
-        for (let i = 0; i < keys.length; i++) {
-          const key = parseInt(keys[i], 10);
-          if (key >= cols) {
-            delete this._combined[key];
+        w.keys = Object.keys(this._combined);
+        for (w.i = 0; w.i < w.keys.length; w.i++) {
+          w.key = parseInt(w.keys[w.i], 10);
+          if (w.key >= cols) {
+            delete this._combined[w.key];
           }
         }
       } else {
