@@ -38,17 +38,11 @@ const enum Cell {
 export const DEFAULT_ATTR_DATA = Object.freeze(new AttributeData());
 
 /** Work variables to avoid garbage collection. */
-const w: {
-  startIndex: number;
-  key: number;
-  i: number;
-  data?: Uint32Array;
-  keys?: string[];
-} = {
-  startIndex: 0,
-  key: 0,
-  i: 0
-};
+let $startIndex = 0;
+let $key = 0;
+let $i = 0;
+let $data: Uint32Array | undefined;
+let $keys: string[] | undefined;
 
 /**
  * Typed array based bufferline implementation.
@@ -186,10 +180,10 @@ export class BufferLine implements IBufferLine {
    * to GC as it significantly reduced the amount of new objects/references needed.
    */
   public loadCell(index: number, cell: ICellData): ICellData {
-    w.startIndex = index * CELL_SIZE;
-    cell.content = this._data[w.startIndex + Cell.CONTENT];
-    cell.fg = this._data[w.startIndex + Cell.FG];
-    cell.bg = this._data[w.startIndex + Cell.BG];
+    $startIndex = index * CELL_SIZE;
+    cell.content = this._data[$startIndex + Cell.CONTENT];
+    cell.fg = this._data[$startIndex + Cell.FG];
+    cell.bg = this._data[$startIndex + Cell.BG];
     if (cell.content & Content.IS_COMBINED_MASK) {
       cell.combinedData = this._combined[index];
     }
@@ -348,29 +342,29 @@ export class BufferLine implements IBufferLine {
       return;
     }
     if (cols > this.length) {
-      w.data = new Uint32Array(cols * CELL_SIZE);
+      $data = new Uint32Array(cols * CELL_SIZE);
       if (this.length) {
         if (cols * CELL_SIZE < this._data.length) {
-          w.data.set(this._data.subarray(0, cols * CELL_SIZE));
+          $data.set(this._data.subarray(0, cols * CELL_SIZE));
         } else {
-          w.data.set(this._data);
+          $data.set(this._data);
         }
       }
-      this._data = w.data;
-      for (w.i = this.length; w.i < cols; ++w.i) {
-        this.setCell(w.i, fillCellData);
+      this._data = $data;
+      for ($i = this.length; $i < cols; ++$i) {
+        this.setCell($i, fillCellData);
       }
     } else {
       if (cols) {
-        w.data = new Uint32Array(cols * CELL_SIZE);
-        w.data.set(this._data.subarray(0, cols * CELL_SIZE));
-        this._data = w.data;
+        $data = new Uint32Array(cols * CELL_SIZE);
+        $data.set(this._data.subarray(0, cols * CELL_SIZE));
+        this._data = $data;
         // Remove any cut off combined data, FIXME: repeat this for extended attrs
-        w.keys = Object.keys(this._combined);
-        for (w.i = 0; w.i < w.keys.length; w.i++) {
-          w.key = parseInt(w.keys[w.i], 10);
-          if (w.key >= cols) {
-            delete this._combined[w.key];
+        $keys = Object.keys(this._combined);
+        for ($i = 0; $i < $keys.length; $i++) {
+          $key = parseInt($keys[$i], 10);
+          if ($key >= cols) {
+            delete this._combined[$key];
           }
         }
       } else {
