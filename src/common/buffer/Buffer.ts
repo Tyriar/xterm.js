@@ -17,6 +17,15 @@ import { ExtendedAttrs } from 'common/buffer/AttributeData';
 
 export const MAX_BUFFER_SIZE = 4294967295; // 2^32 - 1
 
+const w = {
+  i: 0,
+  y: 0,
+  addToY: 0,
+  amountToTrim: 0,
+  newMaxLength: 0,
+  nullCell: undefined as ICellData | undefined
+};
+
 /**
  * This class represents a terminal buffer (an internal state of the terminal), where the
  * following information is stored (in high-level):
@@ -149,13 +158,13 @@ export class Buffer implements IBuffer {
    */
   public resize(newCols: number, newRows: number): void {
     // store reference to null cell with default attrs
-    const nullCell = this.getNullCell(DEFAULT_ATTR_DATA);
+    w.nullCell = this.getNullCell(DEFAULT_ATTR_DATA);
 
     // Increase max length if needed before adjustments to allow space to fill
     // as required.
-    const newMaxLength = this._getCorrectBufferLength(newRows);
-    if (newMaxLength > this.lines.maxLength) {
-      this.lines.maxLength = newMaxLength;
+    w.newMaxLength = this._getCorrectBufferLength(newRows);
+    if (w.newMaxLength > this.lines.maxLength) {
+      this.lines.maxLength = w.newMaxLength;
     }
 
     // The following adjustments should only happen if the buffer has been
@@ -163,26 +172,26 @@ export class Buffer implements IBuffer {
     if (this.lines.length > 0) {
       // Deal with columns increasing (reducing needs to happen after reflow)
       if (this._cols < newCols) {
-        for (let i = 0; i < this.lines.length; i++) {
-          this.lines.get(i)!.resize(newCols, nullCell);
+        for (w.i = 0; w.i < this.lines.length; w.i++) {
+          this.lines.get(w.i)!.resize(newCols, w.nullCell);
         }
       }
 
       // Resize rows in both directions as needed
-      let addToY = 0;
+      w.addToY = 0;
       if (this._rows < newRows) {
-        for (let y = this._rows; y < newRows; y++) {
+        for (w.y = this._rows; w.y < newRows; w.y++) {
           if (this.lines.length < newRows + this.ybase) {
             if (this._optionsService.rawOptions.windowsMode) {
               // Just add the new missing rows on Windows as conpty reprints the screen with it's
               // view of the world. Once a line enters scrollback for conpty it remains there
-              this.lines.push(new BufferLine(newCols, nullCell));
+              this.lines.push(new BufferLine(newCols, w.nullCell));
             } else {
-              if (this.ybase > 0 && this.lines.length <= this.ybase + this.y + addToY + 1) {
+              if (this.ybase > 0 && this.lines.length <= this.ybase + this.y + w.addToY + 1) {
                 // There is room above the buffer and there are no empty elements below the line,
                 // scroll up
                 this.ybase--;
-                addToY++;
+                w.addToY++;
                 if (this.ydisp > 0) {
                   // Viewport is at the top of the buffer, must increase downwards
                   this.ydisp--;
@@ -190,13 +199,13 @@ export class Buffer implements IBuffer {
               } else {
                 // Add a blank line if there is no buffer left at the top to scroll to, or if there
                 // are blank lines after the cursor
-                this.lines.push(new BufferLine(newCols, nullCell));
+                this.lines.push(new BufferLine(newCols, w.nullCell));
               }
             }
           }
         }
       } else { // (this._rows >= newRows)
-        for (let y = this._rows; y > newRows; y--) {
+        for (w.y = this._rows; w.y > newRows; w.y--) {
           if (this.lines.length > newRows + this.ybase) {
             if (this.lines.length > this.ybase + this.y + 1) {
               // The line is a blank line below the cursor, remove it
@@ -212,23 +221,23 @@ export class Buffer implements IBuffer {
 
       // Reduce max length if needed after adjustments, this is done after as it
       // would otherwise cut data from the bottom of the buffer.
-      if (newMaxLength < this.lines.maxLength) {
+      if (w.newMaxLength < this.lines.maxLength) {
         // Trim from the top of the buffer and adjust ybase and ydisp.
-        const amountToTrim = this.lines.length - newMaxLength;
-        if (amountToTrim > 0) {
-          this.lines.trimStart(amountToTrim);
-          this.ybase = Math.max(this.ybase - amountToTrim, 0);
-          this.ydisp = Math.max(this.ydisp - amountToTrim, 0);
-          this.savedY = Math.max(this.savedY - amountToTrim, 0);
+        w.amountToTrim = this.lines.length - w.newMaxLength;
+        if (w.amountToTrim > 0) {
+          this.lines.trimStart(w.amountToTrim);
+          this.ybase = Math.max(this.ybase - w.amountToTrim, 0);
+          this.ydisp = Math.max(this.ydisp - w.amountToTrim, 0);
+          this.savedY = Math.max(this.savedY - w.amountToTrim, 0);
         }
-        this.lines.maxLength = newMaxLength;
+        this.lines.maxLength = w.newMaxLength;
       }
 
       // Make sure that the cursor stays on screen
       this.x = Math.min(this.x, newCols - 1);
       this.y = Math.min(this.y, newRows - 1);
-      if (addToY) {
-        this.y += addToY;
+      if (w.addToY) {
+        this.y += w.addToY;
       }
       this.savedX = Math.min(this.savedX, newCols - 1);
 
@@ -242,8 +251,8 @@ export class Buffer implements IBuffer {
 
       // Trim the end of the line off if cols shrunk
       if (this._cols > newCols) {
-        for (let i = 0; i < this.lines.length; i++) {
-          this.lines.get(i)!.resize(newCols, nullCell);
+        for (w.i = 0; w.i < this.lines.length; w.i++) {
+          this.lines.get(w.i)!.resize(newCols, w.nullCell);
         }
       }
     }

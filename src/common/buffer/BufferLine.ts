@@ -46,7 +46,7 @@ const w: {
   keys?: string[];
 } = {
   startIndex: 0,
-  key: '',
+  key: 0,
   i: 0
 };
 
