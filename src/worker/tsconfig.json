@@ -1,11 +1,14 @@
 {
   "extends": "../tsconfig-library-base",
   "compilerOptions": {
+    "target": "ES5",
     "lib": [
-      "es2015",
-      "es2016.Array.Include",
-      "ES2017.SharedMemory"
+      "webworker",
+      "es6",
+      "scripthost",
+      "dom"
     ],
+    "skipLibCheck": true,
     "outDir": "../../out",
     "types": [
       "../../node_modules/@types/mocha"

@@ -19,6 +19,12 @@ function startServer() {
   var terminals = {},
       logs = {};
 
+  app.use(function (req, res, next) {
+    res.setHeader("Cross-Origin-Opener-Policy", "same-origin");
+    res.setHeader("Cross-Origin-Embedder-Policy", "require-corp");
+    next();
+  });
+
   app.use('/xterm.css', express.static(__dirname + '/../css/xterm.css'));
   app.get('/logo.png', (req, res) => {
     res.sendFile(__dirname + '/logo.png');
@@ -38,6 +44,7 @@ function startServer() {
 
   app.use('/dist', express.static(__dirname + '/dist'));
   app.use('/src', express.static(__dirname + '/src'));
+  app.use('/worker.js', express.static(__dirname + '/../out/worker/Worker.js'));
 
   app.post('/terminals', (req, res) => {
     const env = Object.assign({}, process.env);

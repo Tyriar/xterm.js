@@ -64,7 +64,8 @@ export class BufferLine implements IBufferLine {
   public length: number;
 
   constructor(cols: number, fillCellData?: ICellData, public isWrapped: boolean = false) {
-    this._data = new Uint32Array(cols * CELL_SIZE);
+    const buffer = new SharedArrayBuffer(cols * CELL_SIZE * 4);
+    this._data = new Uint32Array(buffer);
     const cell = fillCellData || CellData.fromCharData([0, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]);
     for (let i = 0; i < cols; ++i) {
       this.setCell(i, cell);
@@ -340,7 +341,8 @@ export class BufferLine implements IBufferLine {
       return;
     }
     if (cols > this.length) {
-      const data = new Uint32Array(cols * CELL_SIZE);
+      const buffer = new SharedArrayBuffer(cols * CELL_SIZE * 4);
+      const data = new Uint32Array(buffer);
       if (this.length) {
         if (cols * CELL_SIZE < this._data.length) {
           data.set(this._data.subarray(0, cols * CELL_SIZE));
@@ -354,7 +356,8 @@ export class BufferLine implements IBufferLine {
       }
     } else {
       if (cols) {
-        const data = new Uint32Array(cols * CELL_SIZE);
+        const buffer = new SharedArrayBuffer(cols * CELL_SIZE * 4);
+        const data = new Uint32Array(buffer);
         data.set(this._data.subarray(0, cols * CELL_SIZE));
         this._data = data;
         // Remove any cut off combined data, FIXME: repeat this for extended attrs
@@ -394,7 +397,9 @@ export class BufferLine implements IBufferLine {
   /** alter to a full copy of line  */
   public copyFrom(line: BufferLine): void {
     if (this.length !== line.length) {
-      this._data = new Uint32Array(line._data);
+      const buffer = new SharedArrayBuffer(line.length * CELL_SIZE * 4);
+      this._data = new Uint32Array(buffer);
+      this._data.set(line._data);
     } else {
       // use high speed copy if lengths are equal
       this._data.set(line._data);
@@ -414,7 +419,9 @@ export class BufferLine implements IBufferLine {
   /** create a new clone */
   public clone(): IBufferLine {
     const newLine = new BufferLine(0);
-    newLine._data = new Uint32Array(this._data);
+    const buffer = new SharedArrayBuffer(this._data.byteLength);
+    newLine._data = new Uint32Array(buffer);
+    newLine._data.set(this._data);
     newLine.length = this.length;
     for (const el in this._combined) {
       newLine._combined[el] = this._combined[el];

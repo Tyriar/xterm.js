@@ -4,6 +4,7 @@
   "references": [
     { "path": "./src/browser" },
     { "path": "./src/headless" },
+    { "path": "./src/worker" },
     { "path": "./test/api" },
     { "path": "./test/benchmark" },
     { "path": "./addons/xterm-addon-attach" },

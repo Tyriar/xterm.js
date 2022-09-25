@@ -145,6 +145,30 @@ export abstract class CoreTerminal extends Disposable implements ICoreTerminal {
     // Setup WriteBuffer
     this._writeBuffer = new WriteBuffer((data, promiseResult) => this._inputHandler.parse(data, promiseResult));
     this.register(forwardEvent(this._writeBuffer.onWriteParsed, this._onWriteParsed));
+
+
+
+    // Worker
+
+
+    // Initial delay ~200-300ms
+    // After that ~<0.5ms
+    const myWorker = new Worker('worker.js');
+    myWorker.onmessage = e => {
+      console.log(`main@${performance.now()}: received message`, e);
+      this._dirtyRowService.markDirty(0);
+      (this._inputHandler as any)._onRequestRefreshRows.fire(0, 0);
+      setTimeout(() => {
+        myWorker.postMessage(
+          (this.buffers.active.lines.get(0) as any)._data.buffer
+        );
+      }, 1000);
+      // this._onWriteParsed.fire();
+    };
+    console.log(`main@${performance.now()}: posting message`);
+    myWorker.postMessage(
+      (this.buffers.active.lines.get(0) as any)._data.buffer
+    );
   }
 
   public dispose(): void {
