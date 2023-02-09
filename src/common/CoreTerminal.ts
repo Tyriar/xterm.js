@@ -22,7 +22,7 @@
  */
 
 import { Disposable, toDisposable } from 'common/Lifecycle';
-import { IInstantiationService, IOptionsService, IBufferService, ILogService, ICharsetService, ICoreService, ICoreMouseService, IUnicodeService, LogLevelEnum, ITerminalOptions, IOscLinkService } from 'common/services/Services';
+import { IInstantiationService, IOptionsService, IBufferService, ILogService, ICharsetService, ICoreService, ICoreMouseService, IUnicodeService, LogLevelEnum, ITerminalOptions, IOscLinkService, IZoneWidgetService } from 'common/services/Services';
 import { InstantiationService } from 'common/services/InstantiationService';
 import { LogService } from 'common/services/LogService';
 import { BufferService, MINIMUM_COLS, MINIMUM_ROWS } from 'common/services/BufferService';
@@ -39,6 +39,7 @@ import { IBufferSet } from 'common/buffer/Types';
 import { InputHandler } from 'common/InputHandler';
 import { WriteBuffer } from 'common/input/WriteBuffer';
 import { OscLinkService } from 'common/services/OscLinkService';
+import { ZoneWidgetService } from 'common/services/ZoneWidgetService';
 
 // Only trigger this warning a single time per session
 let hasWriteSyncWarnHappened = false;
@@ -49,6 +50,7 @@ export abstract class CoreTerminal extends Disposable implements ICoreTerminal {
   protected readonly _logService: ILogService;
   protected readonly _charsetService: ICharsetService;
   protected readonly _oscLinkService: IOscLinkService;
+  protected readonly _zoneWidgetService: IZoneWidgetService;
 
   public readonly coreMouseService: ICoreMouseService;
   public readonly coreService: ICoreService;
@@ -119,6 +121,8 @@ export abstract class CoreTerminal extends Disposable implements ICoreTerminal {
     this._instantiationService.setService(ICharsetService, this._charsetService);
     this._oscLinkService = this._instantiationService.createInstance(OscLinkService);
     this._instantiationService.setService(IOscLinkService, this._oscLinkService);
+    this._zoneWidgetService = this._instantiationService.createInstance(ZoneWidgetService);
+    this._instantiationService.setService(IZoneWidgetService, this._zoneWidgetService);
 
     // Register input handler and handle/forward events
     this._inputHandler = this.register(new InputHandler(this._bufferService, this._charsetService, this.coreService, this._logService, this.optionsService, this._oscLinkService, this.coreMouseService, this.unicodeService));

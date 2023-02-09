@@ -34,7 +34,7 @@ import { addDisposableDomListener } from 'browser/Lifecycle';
 import * as Strings from 'browser/LocalizableStrings';
 import { AccessibilityManager } from './AccessibilityManager';
 import { AccessibleBuffer } from './AccessibleBuffer';
-import { ITheme, IMarker, IDisposable, ILinkProvider, IDecorationOptions, IDecoration } from 'xterm';
+import { ITheme, IMarker, IDisposable, ILinkProvider, IDecorationOptions, IDecoration, IZoneWidget } from 'xterm';
 import { DomRenderer } from 'browser/renderer/dom/DomRenderer';
 import { KeyboardResultType, CoreMouseEventType, CoreMouseButton, CoreMouseAction, ITerminalOptions, ScrollSource, IColorEvent, ColorIndex, ColorRequestType } from 'common/Types';
 import { evaluateKeyboardEvent } from 'common/input/Keyboard';
@@ -933,6 +933,10 @@ export class Terminal extends CoreTerminal implements ITerminal {
 
   public addMarker(cursorYOffset: number): IMarker | undefined {
     return this.buffer.addMarker(this.buffer.ybase + this.buffer.y + cursorYOffset);
+  }
+
+  public registerZoneWidget(cursorYOffset: number, height: number): IZoneWidget {
+    return this._zoneWidgetService.register(this.buffer.ybase + this.buffer.y + cursorYOffset, height);
   }
 
   public registerDecoration(decorationOptions: IDecorationOptions): IDecoration | undefined {

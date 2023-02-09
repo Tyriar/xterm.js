@@ -411,7 +411,6 @@ declare module 'xterm' {
     options: Pick<IDecorationOptions, 'overviewRulerOptions'>;
   }
 
-
   /**
    * Overview ruler decoration options
    */
@@ -482,6 +481,19 @@ declare module 'xterm' {
      * @param position The position of the decoration.
      */
     overviewRulerOptions?: IDecorationOverviewRulerOptions
+  }
+
+  // TODO: Extend from IDecoration?
+  export interface IWidget extends IDisposableWithEvent {
+    readonly marker: IMarker;
+    readonly onRender: IEvent<HTMLElement>;
+    element: HTMLElement | undefined;
+  }
+
+  export interface IZoneWidget extends IWidget {
+    readonly marker: IMarker;
+    readonly onRender: IEvent<HTMLElement>;
+    element: HTMLElement | undefined;
   }
 
   /**
@@ -965,6 +977,15 @@ declare module 'xterm' {
      * @returns The new marker or undefined.
      */
     registerMarker(cursorYOffset?: number): IMarker | undefined;
+
+    /**
+     * (EXPERIMENTAL) Registers a zone widget to the active buffer and returns
+     * it.
+     * @param cursorYOffset The y position offset of the marker from the cursor.
+     * @param height The height of the zone widget in CSS pixels.
+     * @returns The new zone widget.
+     */
+    registerZoneWidget(cursorYOffset: number, height: number): IZoneWidget;
 
     /**
      * (EXPERIMENTAL) Adds a decoration to the terminal using

@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { IDisposable, IMarker, ILinkProvider, IDecorationOptions, IDecoration } from 'xterm';
+import { IDisposable, IMarker, ILinkProvider, IDecorationOptions, IDecoration, IZoneWidget } from 'xterm';
 import { IEvent, EventEmitter } from 'common/EventEmitter';
 import { ICharacterJoinerService, ICharSizeService, ICoreBrowserService, IMouseService, IRenderService, ISelectionService, IThemeService } from 'browser/services/Services';
 import { IRenderDimensions, IRenderer, IRequestRedrawEvent } from 'browser/renderer/shared/Types';
@@ -207,6 +207,9 @@ export class MockTerminal implements ITerminal {
   }
   public registerCharacterJoiner(handler: CharacterJoinerHandler): number { return 0; }
   public deregisterCharacterJoiner(joinerId: number): void { }
+  public registerZoneWidget(cursorYOffset: number, height: number): IZoneWidget {
+    throw new Error('Method not implemented.');
+  }
 }
 
 export class MockBuffer implements IBuffer {

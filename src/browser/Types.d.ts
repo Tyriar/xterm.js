@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { IDecorationOptions, IDecoration, IDisposable, IMarker } from 'xterm';
+import { IDecorationOptions, IDecoration, IDisposable, IMarker, IZoneWidget } from 'xterm';
 import { IEvent } from 'common/EventEmitter';
 import { ICoreTerminal, CharData, ITerminalOptions, IColor } from 'common/Types';
 import { IMouseService, IRenderService } from './services/Services';
@@ -60,6 +60,7 @@ export interface IPublicTerminal extends IDisposable {
   registerCharacterJoiner(handler: (text: string) => [number, number][]): number;
   deregisterCharacterJoiner(joinerId: number): void;
   addMarker(cursorYOffset: number): IMarker | undefined;
+  registerZoneWidget(cursorYOffset: number, height: number): IZoneWidget;
   registerDecoration(decorationOptions: IDecorationOptions): IDecoration | undefined;
   hasSelection(): boolean;
   getSelection(): string;

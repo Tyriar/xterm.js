@@ -5,7 +5,7 @@
 
 import { IEvent, IEventEmitter } from 'common/EventEmitter';
 import { IBuffer, IBufferSet } from 'common/buffer/Types';
-import { IDecPrivateModes, ICoreMouseEvent, CoreMouseEncoding, ICoreMouseProtocol, CoreMouseEventType, ICharset, IWindowOptions, IModes, IAttributeData, ScrollSource, IDisposable, IColor, CursorStyle, IOscLinkData } from 'common/Types';
+import { IDecPrivateModes, ICoreMouseEvent, CoreMouseEncoding, ICoreMouseProtocol, CoreMouseEventType, ICharset, IWindowOptions, IModes, IAttributeData, ScrollSource, IDisposable, IColor, CursorStyle, IOscLinkData, IMarker } from 'common/Types';
 import { createDecorator } from 'common/services/ServiceRegistry';
 import { IDecorationOptions, IDecoration, ILinkHandler } from 'xterm';
 
@@ -337,4 +337,22 @@ export interface IInternalDecoration extends IDecoration {
   readonly backgroundColorRGB: IColor | undefined;
   readonly foregroundColorRGB: IColor | undefined;
   readonly onRenderEmitter: IEventEmitter<HTMLElement>;
+}
+
+export const IZoneWidgetService = createDecorator<IZoneWidgetService>('ZoneWidgetService');
+export interface IZoneWidgetService {
+  serviceBrand: undefined;
+
+  readonly zoneWidgets: IZoneWidget[];
+
+  register(y: number, height: number): IZoneWidget;
+}
+export interface IZoneWidget extends IDisposable {
+  readonly marker: IMarker;
+  readonly element: HTMLElement | undefined;
+  readonly height: number;
+  readonly isDisposed: boolean;
+
+  readonly onRender: IEvent<HTMLElement>;
+  readonly onDispose: IEvent<void>;
 }
