@@ -368,18 +368,12 @@ export class GlyphRenderer extends Disposable {
       } else {
         endRow = renderModel.lineLengths.length;
       }
-      console.log('render range', { startRow, endRow, cumulativeOffset });
       this._renderRowRange(gl, renderModel, activeBuffer, startRow, endRow, cumulativeOffset);
-      startRow = endRow + 1;
+      startRow = endRow;
       if (i < renderModel.gaps.length) {
         cumulativeOffset += renderModel.gaps[i].height;
       }
     }
-    // // Draw the viewport
-    // this._renderRowRange(gl, renderModel, activeBuffer, 0, holeY, 0);
-
-    // // Draw the second section
-    // this._renderRowRange(gl, renderModel, activeBuffer, holeY, renderModel.lineLengths.length, holeHeight);
   }
 
   private _renderRowRange(gl: IWebGL2RenderingContext, renderModel: IRenderModel, activeBuffer: Float32Array, startRow: number, endRow: number, yOffset: number): void {

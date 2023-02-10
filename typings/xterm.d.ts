@@ -494,6 +494,7 @@ declare module 'xterm' {
     readonly marker: IMarker;
     readonly onRender: IEvent<HTMLElement>;
     element: HTMLElement | undefined;
+    height: number;
   }
 
   /**

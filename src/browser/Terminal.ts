@@ -54,10 +54,11 @@ import { toRgbString } from 'common/input/XParseColor';
 import { BufferDecorationRenderer } from 'browser/decorations/BufferDecorationRenderer';
 import { OverviewRulerRenderer } from 'browser/decorations/OverviewRulerRenderer';
 import { DecorationService } from 'common/services/DecorationService';
-import { IDecorationService } from 'common/services/Services';
+import { IDecorationService, IZoneWidgetService } from 'common/services/Services';
 import { OscLinkProvider } from 'browser/OscLinkProvider';
 import { toDisposable } from 'common/Lifecycle';
 import { ThemeService } from 'browser/services/ThemeService';
+import { ZoneWidgetService } from 'common/services/ZoneWidgetService';
 
 // Let it work inside Node.js for automated testing purposes.
 const document: Document = (typeof window !== 'undefined') ? window.document : null as any;
@@ -84,6 +85,7 @@ export class Terminal extends CoreTerminal implements ITerminal {
 
   // browser services
   private _decorationService: DecorationService;
+  private _zoneWidgetService: IZoneWidgetService;
   private _charSizeService: ICharSizeService | undefined;
   private _coreBrowserService: ICoreBrowserService | undefined;
   private _mouseService: IMouseService | undefined;
@@ -171,6 +173,8 @@ export class Terminal extends CoreTerminal implements ITerminal {
     this.linkifier2.registerLinkProvider(this._instantiationService.createInstance(OscLinkProvider));
     this._decorationService = this._instantiationService.createInstance(DecorationService);
     this._instantiationService.setService(IDecorationService, this._decorationService);
+    this._zoneWidgetService = this._instantiationService.createInstance(ZoneWidgetService);
+    this._instantiationService.setService(IZoneWidgetService, this._zoneWidgetService);
 
     // Setup InputHandler listeners
     this.register(this._inputHandler.onRequestBell(() => this._onBell.fire()));

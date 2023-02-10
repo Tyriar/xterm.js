@@ -200,7 +200,70 @@ export class RectangleRenderer extends Disposable {
     let inverse: boolean;
     let offset: number;
 
-    for (y = 0; y < terminal.rows; y++) {
+    let cumulativeOffset = 0;
+    let startRow = 0;
+    let endRow = 0;
+    for (let i = 0; i <= model.gaps.length; i++) {
+      if (i < model.gaps.length) {
+        endRow = model.gaps[i].y;
+      } else {
+        endRow = terminal.rows;
+      }
+      rectangleCount = this._updateBackgroundRange(model, rectangleCount, startRow, endRow, cumulativeOffset);
+      startRow = endRow;
+      if (i < model.gaps.length) {
+        cumulativeOffset += model.gaps[i].height;
+      }
+    }
+
+    // for (y = 0; y < terminal.rows; y++) {
+    //   currentStartX = -1;
+    //   currentBg = 0;
+    //   currentFg = 0;
+    //   currentInverse = false;
+    //   for (x = 0; x < terminal.cols; x++) {
+    //     modelIndex = ((y * terminal.cols) + x) * RENDER_MODEL_INDICIES_PER_CELL;
+    //     bg = model.cells[modelIndex + RENDER_MODEL_BG_OFFSET];
+    //     fg = model.cells[modelIndex + RENDER_MODEL_FG_OFFSET];
+    //     inverse = !!(fg & FgFlags.INVERSE);
+    //     if (bg !== currentBg || (fg !== currentFg && (currentInverse || inverse))) {
+    //       // A rectangle needs to be drawn if going from non-default to another color
+    //       if (currentBg !== 0 || (currentInverse && currentFg !== 0)) {
+    //         offset = rectangleCount++ * INDICES_PER_RECTANGLE;
+    //         this._updateRectangle(vertices, offset, currentFg, currentBg, currentStartX, x, y);
+    //       }
+    //       currentStartX = x;
+    //       currentBg = bg;
+    //       currentFg = fg;
+    //       currentInverse = inverse;
+    //     }
+    //   }
+    //   // Finish rectangle if it's still going
+    //   if (currentBg !== 0 || (currentInverse && currentFg !== 0)) {
+    //     offset = rectangleCount++ * INDICES_PER_RECTANGLE;
+    //     this._updateRectangle(vertices, offset, currentFg, currentBg, currentStartX, terminal.cols, y);
+    //   }
+    // }
+    vertices.count = rectangleCount;
+  }
+
+  private _updateBackgroundRange(model: IRenderModel, rectangleCount: number, startRow: number, endRow: number, cumulativeOffset: number): number {
+    const terminal = this._terminal;
+    const vertices = this._vertices;
+    let y: number;
+    let x: number;
+    let currentStartX: number;
+    let currentBg: number;
+    let currentFg: number;
+    let currentInverse: boolean;
+    let modelIndex: number;
+    let bg: number;
+    let fg: number;
+    let inverse: boolean;
+    let offset: number;
+
+    // console.log('_updateBackgroundRange', startRow, endRow, cumulativeOffset);
+    for (y = startRow; y < endRow; y++) {
       currentStartX = -1;
       currentBg = 0;
       currentFg = 0;
@@ -214,7 +277,7 @@ export class RectangleRenderer extends Disposable {
           // A rectangle needs to be drawn if going from non-default to another color
           if (currentBg !== 0 || (currentInverse && currentFg !== 0)) {
             offset = rectangleCount++ * INDICES_PER_RECTANGLE;
-            this._updateRectangle(vertices, offset, currentFg, currentBg, currentStartX, x, y);
+            this._updateRectangle(vertices, offset, currentFg, currentBg, currentStartX, x, y, cumulativeOffset);
           }
           currentStartX = x;
           currentBg = bg;
@@ -225,13 +288,13 @@ export class RectangleRenderer extends Disposable {
       // Finish rectangle if it's still going
       if (currentBg !== 0 || (currentInverse && currentFg !== 0)) {
         offset = rectangleCount++ * INDICES_PER_RECTANGLE;
-        this._updateRectangle(vertices, offset, currentFg, currentBg, currentStartX, terminal.cols, y);
+        this._updateRectangle(vertices, offset, currentFg, currentBg, currentStartX, terminal.cols, y, cumulativeOffset);
       }
     }
-    vertices.count = rectangleCount;
+    return rectangleCount;
   }
 
-  private _updateRectangle(vertices: IVertices, offset: number, fg: number, bg: number, startX: number, endX: number, y: number): void {
+  private _updateRectangle(vertices: IVertices, offset: number, fg: number, bg: number, startX: number, endX: number, y: number, yOffset: number): void {
     $isDefault = false;
     if (fg & FgFlags.INVERSE) {
       switch (fg & Attributes.CM_MASK) {
@@ -272,7 +335,7 @@ export class RectangleRenderer extends Disposable {
     $b = (($rgba >> 8 ) & 0xFF) / 255;
     $a = (!$isDefault && bg & BgFlags.DIM) ? DIM_OPACITY : 1;
 
-    this._addRectangle(vertices.attributes, offset, $x1, $y1, (endX - startX) * this._dimensions.device.cell.width, this._dimensions.device.cell.height, $r, $g, $b, $a);
+    this._addRectangle(vertices.attributes, offset, $x1, $y1 + yOffset, (endX - startX) * this._dimensions.device.cell.width, this._dimensions.device.cell.height, $r, $g, $b, $a);
   }
 
   private _addRectangle(array: Float32Array, offset: number, x1: number, y1: number, width: number, height: number, r: number, g: number, b: number, a: number): void {

@@ -246,12 +246,6 @@ function createTerminal(): void {
     theme: xtermjsTheme
   } as ITerminalOptions);
 
-  const zoneWidget = term.registerZoneWidget(5, 100);
-  console.log(zoneWidget, 'line', zoneWidget.marker.line);
-  zoneWidget.onRender(e => {
-    e.style.background = '#ff0000';
-  });
-
   // Load addons
   const typedTerm = term as TerminalType;
   addons.search.instance = new SearchAddon();
@@ -304,6 +298,54 @@ function createTerminal(): void {
     // webgl loading failed for some reason, attach with DOM renderer
     term.open(terminalContainer);
   }
+
+  let zoneWidget;
+  term.attachCustomKeyEventHandler((e: KeyboardEvent) => {
+    if (zoneWidget) {
+      return true;
+    }
+    if (e.key === '#') {
+      zoneWidget = term.registerZoneWidget(1, 100);
+      let initialized = false;
+      zoneWidget.onRender((e: HTMLElement) => {
+        if (!initialized) {
+          initialized = true;
+          e.style.background = '#ff000040';
+          const message = document.createElement('div');
+          const input = document.createElement('input');
+          input.type = 'text';
+          input.placeholder = 'Ask me anything...';
+          // Prevent the main textarea from stealing focus
+          e.addEventListener('mousedown', (e: MouseEvent) => e.stopImmediatePropagation());
+          e.addEventListener('keydown', (e: KeyboardEvent) => {
+            switch (e.key) {
+              case 'Enter':
+                if (message.textContent === 'git log --grep="fix"') {
+                  term._core._onData.fire('git log --grep="fix"\r');
+                  zoneWidget.dispose();
+                  zoneWidget = undefined;
+                  term.focus();
+                  return;
+                }
+                input.value = '';
+                input.placeholder = 'You can ask me more...';
+                message.textContent = 'git log --grep="fix"';
+                break;
+              case 'Escape':
+                zoneWidget.dispose();
+                zoneWidget = undefined;
+                term.focus();
+                break;
+            }
+          });
+          e.append(message, input);
+          input.focus();
+        }
+      });
+      e.preventDefault();
+      return false;
+    }
+  });
 
   term.focus();
 
