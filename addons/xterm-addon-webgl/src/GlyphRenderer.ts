@@ -11,6 +11,7 @@ import { IRasterizedGlyph, IRenderDimensions, ITextureAtlas } from 'browser/rend
 import { Disposable, toDisposable } from 'common/Lifecycle';
 import { throwIfFalsy } from 'browser/renderer/shared/RendererUtils';
 import { TextureAtlas } from 'browser/renderer/shared/TextureAtlas';
+import { IZoneWidgetService } from 'common/services/Services';
 
 interface IVertices {
   attributes: Float32Array;
@@ -45,12 +46,13 @@ layout (location = ${VertexAttribLocations.TEXSIZE}) in vec2 a_texsize;
 
 uniform mat4 u_projection;
 uniform vec2 u_resolution;
+uniform float u_yoffset;
 
 out vec2 v_texcoord;
 flat out int v_texpage;
 
 void main() {
-  vec2 zeroToOne = (a_offset / u_resolution) + a_cellpos + (a_unitquad * a_size);
+  vec2 zeroToOne = (a_offset / u_resolution) + a_cellpos + vec2(0, u_yoffset) / u_resolution + (a_unitquad * a_size);
   gl_Position = u_projection * vec4(zeroToOne, 0.0, 1.0);
   v_texpage = int(a_texpage);
   v_texcoord = a_texcoord + a_unitquad * a_texsize;
@@ -94,6 +96,8 @@ export class GlyphRenderer extends Disposable {
   private readonly _projectionLocation: WebGLUniformLocation;
   private readonly _resolutionLocation: WebGLUniformLocation;
   private readonly _textureLocation: WebGLUniformLocation;
+  // TODO: This should just be offset?
+  private readonly _yOffset: WebGLUniformLocation;
   private readonly _atlasTextures: GLTexture[];
   private readonly _attributesBuffer: WebGLBuffer;
 
@@ -111,7 +115,8 @@ export class GlyphRenderer extends Disposable {
   constructor(
     private readonly _terminal: Terminal,
     private readonly _gl: IWebGL2RenderingContext,
-    private _dimensions: IRenderDimensions
+    private _dimensions: IRenderDimensions,
+    private _zoneWidgetService: IZoneWidgetService
   ) {
     super();
 
@@ -131,6 +136,7 @@ export class GlyphRenderer extends Disposable {
     this._projectionLocation = throwIfFalsy(gl.getUniformLocation(this._program, 'u_projection'));
     this._resolutionLocation = throwIfFalsy(gl.getUniformLocation(this._program, 'u_resolution'));
     this._textureLocation = throwIfFalsy(gl.getUniformLocation(this._program, 'u_texture'));
+    this._yOffset = throwIfFalsy(gl.getUniformLocation(this._program, 'u_yoffset'));
 
     // Create and set the vertex array object
     this._vertexArrayObject = gl.createVertexArray();
@@ -327,6 +333,12 @@ export class GlyphRenderer extends Disposable {
     this._activeBuffer = (this._activeBuffer + 1) % 2;
     const activeBuffer = this._vertices.attributesBuffers[this._activeBuffer];
 
+    const holeY = 4;
+    // TODO: When drawing the right instances this offset shouldn't be needed
+    const holeHeight = 100;
+    let firstSectionBufferLength = 0;
+    gl.uniform1f(this._yOffset, 0);
+
     // Copy data for each cell of each line up to its line length (the last non-whitespace cell)
     // from the attributes buffer into activeBuffer, which is the one that gets bound to the GPU.
     // The reasons for this are as follows:
@@ -339,6 +351,9 @@ export class GlyphRenderer extends Disposable {
       const si = y * this._terminal.cols * INDICES_PER_CELL;
       const sub = this._vertices.attributes.subarray(si, si + renderModel.lineLengths[y] * INDICES_PER_CELL);
       activeBuffer.set(sub, bufferLength);
+      if (holeY === y) {
+        firstSectionBufferLength = bufferLength;
+      }
       bufferLength += sub.length;
     }
 
@@ -353,8 +368,39 @@ export class GlyphRenderer extends Disposable {
       }
     }
 
-    // Draw the viewport
-    gl.drawElementsInstanced(gl.TRIANGLE_STRIP, 4, gl.UNSIGNED_BYTE, 0, bufferLength / INDICES_PER_CELL);
+    let cumulativeOffset = 0;
+    let startRow = 0;
+    let endRow = 0;
+    for (let i = 0; i <= renderModel.gaps.length; i++) {
+      if (i < renderModel.gaps.length) {
+        cumulativeOffset += renderModel.gaps[i].height;
+        endRow = renderModel.gaps[i].y;
+      } else {
+        endRow = renderModel.lineLengths.length;;
+      }
+      this._renderRowRange(gl, renderModel, activeBuffer, startRow, endRow, cumulativeOffset);
+      startRow = endRow + 1;
+    }
+    // // Draw the viewport
+    // this._renderRowRange(gl, renderModel, activeBuffer, 0, holeY, 0);
+
+    // // Draw the second section
+    // this._renderRowRange(gl, renderModel, activeBuffer, holeY, renderModel.lineLengths.length, holeHeight);
+  }
+
+  private _renderRowRange(gl: IWebGL2RenderingContext, renderModel: IRenderModel, activeBuffer: Float32Array, startRow: number, endRow: number, yOffset: number): void {
+    let startRowBufferOffset = 0;
+    for (let y = 0; y < startRow; y++) {
+      startRowBufferOffset += renderModel.lineLengths[y] * INDICES_PER_CELL;
+    }
+    let endRowBufferOffset = startRowBufferOffset;
+    for (let y = startRow; y < endRow; y++) {
+      endRowBufferOffset += renderModel.lineLengths[y] * INDICES_PER_CELL;
+    }
+
+    gl.uniform1f(this._yOffset, yOffset);
+    gl.bufferData(gl.ARRAY_BUFFER, activeBuffer.subarray(startRowBufferOffset, endRowBufferOffset), gl.STREAM_DRAW);
+    gl.drawElementsInstanced(gl.TRIANGLE_STRIP, 4, gl.UNSIGNED_BYTE, 0, (endRowBufferOffset - startRowBufferOffset) / INDICES_PER_CELL);
   }
 
   public setAtlas(atlas: ITextureAtlas): void {

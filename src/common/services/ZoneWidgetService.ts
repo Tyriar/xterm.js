@@ -29,6 +29,7 @@ export class ZoneWidgetService implements IZoneWidgetService {
         this._zoneWidgets.splice(index, 1);
       }
     }));
+    this._zoneWidgets.push(zoneWidget);
     return zoneWidget;
   }
 }

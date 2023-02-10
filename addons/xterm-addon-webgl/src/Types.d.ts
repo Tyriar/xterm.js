@@ -9,6 +9,12 @@ export interface IRenderModel {
   cells: Uint32Array;
   lineLengths: Uint32Array;
   selection: ISelectionRenderModel;
+  gaps: IRenderModelGap[];
+}
+
+export interface IRenderModelGap {
+  y: number;
+  height: number;
 }
 
 export interface IWebGL2RenderingContext extends WebGLRenderingContext {

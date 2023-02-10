@@ -17,7 +17,7 @@ import { CellData } from 'common/buffer/CellData';
 import { Content, NULL_CELL_CHAR, NULL_CELL_CODE } from 'common/buffer/Constants';
 import { EventEmitter, forwardEvent } from 'common/EventEmitter';
 import { Disposable, getDisposeArrayDisposable, toDisposable } from 'common/Lifecycle';
-import { ICoreService, IDecorationService, IOptionsService } from 'common/services/Services';
+import { ICoreService, IDecorationService, IOptionsService, IZoneWidgetService } from 'common/services/Services';
 import { CharData, IBufferLine, ICellData } from 'common/Types';
 import { IDisposable, Terminal } from 'xterm';
 import { GlyphRenderer } from './GlyphRenderer';
@@ -69,6 +69,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
     private readonly _decorationService: IDecorationService,
     private readonly _optionsService: IOptionsService,
     private readonly _themeService: IThemeService,
+    private readonly _zoneWidgetService: IZoneWidgetService,
     preserveDrawingBuffer?: boolean
   ) {
     super();
@@ -241,7 +242,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
     this._glyphRenderer?.dispose();
 
     this._rectangleRenderer = this.register(new RectangleRenderer(this._terminal, this._gl, this.dimensions, this._themeService));
-    this._glyphRenderer = this.register(new GlyphRenderer(this._terminal, this._gl, this.dimensions));
+    this._glyphRenderer = this.register(new GlyphRenderer(this._terminal, this._gl, this.dimensions, this._zoneWidgetService));
 
     // Update dimensions and acquire char atlas
     this.handleCharSizeChanged();
@@ -452,6 +453,15 @@ export class WebglRenderer extends Disposable implements IRenderer {
         }
       }
     }
+    // Update gaps
+    this._model.gaps = this._zoneWidgetService.zoneWidgets.filter(e => {
+      return e.marker.line >= terminal.buffer.ydisp && e.marker.line < terminal.buffer.ydisp + terminal.rows;
+    }).map(e => {
+      return {
+        y: e.marker.line - terminal.buffer.ydisp,
+        height: e.height
+      };
+    });
     this._rectangleRenderer!.updateBackgrounds(this._model);
   }
 

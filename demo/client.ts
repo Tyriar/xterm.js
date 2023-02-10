@@ -246,6 +246,12 @@ function createTerminal(): void {
     theme: xtermjsTheme
   } as ITerminalOptions);
 
+  const zoneWidget = term.registerZoneWidget(0, 100);
+  console.log(zoneWidget);
+  zoneWidget.onRender(e => {
+    e.style.background = '#ff0000';
+  });
+
   // Load addons
   const typedTerm = term as TerminalType;
   addons.search.instance = new SearchAddon();
