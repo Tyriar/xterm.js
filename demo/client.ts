@@ -310,8 +310,10 @@ function createTerminal(): void {
       zoneWidget.onRender((e: HTMLElement) => {
         if (!initialized) {
           initialized = true;
-          e.style.background = '#ff000040';
+          e.style.background = '#3C3D3B';
+          e.style.color = '#fff';
           const message = document.createElement('div');
+          message.style.fontFamily = 'Hack';
           const input = document.createElement('input');
           input.type = 'text';
           input.placeholder = 'Ask me anything...';
@@ -328,8 +330,11 @@ function createTerminal(): void {
                   return;
                 }
                 input.value = '';
-                input.placeholder = 'You can ask me more...';
-                message.textContent = 'git log --grep="fix"';
+                // Simulate network
+                setTimeout(() => {
+                  input.placeholder = 'Press enter to run or type to clarify...';
+                  message.textContent = 'git log --grep="fix"';
+                }, 300);
                 break;
               case 'Escape':
                 zoneWidget.dispose();
