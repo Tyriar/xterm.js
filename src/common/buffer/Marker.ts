@@ -20,7 +20,8 @@ export class Marker implements IMarker {
   public readonly onDispose = this._onDispose.event;
 
   constructor(
-    public line: number
+    public line: number,
+    public readonly ignoreEraseInDisplay: boolean
   ) {
   }
 

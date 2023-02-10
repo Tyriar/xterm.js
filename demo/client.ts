@@ -246,8 +246,8 @@ function createTerminal(): void {
     theme: xtermjsTheme
   } as ITerminalOptions);
 
-  const zoneWidget = term.registerZoneWidget(0, 100);
-  console.log(zoneWidget);
+  const zoneWidget = term.registerZoneWidget(5, 100);
+  console.log(zoneWidget, 'line', zoneWidget.marker.line);
   zoneWidget.onRender(e => {
     e.style.background = '#ff0000';
   });

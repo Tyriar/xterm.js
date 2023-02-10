@@ -333,12 +333,6 @@ export class GlyphRenderer extends Disposable {
     this._activeBuffer = (this._activeBuffer + 1) % 2;
     const activeBuffer = this._vertices.attributesBuffers[this._activeBuffer];
 
-    const holeY = 4;
-    // TODO: When drawing the right instances this offset shouldn't be needed
-    const holeHeight = 100;
-    let firstSectionBufferLength = 0;
-    gl.uniform1f(this._yOffset, 0);
-
     // Copy data for each cell of each line up to its line length (the last non-whitespace cell)
     // from the attributes buffer into activeBuffer, which is the one that gets bound to the GPU.
     // The reasons for this are as follows:
@@ -351,9 +345,6 @@ export class GlyphRenderer extends Disposable {
       const si = y * this._terminal.cols * INDICES_PER_CELL;
       const sub = this._vertices.attributes.subarray(si, si + renderModel.lineLengths[y] * INDICES_PER_CELL);
       activeBuffer.set(sub, bufferLength);
-      if (holeY === y) {
-        firstSectionBufferLength = bufferLength;
-      }
       bufferLength += sub.length;
     }
 
@@ -373,13 +364,16 @@ export class GlyphRenderer extends Disposable {
     let endRow = 0;
     for (let i = 0; i <= renderModel.gaps.length; i++) {
       if (i < renderModel.gaps.length) {
-        cumulativeOffset += renderModel.gaps[i].height;
         endRow = renderModel.gaps[i].y;
       } else {
-        endRow = renderModel.lineLengths.length;;
+        endRow = renderModel.lineLengths.length;
       }
+      console.log('render range', { startRow, endRow, cumulativeOffset });
       this._renderRowRange(gl, renderModel, activeBuffer, startRow, endRow, cumulativeOffset);
       startRow = endRow + 1;
+      if (i < renderModel.gaps.length) {
+        cumulativeOffset += renderModel.gaps[i].height;
+      }
     }
     // // Draw the viewport
     // this._renderRowRange(gl, renderModel, activeBuffer, 0, holeY, 0);

@@ -32,7 +32,7 @@ export interface IBuffer {
   getBlankLine(attr: IAttributeData, isWrapped?: boolean): IBufferLine;
   getNullCell(attr?: IAttributeData): ICellData;
   getWhitespaceCell(attr?: IAttributeData): ICellData;
-  addMarker(y: number): IMarker;
+  addMarker(y: number, ignoreErase?: boolean): IMarker;
   clearMarkers(y: number): void;
   clearAllMarkers(): void;
 }

@@ -592,7 +592,7 @@ export class Buffer implements IBuffer {
   public clearMarkers(y: number): void {
     this._isClearing = true;
     for (let i = 0; i < this.markers.length; i++) {
-      if (this.markers[i].line === y) {
+      if (this.markers[i].line === y && !this.markers[i].ignoreEraseInDisplay) {
         this.markers[i].dispose();
         this.markers.splice(i--, 1);
       }
@@ -612,8 +612,8 @@ export class Buffer implements IBuffer {
     this._isClearing = false;
   }
 
-  public addMarker(y: number): Marker {
-    const marker = new Marker(y);
+  public addMarker(y: number, ignoreEraseInDisplay: boolean = false): Marker {
+    const marker = new Marker(y, ignoreEraseInDisplay);
     this.markers.push(marker);
     marker.register(this.lines.onTrim(amount => {
       marker.line -= amount;

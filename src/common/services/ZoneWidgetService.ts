@@ -20,7 +20,7 @@ export class ZoneWidgetService implements IZoneWidgetService {
   }
 
   public register(y: number, height: number): IZoneWidget {
-    const marker = this._bufferService.buffer.addMarker(y);
+    const marker = this._bufferService.buffer.addMarker(y, true);
     const zoneWidget = new ZoneWidget(marker, height);
     zoneWidget.register(marker.onDispose(() => zoneWidget.dispose()));
     zoneWidget.register(toDisposable(() => {

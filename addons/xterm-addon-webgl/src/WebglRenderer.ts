@@ -462,6 +462,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
         height: e.height
       };
     });
+    console.log('gaps', this._model.gaps.map(e => e.y));
     this._rectangleRenderer!.updateBackgrounds(this._model);
   }
 
