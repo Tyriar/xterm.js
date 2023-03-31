@@ -19,6 +19,7 @@ interface ISmoothScrollState {
   target: number;
 }
 
+
 /**
  * Represents the viewport of a terminal, the visible area within the larger buffer of output.
  * Logic for the virtual scroll bar is included in this object.

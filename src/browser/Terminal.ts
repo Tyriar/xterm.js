@@ -792,7 +792,32 @@ export class Terminal extends CoreTerminal implements ITerminal {
       return this.cancel(ev);
     }));
 
+    let isTrackpadUsed = false;
+    let lastTouchTime = 0;
+
+    window.addEventListener('touchstart', () => {
+      isTrackpadUsed = true;
+      lastTouchTime = new Date().getTime();
+    });
+
+    window.addEventListener('touchend', () => {
+      isTrackpadUsed = false;
+    });
+
     this.register(addDisposableDomListener(el, 'wheel', (ev: WheelEvent) => {
+      if (ev.deltaY !== 0) {
+        // Mouse wheel used
+        isTrackpadUsed = false;
+      } else {
+        // Trackpad used
+        const currentTime = new Date().getTime();
+        if (currentTime - lastTouchTime > 50) {
+          isTrackpadUsed = true;
+        }
+        lastTouchTime = currentTime;
+      }
+      console.log('touchpad?', isTrackpadUsed);
+
       // do nothing, if app side handles wheel itself
       if (requestedEvents.wheel) return;
 
