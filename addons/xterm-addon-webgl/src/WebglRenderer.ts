@@ -483,6 +483,8 @@ export class WebglRenderer extends Disposable implements IRenderer {
       }
     }
     this._rectangleRenderer!.updateBackgrounds(this._model);
+
+    this._gpuRectangleRenderer?.update(this._model);
   }
 
   /**
