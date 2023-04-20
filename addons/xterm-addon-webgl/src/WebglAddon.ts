@@ -3,6 +3,7 @@
  * @license MIT
  */
 
+import { throwIfFalsy } from 'browser/renderer/shared/RendererUtils';
 import { ICharacterJoinerService, ICharSizeService, ICoreBrowserService, IRenderService, IThemeService } from 'browser/services/Services';
 import { ITerminal } from 'browser/Types';
 import { EventEmitter, forwardEvent } from 'common/EventEmitter';
@@ -34,7 +35,7 @@ export class WebglAddon extends Disposable implements ITerminalAddon {
     super();
   }
 
-  public activate(terminal: Terminal): void {
+  public async activate(terminal: Terminal): Promise<void> {
     const core = (terminal as any)._core as ITerminal;
     if (!terminal.element) {
       this.register(core.onWillOpen(() => this.activate(terminal)));
@@ -53,8 +54,16 @@ export class WebglAddon extends Disposable implements ITerminalAddon {
     const decorationService: IDecorationService = unsafeCore._decorationService;
     const themeService: IThemeService = unsafeCore._themeService;
 
+
+    const gpuAdapter = throwIfFalsy(await navigator.gpu?.requestAdapter(), 'WebGPU not supported');
+    const gpuDevice = throwIfFalsy(await gpuAdapter?.requestDevice(), 'WebGPU not supported');
+
+    throwIfFalsy(gpuAdapter || gpuDevice, 'WebGPU not supported');
+
     this._renderer = this.register(new WebglRenderer(
       terminal,
+      gpuAdapter,
+      gpuDevice,
       characterJoinerService,
       charSizeService,
       coreBrowserService,

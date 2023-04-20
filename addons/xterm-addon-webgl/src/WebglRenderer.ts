@@ -45,8 +45,6 @@ export class WebglRenderer extends Disposable implements IRenderer {
   private _glyphRenderer?: GlyphRenderer;
 
   private _gpuCanvas?: HTMLCanvasElement;
-  private _gpuDevice?: GPUDevice;
-  private _gpuAdapter?: GPUAdapter;
   private _gpuContext?: GPUCanvasContext;
   private _gpuRectangleRenderer?: GpuRectangleRenderer;
 
@@ -69,6 +67,8 @@ export class WebglRenderer extends Disposable implements IRenderer {
 
   constructor(
     private _terminal: Terminal,
+    private readonly _gpuAdapter: GPUAdapter,
+    private readonly _gpuDevice: GPUDevice,
     private readonly _characterJoinerService: ICharacterJoinerService,
     private readonly _charSizeService: ICharSizeService,
     private readonly _coreBrowserService: ICoreBrowserService,
@@ -146,19 +146,17 @@ export class WebglRenderer extends Disposable implements IRenderer {
       removeTerminalFromCache(this._terminal);
     }));
 
-    this._initWebGpu(this._core.screenElement!);
-  }
-
-  private async _initWebGpu(screenElement: HTMLElement): Promise<void> {
-    this._gpuAdapter = throwIfFalsy(await navigator.gpu?.requestAdapter(), 'WebGPU not supported');
-    this._gpuDevice = throwIfFalsy(await this._gpuAdapter?.requestDevice(), 'WebGPU not supported');
-
     this._gpuCanvas = document.createElement('canvas');
     this._gpuContext = throwIfFalsy(this._gpuCanvas.getContext('webgpu'), 'Could not get WebGPU context');
 
-    screenElement.appendChild(this._gpuCanvas);
+    this.register(observeDevicePixelDimensions(this._gpuCanvas, this._coreBrowserService.window, (w, h) => this._setCanvasDevicePixelDimensions(w, h)));
+
+    this._core.screenElement!.appendChild(this._gpuCanvas);
 
     this._gpuRectangleRenderer = this.register(new GpuRectangleRenderer(this._terminal, this._gpuContext, this._gpuAdapter, this._gpuDevice, this.dimensions, this._themeService));
+
+    // Update dimensions and acquire char atlas
+    this.handleCharSizeChanged();
   }
 
   public get textureAtlas(): HTMLCanvasElement | undefined {
@@ -212,6 +210,15 @@ export class WebglRenderer extends Disposable implements IRenderer {
     // Force a full refresh. Resizing `_glyphRenderer` should clear it already,
     // so there is no need to clear it again here.
     this._clearModel(false);
+
+    // Resize the canvas
+    if (!this._gpuCanvas) {
+      return;
+    }
+    this._gpuCanvas.width = this.dimensions.device.canvas.width;
+    this._gpuCanvas.height = this.dimensions.device.canvas.height;
+    this._gpuCanvas.style.width = `${this.dimensions.css.canvas.width}px`;
+    this._gpuCanvas.style.height = `${this.dimensions.css.canvas.height}px`;
   }
 
   public handleCharSizeChanged(): void {
