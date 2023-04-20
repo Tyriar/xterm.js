@@ -19,6 +19,7 @@ import { EventEmitter, forwardEvent } from 'common/EventEmitter';
 import { Disposable, getDisposeArrayDisposable, toDisposable } from 'common/Lifecycle';
 import { ICoreService, IDecorationService, IOptionsService } from 'common/services/Services';
 import { CharData, IBufferLine, ICellData } from 'common/Types';
+import { GpuRectangleRenderer } from './GpuRectangleRenderer';
 import { IDisposable, Terminal } from 'xterm';
 import { GlyphRenderer } from './GlyphRenderer';
 import { RectangleRenderer } from './RectangleRenderer';
@@ -42,6 +43,12 @@ export class WebglRenderer extends Disposable implements IRenderer {
   private _gl: IWebGL2RenderingContext;
   private _rectangleRenderer?: RectangleRenderer;
   private _glyphRenderer?: GlyphRenderer;
+
+  private _gpuCanvas?: HTMLCanvasElement;
+  private _gpuDevice?: GPUDevice;
+  private _gpuAdapter?: GPUAdapter;
+  private _gpuContext?: GPUCanvasContext;
+  private _gpuRectangleRenderer?: GpuRectangleRenderer;
 
   public readonly dimensions: IRenderDimensions;
 
@@ -138,6 +145,20 @@ export class WebglRenderer extends Disposable implements IRenderer {
       this._canvas.parentElement?.removeChild(this._canvas);
       removeTerminalFromCache(this._terminal);
     }));
+
+    this._initWebGpu(this._core.screenElement!);
+  }
+
+  private async _initWebGpu(screenElement: HTMLElement): Promise<void> {
+    this._gpuAdapter = throwIfFalsy(await navigator.gpu?.requestAdapter(), 'WebGPU not supported');
+    this._gpuDevice = throwIfFalsy(await this._gpuAdapter?.requestDevice(), 'WebGPU not supported');
+
+    this._gpuCanvas = document.createElement('canvas');
+    this._gpuContext = throwIfFalsy(this._gpuCanvas.getContext('webgpu'), 'Could not get WebGPU context');
+
+    screenElement.appendChild(this._gpuCanvas);
+
+    this._gpuRectangleRenderer = this.register(new GpuRectangleRenderer(this._terminal, this._gpuContext, this._gpuAdapter, this._gpuDevice, this.dimensions, this._themeService));
   }
 
   public get textureAtlas(): HTMLCanvasElement | undefined {
@@ -346,6 +367,8 @@ export class WebglRenderer extends Disposable implements IRenderer {
     // Render
     this._rectangleRenderer?.render();
     this._glyphRenderer?.render(this._model);
+
+    this._gpuRectangleRenderer?.render();
   }
 
   private _updateModel(start: number, end: number): void {

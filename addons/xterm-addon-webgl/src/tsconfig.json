@@ -4,7 +4,7 @@
     "target": "es2015",
     "lib": [
       "dom",
-      "es6"
+      "es2017"
     ],
     "rootDir": ".",
     "outDir": "../out",
@@ -22,7 +22,8 @@
     "strict": true,
     "downlevelIteration": true,
     "types": [
-      "../../../node_modules/@types/mocha"
+      "../../../node_modules/@types/mocha",
+      "../../../node_modules/@webgpu/types"
     ]
   },
   "include": [

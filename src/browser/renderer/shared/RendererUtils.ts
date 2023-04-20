@@ -5,9 +5,9 @@
 
 import { IDimensions, IOffset, IRenderDimensions } from 'browser/renderer/shared/Types';
 
-export function throwIfFalsy<T>(value: T | undefined | null): T {
+export function throwIfFalsy<T>(value: T | undefined | null, message?: string): T {
   if (!value) {
-    throw new Error('value must not be falsy');
+    throw new Error(message ?? 'value must not be falsy');
   }
   return value;
 }
