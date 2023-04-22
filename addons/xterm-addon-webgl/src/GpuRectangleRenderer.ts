@@ -22,21 +22,36 @@ const enum VertexAttribLocations {
 }
 
 const shaderSource = `
-struct VSUniforms {
-  projection: mat4x4f,
+// struct VSUniforms {
+//   projection: mat4x4f,
+// };
+// @group(0) @binding(0) var<uniform> vsUniforms: VSUniforms;
+
+struct VSInput {
+  @location(0) position: vec2f,
+  @location(1) size: vec2f,
+  @location(2) color: vec4f,
+  @location(3) unitquad: vec2f
 };
-@group(0) @binding(0) var<uniform> vsUniforms: VSUniforms;
 
 @vertex fn vs(
-  @builtin(vertex_index) vertexIndex : u32
+  v: VSInput
+  // @builtin(vertex_index) vertexIndex : u32
 ) -> @builtin(position) vec4f {
-  var pos = array<vec2f, 3>(
-    vec2f( 0.0,  0.5),  // top center
-    vec2f(-0.5, -0.5),  // bottom left
-    vec2f( 0.5, -0.5)   // bottom right
-  );
 
-  return vsUniforms.projection * vec4f(pos[vertexIndex], 0.0, 1.0);
+  // var pos = array<vec2f, 3>(
+  //   vec2f( 0.0,  0.5),  // top center
+  //   vec2f(-0.5, -0.5),  // bottom left
+  //   vec2f( 0.5, -0.5)   // bottom right
+  // );
+  // return vsUniforms.projection * vec4f(pos[vertexIndex], 0.0, 1.0);
+
+  // var zeroToOne: vec2f = v.position + (v.unitquad * v.size);
+
+  var zeroToOne: vec2f = v.position + (v.unitquad * v.size);
+
+  return vec4f(zeroToOne, 0.0, 1.0);
+
 }
 
 @fragment fn fs() -> @location(0) vec4f {
@@ -67,15 +82,19 @@ export class GpuRectangleRenderer extends Disposable {
   private _presentationFormat: GPUTextureFormat;
   private _renderPassDescriptor: GPURenderPassDescriptor;
   private _pipeline: GPURenderPipeline;
-  private _bindGroup: GPUBindGroup;
+  // private _bindGroup: GPUBindGroup;
 
   private _vertices: IVertices = {
     count: 0,
     attributes: new Float32Array(INITIAL_BUFFER_RECTANGLE_CAPACITY)
   };
-  private _vsUniformBuffer: GPUBuffer;
-  private _worldViewProjection: Float32Array;
-  private _vsUniformValues: Float32Array;
+  // private _vsUniformBuffer: GPUBuffer;
+  // private _worldViewProjection: Float32Array;
+  // private _vsUniformValues: Float32Array;
+  private _positionBuffer: GPUBuffer;
+  private _sizeBuffer: GPUBuffer;
+  private _coordBuffer: GPUBuffer;
+  private _unitquadBuffer: GPUBuffer;
 
   constructor(
     private _terminal: Terminal,
@@ -98,12 +117,68 @@ export class GpuRectangleRenderer extends Disposable {
       code: shaderSource
     });
 
+    function createBuffer(device: GPUDevice, data: Float32Array | Uint16Array, usage: number): GPUBuffer {
+      const buffer = device.createBuffer({
+        size: data.byteLength,
+        usage,
+        mappedAtCreation: true
+      });
+      const dst = new (data.constructor as any)(buffer.getMappedRange());
+      dst.set(data);
+      buffer.unmap();
+      return buffer;
+    }
+
+    const positions = new Float32Array([1, 1, 1, 1, 1,
+      1, 1, 1, 1, 1, 1, 1, 1, 1, 1]);
+    const size   = new Float32Array([16, 32, 16, 32, 16, 32,
+      16, 32, 16, 32, 16, 32, 16, 32, 16, 32, 16, 32]);
+    const color = new Float32Array([1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1,
+      1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1]);
+    const unitquad = new Float32Array([0, 0, 1, 0, 0, 1,
+      0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1]);
+
+    this._positionBuffer = createBuffer(this._device, positions, GPUBufferUsage.VERTEX);
+    this._sizeBuffer = createBuffer(this._device, size, GPUBufferUsage.VERTEX);
+    this._coordBuffer = createBuffer(this._device, color, GPUBufferUsage.VERTEX);
+    this._unitquadBuffer = createBuffer(this._device, unitquad, GPUBufferUsage.VERTEX);
+
     this._pipeline = this._device.createRenderPipeline({
       label: 'our hardcoded red triangle pipeline',
       layout: 'auto',
       vertex: {
         module,
-        entryPoint: 'vs'
+        entryPoint: 'vs',
+        buffers: [
+          // position
+          {
+            arrayStride: 2 * 4, // 2 floats, 4 bytes each
+            attributes: [
+              { shaderLocation: 0, offset: 0, format: 'float32x2' }
+            ]
+          },
+          // size
+          {
+            arrayStride: 2 * 4, // 2 floats, 4 bytes each
+            attributes: [
+              { shaderLocation: 1, offset: 0, format: 'float32x2' }
+            ]
+          },
+          // color
+          {
+            arrayStride: 4 * 4, // 4 floats, 4 bytes each
+            attributes: [
+              { shaderLocation: 2, offset: 0, format: 'float32x4' }
+            ]
+          },
+          // unitquad
+          {
+            arrayStride: 2 * 4, // 2 floats, 4 bytes each
+            attributes: [
+              { shaderLocation: 3, offset: 0, format: 'float32x2' }
+            ]
+          }
+        ]
       },
       fragment: {
         module,
@@ -126,27 +201,27 @@ export class GpuRectangleRenderer extends Disposable {
 
     const vUniformBufferSize = 1 * 16 * 4; // 1 mat4s * 16 floats per mat * 4 bytes per float
 
-    this._vsUniformBuffer = this._device.createBuffer({
-      size: vUniformBufferSize,
-      usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
-    });
-    this._vsUniformValues = new Float32Array(1 * 16); // 1 mat4s
-    this._worldViewProjection = this._vsUniformValues.subarray(0, 16);
+    // this._vsUniformBuffer = this._device.createBuffer({
+    //   size: vUniformBufferSize,
+    //   usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
+    // });
+    // this._vsUniformValues = new Float32Array(1 * 16); // 1 mat4s
+    // this._worldViewProjection = this._vsUniformValues.subarray(0, 16);
 
-    this._bindGroup = this._device.createBindGroup({
-      layout: this._pipeline.getBindGroupLayout(0),
-      entries: [
-        { binding: 0, resource: { buffer: this._vsUniformBuffer } }
-      ]
-    });
-
+    // this._bindGroup = this._device.createBindGroup({
+    //   layout: this._pipeline.getBindGroupLayout(0),
+    //   entries: [
+    //     { binding: 0, resource: { buffer: this._vsUniformBuffer } }
+    //   ]
+    // });
   }
 
   // #region Render
 
   public render(): void {
-    this._worldViewProjection.set(PROJECTION_MATRIX, 0);
-    this._device.queue.writeBuffer(this._vsUniformBuffer, 0, this._vsUniformValues);
+    // this._worldViewProjection.set(PROJECTION_MATRIX, 0);
+    // this._worldViewProjection.set([1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]);
+    // this._device.queue.writeBuffer(this._vsUniformBuffer, 0, this._vsUniformValues);
 
     // TODO: Investigate types
     (this._renderPassDescriptor.colorAttachments as GPURenderPassColorAttachment[])[0].view =
@@ -158,7 +233,13 @@ export class GpuRectangleRenderer extends Disposable {
     // make a render pass encoder to encode render specific commands
     const pass = encoder.beginRenderPass(this._renderPassDescriptor);
     pass.setPipeline(this._pipeline);
-    pass.setBindGroup(0, this._bindGroup);
+    // pass.setBindGroup(0, this._bindGroup);
+    pass.setVertexBuffer(0, this._positionBuffer);
+    pass.setVertexBuffer(1, this._sizeBuffer);
+    pass.setVertexBuffer(2, this._coordBuffer);
+    pass.setVertexBuffer(3, this._unitquadBuffer);
+
+    // TODO: Pass in vertex count?
     pass.draw(3);  // call our vertex shader 3 times.
     pass.end();
 
