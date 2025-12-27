@@ -5,7 +5,6 @@
 
 import { throwIfFalsy } from 'browser/renderer/shared/RendererUtils';
 import { customGlyphDefinitions } from './CustomGlyphDefinitions';
-import { base64ToBinary, executeBinaryPath } from './CustomGlyphBinaryFormat';
 import { CustomGlyphDefinitionType, CustomGlyphScaleType, CustomGlyphVectorType, type CustomGlyphDefinitionPart, type CustomGlyphPathDrawFunctionDefinition, type CustomGlyphPatternDefinition, type ICustomGlyphSolidOctantBlockVector, type ICustomGlyphVectorShape } from './Types';
 
 /**
@@ -91,9 +90,6 @@ function drawDefinitionPart(
       break;
     case CustomGlyphDefinitionType.BRAILLE:
       drawBrailleCharacter(ctx, part.data, drawXOffset, drawYOffset, drawWidth, drawHeight);
-      break;
-    case CustomGlyphDefinitionType.PATH_BINARY:
-      drawBinaryPathCharacter(ctx, part.data, drawXOffset, drawYOffset, drawWidth, drawHeight, devicePixelRatio, part.strokeWidth);
       break;
   }
 
@@ -278,28 +274,6 @@ function drawPathDefinitionCharacter(
     }
     lastCommand = type;
   }
-  if (strokeWidth !== undefined) {
-    ctx.strokeStyle = ctx.fillStyle;
-    ctx.lineWidth = devicePixelRatio * strokeWidth;
-    ctx.stroke();
-  } else {
-    ctx.fill();
-  }
-}
-
-function drawBinaryPathCharacter(
-  ctx: CanvasRenderingContext2D,
-  base64Data: string,
-  xOffset: number,
-  yOffset: number,
-  deviceCellWidth: number,
-  deviceCellHeight: number,
-  devicePixelRatio: number,
-  strokeWidth?: number
-): void {
-  const binary = base64ToBinary(base64Data);
-  ctx.beginPath();
-  executeBinaryPath(ctx, binary, xOffset, yOffset, deviceCellWidth, deviceCellHeight);
   if (strokeWidth !== undefined) {
     ctx.strokeStyle = ctx.fillStyle;
     ctx.lineWidth = devicePixelRatio * strokeWidth;
