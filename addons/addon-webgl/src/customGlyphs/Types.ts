@@ -38,6 +38,10 @@ export const enum CustomGlyphDefinitionType {
   PATH_NEGATIVE,
   VECTOR_SHAPE,
   BRAILLE,
+  /**
+   * Binary-encoded path data (base64). More compact than PATH.
+   */
+  PATH_BINARY,
 }
 
 export type CustomGlyphDefinitionPartRaw = (
@@ -47,7 +51,8 @@ export type CustomGlyphDefinitionPartRaw = (
   { type: CustomGlyphDefinitionType.PATH, data: string } |
   { type: CustomGlyphDefinitionType.PATH_NEGATIVE, data: ICustomGlyphVectorShape } |
   { type: CustomGlyphDefinitionType.VECTOR_SHAPE, data: ICustomGlyphVectorShape} |
-  { type: CustomGlyphDefinitionType.BRAILLE, data: number }
+  { type: CustomGlyphDefinitionType.BRAILLE, data: number } |
+  { type: CustomGlyphDefinitionType.PATH_BINARY, data: string }
 );
 
 export const enum CustomGlyphScaleType {
