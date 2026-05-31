@@ -118,11 +118,11 @@ static int emit_op(uint8_t kind, uint32_t start, uint32_t length, uint32_t aux_v
   if (idx > 0) {
     uint32_t prev = idx - 1;
     if (kind == OP_EXECUTE && kinds()[prev] == OP_EXECUTE && aux()[prev] == aux_val) {
-      lengths()[prev]++;
+      lengths()[prev] += length ? length : 1;
       return (int)prev;
     }
     if (kind == OP_ESC && kinds()[prev] == OP_ESC && aux()[prev] == aux_val) {
-      lengths()[prev]++;
+      lengths()[prev] += length ? length : 1;
       return (int)prev;
     }
   }
