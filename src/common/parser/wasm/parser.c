@@ -284,6 +284,30 @@ static int emit_or_stop(uint8_t kind, uint32_t start, uint32_t length, uint32_t 
   return 1;
 }
 
+static __attribute__((always_inline)) int emit_esc_dispatch(uint32_t pos, uint32_t ident, uint32_t stop_at, ParserWasmState *s) {
+  ParserScanHeader *h = header();
+  uint32_t idx = h->op_count;
+  if (idx > 0) {
+    uint32_t prev = idx - 1;
+    if (kinds()[prev] == OP_ESC && aux()[prev] == ident) {
+      lengths()[prev] += 1;
+      return (int)prev;
+    }
+  }
+  if (idx >= PARSER_MAX_OPS) {
+    h->scan_offset = stop_at;
+    return -1;
+  }
+  kinds()[idx] = OP_ESC;
+  starts()[idx] = pos;
+  lengths()[idx] = 1;
+  aux()[idx] = ident;
+  param_starts()[idx] = 0;
+  param_counts()[idx] = 0;
+  h->op_count++;
+  return (int)idx;
+}
+
 static __attribute__((always_inline)) int emit_csi_zdm(uint32_t final_idx, uint32_t ident, uint32_t stop_at) {
   ParserScanHeader *h = header();
   uint32_t idx = h->op_count;
@@ -341,6 +365,25 @@ int32_t scan(uint32_t offset, uint32_t length) {
       }
       s->preceding_join_state = 0;
       i += run;
+      continue;
+    }
+
+    if (code == 0x1b && s->current_state < PARSER_STATE_OSC_STRING && i + 1 < length &&
+        input()[i + 1] >= 0x40 && input()[i + 1] <= 0x7e && input()[i + 1] != 0x5b &&
+        input()[i + 1] != 0x5d && input()[i + 1] != 0x50) {
+      while (i < length && input()[i] == 0x1b) {
+        uint32_t fin = input()[i + 1];
+        if (fin < 0x40 || fin > 0x7e || fin == 0x5b || fin == 0x5d || fin == 0x50) break;
+        uint32_t ident = fin;
+        if (emit_esc_dispatch(i + 1, ident, i + 1, s) < 0) {
+          return h->op_count > 0 ? (int32_t)h->op_count : -1;
+        }
+        s->current_state = PARSER_STATE_GROUND;
+        s->preceding_join_state = 0;
+        params_reset_zdm(s);
+        s->collect = 0;
+        i += 2;
+      }
       continue;
     }
 
