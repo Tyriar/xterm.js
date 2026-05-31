@@ -57,6 +57,8 @@ function ensureWasm(): typeof wasmExports {
 export class WasmEscapeScanner {
   private static _initPromise: Promise<void> | undefined;
   private static _syncReady = false;
+  private static _uploadedData: Uint32Array | undefined;
+  private static _uploadedLength = 0;
 
   public static init(): Promise<void> {
     if (!this._initPromise) {
@@ -83,6 +85,8 @@ export class WasmEscapeScanner {
 
   public static reset(): void {
     ensureWasm().reset();
+    this._uploadedData = undefined;
+    this._uploadedLength = 0;
   }
 
   public static get currentState(): number {
@@ -166,8 +170,12 @@ export class WasmEscapeScanner {
     const ex = ensureWasm();
     const inputPtr = ex.get_input_ptr();
     const mem = ex.memory.buffer;
-    const inputView = new Uint32Array(mem, inputPtr, length);
-    inputView.set(data.subarray(0, length));
+    if (offset === 0 || this._uploadedData !== data || this._uploadedLength !== length) {
+      const inputView = new Uint32Array(mem, inputPtr, length);
+      inputView.set(data.subarray(0, length));
+      this._uploadedData = data;
+      this._uploadedLength = length;
+    }
 
     const opCount = ex.scan(offset, length);
     if (opCount < 0) {
