@@ -90,6 +90,10 @@ static void params_add_digit(ParserWasmState *s, int32_t digit) {
   store[len - 1] = cur >= 0 ? (cur * 10 + digit > 0x7FFFFFFF ? 0x7FFFFFFF : cur * 10 + digit) : digit;
 }
 
+static int params_is_zdm_default(const ParserWasmState *s) {
+  return s->params_len == 1 && s->params[0] == 0 && s->subparams_len == 0;
+}
+
 static void copy_params_to_arena(uint32_t op_idx, ParserWasmState *s) {
   uint32_t start = header()->params_arena_len;
   param_starts()[op_idx] = start;
@@ -133,7 +137,12 @@ static int emit_op(uint8_t kind, uint32_t start, uint32_t length, uint32_t aux_v
   aux()[idx] = aux_val;
   if (kind == OP_CSI || kind == OP_DCS_HOOK) {
     uint32_t input_pos = start;
-    copy_params_to_arena(idx, s);
+    if (params_is_zdm_default(s)) {
+      param_starts()[idx] = 0;
+      param_counts()[idx] = 0;
+    } else {
+      copy_params_to_arena(idx, s);
+    }
     lengths()[idx] = input_pos;
     starts()[idx] = param_starts()[idx];
   } else if (kind == OP_ESC) {
@@ -281,11 +290,13 @@ int32_t scan(uint32_t offset, uint32_t length) {
     code = input()[i];
 
     if (code < 0x18 && s->current_state <= PARSER_STATE_CSI_PARAM + 2) {
-      if (!emit_or_stop(OP_EXECUTE, i, 0, code, s, i)) {
+      uint32_t run = 1;
+      while (i + run < length && input()[i + run] == code) run++;
+      if (!emit_or_stop(OP_EXECUTE, i, run, code, s, i + run - 1)) {
         return h->op_count > 0 ? (int32_t)h->op_count : -1;
       }
       s->preceding_join_state = 0;
-      i++;
+      i += run;
       continue;
     }
 
