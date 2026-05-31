@@ -125,6 +125,10 @@ static int emit_op(uint8_t kind, uint32_t start, uint32_t length, uint32_t aux_v
       lengths()[prev] += length ? length : 1;
       return (int)prev;
     }
+    if (kind == OP_PRINT && kinds()[prev] == OP_PRINT && aux()[prev] == 0) {
+      lengths()[prev] += length;
+      return (int)prev;
+    }
   }
   if (idx >= PARSER_MAX_OPS) return -1;
   kinds()[idx] = kind;
@@ -305,6 +309,22 @@ int32_t scan(uint32_t offset, uint32_t length) {
 
   while (i < length) {
     code = input()[i];
+
+    if (s->current_state == PARSER_STATE_GROUND && is_printable(code)) {
+      print_start = i;
+      uint32_t c = i;
+      uint32_t l4 = length > 4 ? length - 4 : 0;
+      while (c < l4 && is_printable(input()[c]) && is_printable(input()[c + 1]) &&
+             is_printable(input()[c + 2]) && is_printable(input()[c + 3])) {
+        c += 4;
+      }
+      while (c < length && is_printable(input()[c])) c++;
+      if (!emit_or_stop(OP_PRINT, print_start, c - print_start, 0, s, i)) {
+        return h->op_count > 0 ? (int32_t)h->op_count : -1;
+      }
+      i = c;
+      continue;
+    }
 
     if (code < 0x18 && s->current_state <= PARSER_STATE_CSI_PARAM + 2) {
       uint32_t run = 1;
