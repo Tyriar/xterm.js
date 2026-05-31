@@ -273,6 +273,23 @@ static int emit_or_stop(uint8_t kind, uint32_t start, uint32_t length, uint32_t 
   return 1;
 }
 
+static __attribute__((always_inline)) int emit_csi_zdm(uint32_t final_idx, uint32_t ident, uint32_t stop_at) {
+  ParserScanHeader *h = header();
+  uint32_t idx = h->op_count;
+  if (idx >= PARSER_MAX_OPS) {
+    h->scan_offset = stop_at;
+    return -1;
+  }
+  kinds()[idx] = OP_CSI;
+  starts()[idx] = 0;
+  lengths()[idx] = final_idx;
+  aux()[idx] = ident;
+  param_starts()[idx] = 0;
+  param_counts()[idx] = 0;
+  h->op_count++;
+  return (int)idx;
+}
+
 __attribute__((export_name("scan")))
 int32_t scan(uint32_t offset, uint32_t length) {
   ParserWasmState *s = state();
@@ -301,42 +318,49 @@ int32_t scan(uint32_t offset, uint32_t length) {
     }
 
     if (code == 0x1b && s->current_state < PARSER_STATE_OSC_STRING && i + 2 < length && input()[i + 1] == 0x5b) {
-      params_reset_zdm(s);
-      s->collect = 0;
-      uint32_t k = i + 2;
-      uint32_t ch = input()[k];
-      if (ch >= 0x3c && ch <= 0x3f) {
-        s->collect = ch;
-        k++;
-      }
-      int csi_done = 0;
-      for (; k < length; k++) {
-        ch = input()[k];
-        if (ch >= 0x30 && ch <= 0x39) {
-          params_add_digit(s, ch - 48);
-        } else if (ch == 0x3b) {
-          params_add_param(s, 0);
-        } else if (ch == 0x3a) {
-          params_add_subparam(s, -1);
-        } else if (ch >= 0x40 && ch <= 0x7e) {
-          uint32_t ident = (s->collect << 8) | ch;
-          if (!emit_or_stop(OP_CSI, k, 0, ident, s, k)) {
-            return h->op_count > 0 ? (int32_t)h->op_count : -1;
+      while (i < length && input()[i] == 0x1b && input()[i + 1] == 0x5b) {
+        params_reset_zdm(s);
+        s->collect = 0;
+        uint32_t k = i + 2;
+        uint32_t ch = input()[k];
+        if (ch >= 0x3c && ch <= 0x3f) {
+          s->collect = ch;
+          k++;
+        }
+        int csi_done = 0;
+        for (; k < length; k++) {
+          ch = input()[k];
+          if (ch >= 0x30 && ch <= 0x39) {
+            params_add_digit(s, ch - 48);
+          } else if (ch == 0x3b) {
+            params_add_param(s, 0);
+          } else if (ch == 0x3a) {
+            params_add_subparam(s, -1);
+          } else if (ch >= 0x40 && ch <= 0x7e) {
+            uint32_t ident = (s->collect << 8) | ch;
+            if (params_is_zdm_default(s)) {
+              if (emit_csi_zdm(k, ident, k) < 0) {
+                return h->op_count > 0 ? (int32_t)h->op_count : -1;
+              }
+            } else if (!emit_or_stop(OP_CSI, k, 0, ident, s, k)) {
+              return h->op_count > 0 ? (int32_t)h->op_count : -1;
+            }
+            s->preceding_join_state = 0;
+            i = k + 1;
+            s->current_state = PARSER_STATE_GROUND;
+            csi_done = 1;
+            break;
+          } else {
+            break;
           }
-          s->preceding_join_state = 0;
-          i = k;
-          s->current_state = PARSER_STATE_GROUND;
-          csi_done = 1;
-          break;
-        } else {
+        }
+        if (!csi_done) {
+          i = k - 1;
+          s->current_state = PARSER_STATE_CSI_PARAM;
+          i++;
           break;
         }
       }
-      if (!csi_done) {
-        i = k - 1;
-        s->current_state = PARSER_STATE_CSI_PARAM;
-      }
-      i++;
       continue;
     }
 
