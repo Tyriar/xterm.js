@@ -364,6 +364,88 @@ static __attribute__((always_inline)) int is_apc_payload(uint32_t code) {
     code >= PARSER_NON_ASCII_PRINTABLE;
 }
 
+static __attribute__((always_inline)) int emit_dcs_sequence_direct(
+  uint32_t hook_pos,
+  uint32_t ident,
+  uint32_t payload_start,
+  uint32_t payload_len,
+  uint32_t term_pos,
+  uint32_t stop_at
+) {
+  ParserScanHeader *h = header();
+  uint32_t idx = h->op_count;
+  uint32_t needed = 2 + (payload_len > 0);
+  if (idx + needed > PARSER_MAX_OPS) {
+    h->scan_offset = stop_at;
+    return -1;
+  }
+  kinds()[idx] = OP_DCS_HOOK;
+  starts()[idx] = 0;
+  lengths()[idx] = hook_pos;
+  aux()[idx] = ident;
+  param_starts()[idx] = 0;
+  param_counts()[idx] = 0;
+  idx++;
+  if (payload_len > 0) {
+    kinds()[idx] = OP_DCS_PUT;
+    starts()[idx] = payload_start;
+    lengths()[idx] = payload_len;
+    aux()[idx] = 0;
+    param_starts()[idx] = 0;
+    param_counts()[idx] = 0;
+    idx++;
+  }
+  kinds()[idx] = OP_DCS_UNHOOK;
+  starts()[idx] = term_pos;
+  lengths()[idx] = 0;
+  aux()[idx] = 0x1b;
+  param_starts()[idx] = 0;
+  param_counts()[idx] = 0;
+  h->op_count = idx + 1;
+  return (int)idx;
+}
+
+static __attribute__((always_inline)) int emit_apc_sequence_direct(
+  uint32_t start_pos,
+  uint32_t ident,
+  uint32_t payload_start,
+  uint32_t payload_len,
+  uint32_t term_pos,
+  uint32_t stop_at
+) {
+  ParserScanHeader *h = header();
+  uint32_t idx = h->op_count;
+  uint32_t needed = 2 + (payload_len > 0);
+  if (idx + needed > PARSER_MAX_OPS) {
+    h->scan_offset = stop_at;
+    return -1;
+  }
+  kinds()[idx] = OP_APC_START;
+  starts()[idx] = start_pos;
+  lengths()[idx] = 0;
+  aux()[idx] = ident;
+  param_starts()[idx] = 0;
+  param_counts()[idx] = 0;
+  idx++;
+  if (payload_len > 0) {
+    kinds()[idx] = OP_APC_PUT;
+    starts()[idx] = payload_start;
+    lengths()[idx] = payload_len;
+    aux()[idx] = 0;
+    param_starts()[idx] = 0;
+    param_counts()[idx] = 0;
+    idx++;
+  }
+  kinds()[idx] = OP_APC_END;
+  starts()[idx] = term_pos;
+  lengths()[idx] = 0;
+  aux()[idx] = 0x1b;
+  param_starts()[idx] = 0;
+  param_counts()[idx] = 0;
+  h->op_count = idx + 1;
+  return (int)idx;
+}
+
 __attribute__((export_name("scan")))
 int32_t scan(uint32_t offset, uint32_t length) {
   ParserWasmState *s = state();
@@ -494,21 +576,9 @@ int32_t scan(uint32_t offset, uint32_t length) {
         uint32_t j = payload;
         while (j < length && is_dcs_payload(input()[j])) j++;
         if (j + 1 < length && input()[j] == 0x1b && input()[j + 1] == 0x5c) {
-          uint32_t op_count = h->op_count;
-          uint32_t needed = 2 + (j > payload);
-          if (op_count + needed > PARSER_MAX_OPS) {
-            h->scan_offset = i;
-            return op_count > 0 ? (int32_t)op_count : -1;
-          }
           params_reset_zdm(s);
           s->collect = 0;
-          if (!emit_or_stop(OP_DCS_HOOK, i + 2, 0, fin, s, i + 2)) {
-            return h->op_count > 0 ? (int32_t)h->op_count : -1;
-          }
-          if (j > payload && !emit_or_stop(OP_DCS_PUT, payload, j - payload, 0, s, payload)) {
-            return h->op_count > 0 ? (int32_t)h->op_count : -1;
-          }
-          if (!emit_or_stop(OP_DCS_UNHOOK, j, 0, 0x1b, s, j)) {
+          if (emit_dcs_sequence_direct(i + 2, fin, payload, j - payload, j, i) < 0) {
             return h->op_count > 0 ? (int32_t)h->op_count : -1;
           }
           s->current_state = PARSER_STATE_GROUND;
@@ -528,21 +598,9 @@ int32_t scan(uint32_t offset, uint32_t length) {
         uint32_t j = payload;
         while (j < length && is_apc_payload(input()[j])) j++;
         if (j + 1 < length && input()[j] == 0x1b && input()[j + 1] == 0x5c) {
-          uint32_t op_count = h->op_count;
-          uint32_t needed = 2 + (j > payload);
-          if (op_count + needed > PARSER_MAX_OPS) {
-            h->scan_offset = i;
-            return op_count > 0 ? (int32_t)op_count : -1;
-          }
           params_reset_zdm(s);
           s->collect = 0;
-          if (!emit_or_stop(OP_APC_START, i + 2, 0, fin, s, i + 2)) {
-            return h->op_count > 0 ? (int32_t)h->op_count : -1;
-          }
-          if (j > payload && !emit_or_stop(OP_APC_PUT, payload, j - payload, 0, s, payload)) {
-            return h->op_count > 0 ? (int32_t)h->op_count : -1;
-          }
-          if (!emit_or_stop(OP_APC_END, j, 0, 0x1b, s, j)) {
+          if (emit_apc_sequence_direct(i + 2, fin, payload, j - payload, j, i) < 0) {
             return h->op_count > 0 ? (int32_t)h->op_count : -1;
           }
           s->current_state = PARSER_STATE_GROUND;
