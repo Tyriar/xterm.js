@@ -387,6 +387,42 @@ int32_t scan(uint32_t offset, uint32_t length) {
       continue;
     }
 
+    if (code == 0x1b && s->current_state < PARSER_STATE_OSC_STRING && i + 1 < length && input()[i + 1] == 0x5d) {
+      while (i < length && input()[i] == 0x1b && input()[i + 1] == 0x5d) {
+        if (!emit_or_stop(OP_OSC_START, i, 0, 0, s, i)) {
+          return h->op_count > 0 ? (int32_t)h->op_count : -1;
+        }
+        uint32_t j = i + 2;
+        while (j < length && input()[j] >= 0x30 && input()[j] <= 0x39) j++;
+        if (j < length && input()[j] == 0x3b) {
+          uint32_t payload = j + 1;
+          j = payload;
+          while (j < length) {
+            uint32_t cj = input()[j];
+            if (cj < 0x20 || (cj > 0x7f && cj < PARSER_NON_ASCII_PRINTABLE)) break;
+            if (cj == 0x1b) break;
+            j++;
+          }
+          if (j > payload && !emit_or_stop(OP_OSC_PUT, payload, j - payload, 0, s, payload)) {
+            return h->op_count > 0 ? (int32_t)h->op_count : -1;
+          }
+          if (j + 1 < length && input()[j] == 0x1b && input()[j + 1] == 0x5c) {
+            if (!emit_or_stop(OP_OSC_END, j, 0, 0x1b, s, j)) {
+              return h->op_count > 0 ? (int32_t)h->op_count : -1;
+            }
+            s->current_state = PARSER_STATE_ESCAPE;
+            params_reset_zdm(s);
+            s->collect = 0;
+            s->preceding_join_state = 0;
+            i = j + 2;
+            continue;
+          }
+        }
+        break;
+      }
+      continue;
+    }
+
     if (code == 0x1b && s->current_state < PARSER_STATE_OSC_STRING && i + 2 < length && input()[i + 1] == 0x5b) {
       while (i < length && input()[i] == 0x1b && input()[i + 1] == 0x5b) {
         if (i + 2 < length) {
