@@ -368,6 +368,26 @@ int32_t scan(uint32_t offset, uint32_t length) {
       continue;
     }
 
+    if (code == 0x1b && s->current_state < PARSER_STATE_OSC_STRING && i + 2 < length &&
+        input()[i + 1] >= 0x20 && input()[i + 1] <= 0x2f && input()[i + 2] >= 0x40 &&
+        input()[i + 2] <= 0x7e) {
+      while (i + 2 < length && input()[i] == 0x1b) {
+        uint32_t im = input()[i + 1];
+        uint32_t fin = input()[i + 2];
+        if (im < 0x20 || im > 0x2f || fin < 0x40 || fin > 0x7e) break;
+        uint32_t ident = (im << 8) | fin;
+        if (emit_esc_dispatch(i + 2, ident, i + 2, s) < 0) {
+          return h->op_count > 0 ? (int32_t)h->op_count : -1;
+        }
+        s->current_state = PARSER_STATE_GROUND;
+        s->preceding_join_state = 0;
+        params_reset_zdm(s);
+        s->collect = 0;
+        i += 3;
+      }
+      continue;
+    }
+
     if (code == 0x1b && s->current_state < PARSER_STATE_OSC_STRING && i + 1 < length &&
         input()[i + 1] >= 0x40 && input()[i + 1] <= 0x7e && input()[i + 1] != 0x5b &&
         input()[i + 1] != 0x5d && input()[i + 1] != 0x50) {
