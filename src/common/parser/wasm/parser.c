@@ -344,6 +344,9 @@ int32_t scan(uint32_t offset, uint32_t length) {
     action = transition >> PARSER_TABLE_ACTION_SHIFT;
     {
       uint32_t next_state = transition & PARSER_TABLE_STATE_MASK;
+      if (action != 1) {
+        s->current_state = next_state;
+      }
       switch (action) {
       case 1: /* ERROR - report state before transition (matches TS parser) */
         if (!emit_or_stop(OP_ERROR, i, 0, (s->current_state << 16) | code, s, i)) {
@@ -351,13 +354,6 @@ int32_t scan(uint32_t offset, uint32_t length) {
         }
         s->current_state = next_state;
         break;
-      default:
-        s->current_state = next_state;
-        break;
-      }
-    }
-
-    switch (action) {
       case PARSER_ACTION_PRINT: {
         print_start = i;
         uint32_t c = i;
@@ -380,8 +376,6 @@ int32_t scan(uint32_t offset, uint32_t length) {
         s->preceding_join_state = 0;
         break;
       case PARSER_ACTION_IGNORE:
-        break;
-      case 1: /* ERROR - handled above */
         break;
       case PARSER_ACTION_CSI_DISPATCH: {
         uint32_t ident = (s->collect << 8) | code;
@@ -508,6 +502,7 @@ int32_t scan(uint32_t offset, uint32_t length) {
       }
       default:
         break;
+      }
     }
     i++;
   }
