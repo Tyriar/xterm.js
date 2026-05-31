@@ -417,6 +417,11 @@ int32_t scan(uint32_t offset, uint32_t length) {
         if (j < length && input()[j] == 0x3b) {
           uint32_t payload = j + 1;
           j = payload;
+          while (j + 3 < length && input()[j] >= 0x20 && input()[j] <= 0x7e && input()[j + 1] >= 0x20 &&
+                 input()[j + 1] <= 0x7e && input()[j + 2] >= 0x20 && input()[j + 2] <= 0x7e &&
+                 input()[j + 3] >= 0x20 && input()[j + 3] <= 0x7e) {
+            j += 4;
+          }
           while (j < length) {
             uint32_t cj = input()[j];
             if (cj < 0x20 || (cj > 0x7f && cj < PARSER_NON_ASCII_PRINTABLE)) break;
@@ -454,6 +459,20 @@ int32_t scan(uint32_t offset, uint32_t length) {
             s->current_state = PARSER_STATE_GROUND;
             s->preceding_join_state = 0;
             i += 3;
+            continue;
+          }
+        }
+        if (i + 3 < length) {
+          uint32_t im = input()[i + 2];
+          uint32_t fin = input()[i + 3];
+          if (im >= 0x3c && im <= 0x3f && fin >= 0x40 && fin <= 0x7e) {
+            uint32_t ident = (im << 8) | fin;
+            if (emit_csi_zdm(i + 3, ident, i + 3) < 0) {
+              return h->op_count > 0 ? (int32_t)h->op_count : -1;
+            }
+            s->current_state = PARSER_STATE_GROUND;
+            s->preceding_join_state = 0;
+            i += 4;
             continue;
           }
         }
