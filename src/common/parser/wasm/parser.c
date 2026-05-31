@@ -325,6 +325,34 @@ static __attribute__((always_inline)) int emit_csi_zdm(uint32_t final_idx, uint3
   return (int)idx;
 }
 
+static __attribute__((always_inline)) int emit_csi_params_direct(
+  uint32_t final_idx,
+  uint32_t ident,
+  const int32_t *parsed_params,
+  uint32_t count,
+  uint32_t stop_at
+) {
+  ParserScanHeader *h = header();
+  uint32_t idx = h->op_count;
+  uint32_t start = h->params_arena_len;
+  if (idx >= PARSER_MAX_OPS) {
+    h->scan_offset = stop_at;
+    return -1;
+  }
+  kinds()[idx] = OP_CSI;
+  starts()[idx] = start;
+  lengths()[idx] = final_idx;
+  aux()[idx] = ident;
+  param_starts()[idx] = start;
+  param_counts()[idx] = (uint16_t)count;
+  for (uint32_t pi = 0; pi < count; pi++) {
+    if (h->params_arena_len >= PARSER_MAX_PARAMS) break;
+    params_arena()[h->params_arena_len++] = parsed_params[pi];
+  }
+  h->op_count++;
+  return (int)idx;
+}
+
 static __attribute__((always_inline)) int is_dcs_payload(uint32_t code) {
   return code != 0x18 && code != 0x1a && code != 0x1b &&
     (code <= 0x7f || code >= PARSER_NON_ASCII_PRINTABLE);
@@ -554,6 +582,49 @@ int32_t scan(uint32_t offset, uint32_t length) {
             i += 4;
             continue;
           }
+        }
+        if (i + 3 < length && input()[i + 2] >= 0x30 && input()[i + 2] <= 0x39) {
+          uint32_t k = i + 2;
+          uint32_t count = 1;
+          int32_t value = 0;
+          int32_t parsed_params[PARSER_PARAMS_MAX_LEN];
+          int direct_done = 0;
+          for (; k < length; k++) {
+            uint32_t ch = input()[k];
+            if (ch >= 0x30 && ch <= 0x39) {
+              uint32_t digit = ch - 48;
+              if (value > 214748364 || (value == 214748364 && digit > 7)) break;
+              value = value * 10 + (int32_t)digit;
+            } else if (ch == 0x3b) {
+              parsed_params[count - 1] = value;
+              if (count >= PARSER_PARAMS_MAX_LEN) break;
+              count++;
+              value = 0;
+            } else if (ch >= 0x40 && ch <= 0x7e) {
+              parsed_params[count - 1] = value;
+              s->params_len = count;
+              s->subparams_len = 0;
+              s->reject_digits = 0;
+              s->reject_sub_digits = 0;
+              s->digit_is_sub = 0;
+              for (uint32_t pi = 0; pi < count; pi++) {
+                s->params[pi] = parsed_params[pi];
+                s->subparams_idx[pi] = 0;
+              }
+              s->collect = 0;
+              if (emit_csi_params_direct(k, ch, parsed_params, count, k) < 0) {
+                return h->op_count > 0 ? (int32_t)h->op_count : -1;
+              }
+              s->preceding_join_state = 0;
+              i = k + 1;
+              s->current_state = PARSER_STATE_GROUND;
+              direct_done = 1;
+              break;
+            } else {
+              break;
+            }
+          }
+          if (direct_done) continue;
         }
         params_reset_zdm(s);
         s->collect = 0;
