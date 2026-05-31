@@ -98,6 +98,13 @@ static void copy_params_to_arena(uint32_t op_idx, ParserWasmState *s) {
   uint32_t start = header()->params_arena_len;
   param_starts()[op_idx] = start;
   param_counts()[op_idx] = (uint16_t)s->params_len;
+  if (s->subparams_len == 0) {
+    for (uint32_t pi = 0; pi < s->params_len; pi++) {
+      if (header()->params_arena_len >= PARSER_MAX_PARAMS) return;
+      params_arena()[header()->params_arena_len++] = s->params[pi];
+    }
+    return;
+  }
   for (uint32_t i = 0; i < s->params_len; i++) {
     if (header()->params_arena_len >= PARSER_MAX_PARAMS) return;
     params_arena()[header()->params_arena_len++] = s->params[i];
@@ -339,6 +346,18 @@ int32_t scan(uint32_t offset, uint32_t length) {
 
     if (code == 0x1b && s->current_state < PARSER_STATE_OSC_STRING && i + 2 < length && input()[i + 1] == 0x5b) {
       while (i < length && input()[i] == 0x1b && input()[i + 1] == 0x5b) {
+        if (i + 2 < length) {
+          uint32_t fin = input()[i + 2];
+          if (fin >= 0x40 && fin <= 0x7e) {
+            if (emit_csi_zdm(i + 2, fin, i + 2) < 0) {
+              return h->op_count > 0 ? (int32_t)h->op_count : -1;
+            }
+            s->current_state = PARSER_STATE_GROUND;
+            s->preceding_join_state = 0;
+            i += 3;
+            continue;
+          }
+        }
         params_reset_zdm(s);
         s->collect = 0;
         uint32_t k = i + 2;
