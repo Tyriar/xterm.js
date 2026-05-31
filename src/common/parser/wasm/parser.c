@@ -325,6 +325,17 @@ static __attribute__((always_inline)) int emit_csi_zdm(uint32_t final_idx, uint3
   return (int)idx;
 }
 
+static __attribute__((always_inline)) int is_dcs_payload(uint32_t code) {
+  return code != 0x18 && code != 0x1a && code != 0x1b &&
+    (code <= 0x7f || code >= PARSER_NON_ASCII_PRINTABLE);
+}
+
+static __attribute__((always_inline)) int is_apc_payload(uint32_t code) {
+  return (code >= 0x20 && code < 0x7f) ||
+    (code >= 0x08 && code < 0x0e) ||
+    code >= PARSER_NON_ASCII_PRINTABLE;
+}
+
 __attribute__((export_name("scan")))
 int32_t scan(uint32_t offset, uint32_t length) {
   ParserWasmState *s = state();
@@ -446,6 +457,74 @@ int32_t scan(uint32_t offset, uint32_t length) {
         break;
       }
       continue;
+    }
+
+    if (code == 0x1b && s->current_state < PARSER_STATE_OSC_STRING && i + 3 < length && input()[i + 1] == 0x50) {
+      uint32_t fin = input()[i + 2];
+      if (fin >= 0x40 && fin <= 0x7e) {
+        uint32_t payload = i + 3;
+        uint32_t j = payload;
+        while (j < length && is_dcs_payload(input()[j])) j++;
+        if (j + 1 < length && input()[j] == 0x1b && input()[j + 1] == 0x5c) {
+          uint32_t op_count = h->op_count;
+          uint32_t needed = 2 + (j > payload);
+          if (op_count + needed > PARSER_MAX_OPS) {
+            h->scan_offset = i;
+            return op_count > 0 ? (int32_t)op_count : -1;
+          }
+          params_reset_zdm(s);
+          s->collect = 0;
+          if (!emit_or_stop(OP_DCS_HOOK, i + 2, 0, fin, s, i + 2)) {
+            return h->op_count > 0 ? (int32_t)h->op_count : -1;
+          }
+          if (j > payload && !emit_or_stop(OP_DCS_PUT, payload, j - payload, 0, s, payload)) {
+            return h->op_count > 0 ? (int32_t)h->op_count : -1;
+          }
+          if (!emit_or_stop(OP_DCS_UNHOOK, j, 0, 0x1b, s, j)) {
+            return h->op_count > 0 ? (int32_t)h->op_count : -1;
+          }
+          s->current_state = PARSER_STATE_GROUND;
+          s->preceding_join_state = 0;
+          params_reset_zdm(s);
+          s->collect = 0;
+          i = j + 2;
+          continue;
+        }
+      }
+    }
+
+    if (code == 0x1b && s->current_state < PARSER_STATE_OSC_STRING && i + 3 < length && input()[i + 1] == 0x5f) {
+      uint32_t fin = input()[i + 2];
+      if (fin >= 0x30 && fin <= 0x7e) {
+        uint32_t payload = i + 3;
+        uint32_t j = payload;
+        while (j < length && is_apc_payload(input()[j])) j++;
+        if (j + 1 < length && input()[j] == 0x1b && input()[j + 1] == 0x5c) {
+          uint32_t op_count = h->op_count;
+          uint32_t needed = 2 + (j > payload);
+          if (op_count + needed > PARSER_MAX_OPS) {
+            h->scan_offset = i;
+            return op_count > 0 ? (int32_t)op_count : -1;
+          }
+          params_reset_zdm(s);
+          s->collect = 0;
+          if (!emit_or_stop(OP_APC_START, i + 2, 0, fin, s, i + 2)) {
+            return h->op_count > 0 ? (int32_t)h->op_count : -1;
+          }
+          if (j > payload && !emit_or_stop(OP_APC_PUT, payload, j - payload, 0, s, payload)) {
+            return h->op_count > 0 ? (int32_t)h->op_count : -1;
+          }
+          if (!emit_or_stop(OP_APC_END, j, 0, 0x1b, s, j)) {
+            return h->op_count > 0 ? (int32_t)h->op_count : -1;
+          }
+          s->current_state = PARSER_STATE_GROUND;
+          s->preceding_join_state = 0;
+          params_reset_zdm(s);
+          s->collect = 0;
+          i = j + 2;
+          continue;
+        }
+      }
     }
 
     if (code == 0x1b && s->current_state < PARSER_STATE_OSC_STRING && i + 2 < length && input()[i + 1] == 0x5b) {
