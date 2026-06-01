@@ -184,11 +184,11 @@ Well you don't have to, and it probably will just work fine with the addon defau
 
 _How can I adjust the memory usage?_  
 - `pixelLimit`  
-  A constructor setting, thus you would have to anticipate, whether (multiple) terminals in your page gonna do lots of concurrent decoding. Since this is normally not the case and the memory usage is only temporarily peaking, a rather high value should work even with multiple terminals in one page.
+  A constructor setting, thus you would have to anticipate, whether (multiple) terminals in your page gonna do lots of concurrent decoding. Since this is normally not the case and the memory usage only peaks temporarily, a rather high value should work even with multiple terminals in one page.
 - `storageLimit`  
-  A constructor and a runtime setting. In conjunction with `storageUsage` you can do runtime checks and adjust the limit to your needs. If you have to lower the limit below the current usage, images will be removed in FIFO order and may turn into a placeholder in the terminal's scrollback (if `showPlaceholder` is set). When adjusting keep in mind to leave enough room for memory peaking for decoding.
+  A constructor and a runtime setting. In conjunction with `storageUsage` you can do runtime checks and adjust the limit to your needs. If you have to lower the limit below the current usage, images will be removed in FIFO order and may turn into a placeholder in the terminal's scrollback (if `showPlaceholder` is set). When adjusting keep in mind to leave enough room for peak memory use during decoding.
 - `sixelSizeLimit | iipSizeLimit | kittySizeLimit`  
-  Constructor settings. This has only a small impact on peaking memory during decoding. It is meant to avoid processing of overly big or broken image sequences at an earlier phase, thus may stop the invoked decoders from entering memory intensive tasks for potentially invalid data.
+  Constructor settings. This has only a small impact on peak memory during decoding. It is meant to avoid processing of overly big or broken image sequences at an earlier phase, thus may stop the invoked decoders from entering memory intensive tasks for potentially invalid data.
 
 
 ### Terminal Interaction
