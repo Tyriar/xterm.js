@@ -50,6 +50,11 @@ export class TimeBasedDebouncer implements IRenderDebouncer {
     const refreshRequestTime: number = performance.now();
     if (refreshRequestTime - this._lastRefreshMs >= this._debounceThresholdMS) {
       // Enough time has elapsed since the last refresh; refresh immediately
+      if (this._refreshTimeoutID !== undefined) {
+        clearTimeout(this._refreshTimeoutID);
+        this._refreshTimeoutID = undefined;
+        this._additionalRefreshRequested = false;
+      }
       this._lastRefreshMs = refreshRequestTime;
       this._innerRefresh();
     } else if (!this._additionalRefreshRequested) {
