@@ -149,7 +149,7 @@ The addon provides the following API endpoints to retrieve raw image data as can
 
 ### Memory Usage
 
-The addon does most image processing in Javascript and therefore can occupy a rather big amount of memory. To get an idea where the memory gets eaten, let's look at the data flow and processing steps:
+The addon does most image processing in JavaScript and therefore can occupy a rather big amount of memory. To get an idea where the memory gets eaten, let's look at the data flow and processing steps:
 - Incoming image data chunk at `term.write` (terminal)  
   `term.write` might stack up incoming chunks. To circumvent this, you will need proper flow control (see xterm.js docs). Note that with image output it is more likely to run into this issue, as it can create lots of MBs in very short time.
 - Sequence Parser (terminal)  
@@ -177,10 +177,10 @@ const totalActive = storageBytes + decodingBytes;
 ```
 
 Note that browsers have offloading tricks for rarely touched memory segments, esp. `storageBytes` might not directly translate into real memory usage. Usage peaks will happen during active decoding of multiple big images due to the need of 2 full pixel buffers at the same time, which cannot be offloaded. Thus you may want to keep an eye on `pixelLimit` under limited memory conditions.  
-Further note that the formulas above do not respect the Javascript object's overhead. Compared to the raw buffer needs the book keeping by these objects is rather small (<<5%).
+Further note that the formulas above do not respect the JavaScript object's overhead. Compared to the raw buffer needs the book keeping by these objects is rather small (<<5%).
 
 _Why should I care about memory usage at all?_  
-Well you don't have to, and it probably will just work fine with the addon defaults. But for bigger integrations, where much more data is held in the Javascript context (like multiple terminals on one page), it is likely to hit the engine's memory limit sooner or later under decoding and/or storage pressure.
+Well you don't have to, and it probably will just work fine with the addon defaults. But for bigger integrations, where much more data is held in the JavaScript context (like multiple terminals on one page), it is likely to hit the engine's memory limit sooner or later under decoding and/or storage pressure.
 
 _How can I adjust the memory usage?_  
 - `pixelLimit`  
