@@ -149,7 +149,7 @@ The addon provides the following API endpoints to retrieve raw image data as can
 
 ### Memory Usage
 
-The addon does most image processing in Javascript and therefore can occupy a rather big amount of memory. To get an idea where the memory gets eaten, lets look at the data flow and processing steps:
+The addon does most image processing in Javascript and therefore can occupy a rather big amount of memory. To get an idea where the memory gets eaten, let's look at the data flow and processing steps:
 - Incoming image data chunk at `term.write` (terminal)  
   `term.write` might stack up incoming chunks. To circumvent this, you will need proper flow control (see xterm.js docs). Note that with image output it is more likely to run into this issue, as it can create lots of MBs in very short time.
 - Sequence Parser (terminal)  
