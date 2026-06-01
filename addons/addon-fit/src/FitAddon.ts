@@ -75,7 +75,7 @@ export class FitAddon implements ITerminalAddon, IFitApi {
 
     const parentElementStyle = _getComputedStyle(this._terminal.element.parentElement);
     const parentElementHeight = Math.max(0, parseInt(parentElementStyle.getPropertyValue('height'), 10) || 0);
-    const parentElementWidth = Math.max(0, parseInt(parentElementStyle.getPropertyValue('width')));
+    const parentElementWidth = Math.max(0, parseInt(parentElementStyle.getPropertyValue('width'), 10) || 0);
     const elementStyle = _getComputedStyle(this._terminal.element);
     const elementPadding = {
       top: parseInt(elementStyle.getPropertyValue('padding-top')),
