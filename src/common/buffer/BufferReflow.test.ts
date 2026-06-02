@@ -6,7 +6,9 @@ import { assert } from 'chai';
 import { BufferLine } from './BufferLine';
 import { BufferLineStringCache } from './BufferLineStringCache';
 import { NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE } from './Constants';
-import { reflowSmallerGetNewLineLengths } from './BufferReflow';
+import { reflowLargerGetLinesToRemove, reflowSmallerGetNewLineLengths } from './BufferReflow';
+import { CircularList } from '../CircularList';
+import { createCellData, NULL_CELL_DATA } from '../TestUtils.test';
 
 const TEST_STRING_CACHE = new BufferLineStringCache();
 
@@ -91,6 +93,30 @@ describe('BufferReflow', () => {
       assert.equal(line.translateToString(false), '汉语 ');
       assert.deepEqual(reflowSmallerGetNewLineLengths([line], 4, 3), [2, 2], 'line: 汉, 语');
       assert.deepEqual(reflowSmallerGetNewLineLengths([line], 4, 2), [2, 2], 'line: 汉, 语');
+    });
+  });
+
+  describe('reflowLargerGetLinesToRemove', () => {
+    it('should clear isWrapped on the last retained row after unwrap', () => {
+      const lines = new CircularList<BufferLine>(10);
+      const set2 = (line: BufferLine, s: string) => {
+        for (let i = 0; i < s.length; i++) {
+          line.setCell(i, createCellData(0, s[i], 1));
+        }
+      };
+      const l0 = new BufferLine(TEST_STRING_CACHE, 2);
+      set2(l0, 'ab');
+      const l1 = new BufferLine(TEST_STRING_CACHE, 2, undefined, true);
+      set2(l1, 'cd');
+      const l2 = new BufferLine(TEST_STRING_CACHE, 2, undefined, true);
+      set2(l2, 'ef');
+      lines.push(l0);
+      lines.push(l1);
+      lines.push(l2);
+
+      reflowLargerGetLinesToRemove(lines, 2, 6, 99, NULL_CELL_DATA, false);
+
+      assert.equal(l1.isWrapped, false);
     });
   });
 });
