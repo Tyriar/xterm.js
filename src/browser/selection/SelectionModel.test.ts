@@ -64,6 +64,13 @@ describe('SelectionModel', () => {
       assert.deepEqual(model.finalSelectionStart, undefined);
       assert.deepEqual(model.finalSelectionEnd, undefined);
     });
+    it('should clamp selection start to origin when start row is trimmed', () => {
+      model.selectionStart = [5, 2];
+      model.selectionEnd = [10, 10];
+      model.handleTrim(3);
+      assert.deepEqual(model.finalSelectionStart, [0, 0]);
+      assert.deepEqual(model.finalSelectionEnd, [10, 7]);
+    });
   });
 
   describe('finalSelectionStart', () => {

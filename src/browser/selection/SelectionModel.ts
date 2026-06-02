@@ -135,9 +135,11 @@ export class SelectionModel {
       return true;
     }
 
-    // If the selection start is trimmed, ensure the start column is 0.
+    // If the selection start row was trimmed away, clamp to the top of the buffer.
     if (this.selectionStart && this.selectionStart[1] < 0) {
       this.selectionStart[1] = 0;
+      this.selectionStart[0] = 0;
+      return true;
     }
     return false;
   }
