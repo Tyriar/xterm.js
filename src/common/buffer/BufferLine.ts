@@ -526,12 +526,18 @@ export class BufferLine implements IBufferLine {
       }
     }
 
-    // Move any combined data over as needed, FIXME: repeat for extended attrs
-    const srcCombinedKeys = Object.keys(src._combined);
-    for (let i = 0; i < srcCombinedKeys.length; i++) {
-      const key = parseInt(srcCombinedKeys[i], 10);
-      if (key >= srcCol) {
-        this._combined[key - srcCol + destCol] = src._combined[key];
+    // Move combined/extended metadata only for copied cells.
+    for (let cell = 0; cell < length; cell++) {
+      const destIndex = destCol + cell;
+      const srcIndex = srcCol + cell;
+      const content = srcData[srcIndex * Constants.CELL_INDICIES + Cell.CONTENT];
+      if (content & Content.IS_COMBINED_MASK) {
+        this._combined[destIndex] = src._combined[srcIndex];
+      } else {
+        delete this._combined[destIndex];
+      }
+      if (!(srcData[srcIndex * Constants.CELL_INDICIES + Cell.BG] & BgFlags.HAS_EXTENDED)) {
+        delete this._extendedAttrs[destIndex];
       }
     }
   }
