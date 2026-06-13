@@ -75,6 +75,8 @@ export class BufferLine implements IBufferLine {
   protected _data: Uint32Array;
   protected _combined: {[index: number]: string} = {};
   protected _extendedAttrs: {[index: number]: IExtendedAttrs | undefined} = {};
+  protected _hasCombined: boolean = false;
+  protected _hasExtendedAttrs: boolean = false;
   protected _stringCacheEntryRef: WeakRef<IBufferLineStringCacheEntry> | undefined;
   public length: number;
 
@@ -120,6 +122,7 @@ export class BufferLine implements IBufferLine {
     this._data[index * Constants.CELL_INDICIES + Cell.FG] = value[CHAR_DATA_ATTR_INDEX];
     if (value[CHAR_DATA_CHAR_INDEX].length > 1) {
       this._combined[index] = value[1];
+      this._hasCombined = true;
       this._data[index * Constants.CELL_INDICIES + Cell.CONTENT] = index | Content.IS_COMBINED_MASK | (value[CHAR_DATA_WIDTH_INDEX] << Content.WIDTH_SHIFT);
     } else {
       this._data[index * Constants.CELL_INDICIES + Cell.CONTENT] = value[CHAR_DATA_CHAR_INDEX].charCodeAt(0) | (value[CHAR_DATA_WIDTH_INDEX] << Content.WIDTH_SHIFT);
@@ -219,9 +222,11 @@ export class BufferLine implements IBufferLine {
     this._invalidateStringCache();
     if (cell.content & Content.IS_COMBINED_MASK) {
       this._combined[index] = cell.combinedData;
+      this._hasCombined = true;
     }
     if (cell.bg & BgFlags.HAS_EXTENDED) {
       this._extendedAttrs[index] = cell.extended;
+      this._hasExtendedAttrs = true;
     }
     this._data[index * Constants.CELL_INDICIES + Cell.CONTENT] = cell.content;
     this._data[index * Constants.CELL_INDICIES + Cell.FG] = cell.fg;
@@ -237,6 +242,7 @@ export class BufferLine implements IBufferLine {
     this._invalidateStringCache();
     if (attrs.bg & BgFlags.HAS_EXTENDED) {
       this._extendedAttrs[index] = attrs.extended;
+      this._hasExtendedAttrs = true;
     }
     this._data[index * Constants.CELL_INDICIES + Cell.CONTENT] = codePoint | (width << Content.WIDTH_SHIFT);
     this._data[index * Constants.CELL_INDICIES + Cell.FG] = attrs.fg;
@@ -255,12 +261,14 @@ export class BufferLine implements IBufferLine {
     if (content & Content.IS_COMBINED_MASK) {
       // we already have a combined string, simply add
       this._combined[index] += stringFromCodePoint(codePoint);
+      this._hasCombined = true;
     } else {
       if (content & Content.CODEPOINT_MASK) {
         // normal case for combining chars:
         //  - move current leading char + new one into combined string
         //  - set combined flag
         this._combined[index] = stringFromCodePoint(content & Content.CODEPOINT_MASK) + stringFromCodePoint(codePoint);
+        this._hasCombined = true;
         content &= ~Content.CODEPOINT_MASK; // set codepoint in buffer to 0
         content |= Content.IS_COMBINED_MASK;
       } else {
@@ -401,12 +409,30 @@ export class BufferLine implements IBufferLine {
           delete this._combined[key];
         }
       }
+      if (this._hasCombined) {
+        this._hasCombined = false;
+        for (let i = 0; i < keys.length; i++) {
+          if (parseInt(keys[i], 10) < cols) {
+            this._hasCombined = true;
+            break;
+          }
+        }
+      }
       // remove any cut off extended attributes
       const extKeys = Object.keys(this._extendedAttrs);
       for (let i = 0; i < extKeys.length; i++) {
         const key = parseInt(extKeys[i], 10);
         if (key >= cols) {
           delete this._extendedAttrs[key];
+        }
+      }
+      if (this._hasExtendedAttrs) {
+        this._hasExtendedAttrs = false;
+        for (let i = 0; i < extKeys.length; i++) {
+          if (parseInt(extKeys[i], 10) < cols) {
+            this._hasExtendedAttrs = true;
+            break;
+          }
         }
       }
     }
@@ -442,8 +468,7 @@ export class BufferLine implements IBufferLine {
       }
       return;
     }
-    this._combined = {};
-    this._extendedAttrs = {};
+    this._releaseMapsFast();
     for (let i = 0; i < this.length; ++i) {
       this.setCell(i, fillCellData);
     }
@@ -453,20 +478,19 @@ export class BufferLine implements IBufferLine {
   public copyFrom(line: BufferLine): void {
     this._invalidateStringCache();
     if (this.length !== line.length) {
-      this._data = new Uint32Array(line._data);
+      const uint32Cells = line._data.length;
+      if (this._data.buffer.byteLength >= uint32Cells * 4) {
+        this._data = new Uint32Array(this._data.buffer, 0, uint32Cells);
+        this._data.set(line._data);
+      } else {
+        this._data = new Uint32Array(line._data);
+      }
     } else {
       // use high speed copy if lengths are equal
       this._data.set(line._data);
     }
     this.length = line.length;
-    this._combined = {};
-    for (const el in line._combined) {
-      this._combined[el] = line._combined[el];
-    }
-    this._extendedAttrs = {};
-    for (const el in line._extendedAttrs) {
-      this._extendedAttrs[el] = line._extendedAttrs[el];
-    }
+    this._copyMapsFrom(line);
     this.isWrapped = line.isWrapped;
   }
 
@@ -481,6 +505,8 @@ export class BufferLine implements IBufferLine {
     for (const el in this._extendedAttrs) {
       newLine._extendedAttrs[el] = this._extendedAttrs[el];
     }
+    newLine._hasCombined = this._hasCombined;
+    newLine._hasExtendedAttrs = this._hasExtendedAttrs;
     newLine.isWrapped = this.isWrapped;
     return newLine;
   }
@@ -513,6 +539,7 @@ export class BufferLine implements IBufferLine {
         }
         if (srcData[(srcCol + cell) * Constants.CELL_INDICIES + Cell.BG] & BgFlags.HAS_EXTENDED) {
           this._extendedAttrs[destCol + cell] = src._extendedAttrs[srcCol + cell];
+          this._hasExtendedAttrs = true;
         }
       }
     } else {
@@ -522,16 +549,20 @@ export class BufferLine implements IBufferLine {
         }
         if (srcData[(srcCol + cell) * Constants.CELL_INDICIES + Cell.BG] & BgFlags.HAS_EXTENDED) {
           this._extendedAttrs[destCol + cell] = src._extendedAttrs[srcCol + cell];
+          this._hasExtendedAttrs = true;
         }
       }
     }
 
     // Move any combined data over as needed, FIXME: repeat for extended attrs
-    const srcCombinedKeys = Object.keys(src._combined);
-    for (let i = 0; i < srcCombinedKeys.length; i++) {
-      const key = parseInt(srcCombinedKeys[i], 10);
-      if (key >= srcCol) {
-        this._combined[key - srcCol + destCol] = src._combined[key];
+    if (src._hasCombined) {
+      const srcCombinedKeys = Object.keys(src._combined);
+      for (let i = 0; i < srcCombinedKeys.length; i++) {
+        const key = parseInt(srcCombinedKeys[i], 10);
+        if (key >= srcCol) {
+          this._combined[key - srcCol + destCol] = src._combined[key];
+          this._hasCombined = true;
+        }
       }
     }
   }
@@ -611,6 +642,56 @@ export class BufferLine implements IBufferLine {
     const cacheEntry = this._stringCache.allocateEntry();
     this._stringCacheEntryRef = new WeakRef(cacheEntry);
     return cacheEntry;
+  }
+
+  /**
+   * Drop map entries using fresh objects when maps are non-empty (faster than per-key delete).
+   */
+  private _releaseMapsFast(): void {
+    if (this._hasCombined) {
+      this._combined = {};
+      this._hasCombined = false;
+    }
+    if (this._hasExtendedAttrs) {
+      this._extendedAttrs = {};
+      this._hasExtendedAttrs = false;
+    }
+  }
+
+  private _copyMapsFrom(line: BufferLine): void {
+    if (!line._hasCombined && !line._hasExtendedAttrs) {
+      if (!this._hasCombined && !this._hasExtendedAttrs) {
+        return;
+      }
+      this._releaseMapsFast();
+      return;
+    }
+
+    if (line._hasCombined) {
+      if (this._hasCombined) {
+        this._combined = {};
+      }
+      for (const el in line._combined) {
+        this._combined[el] = line._combined[el];
+      }
+      this._hasCombined = true;
+    } else if (this._hasCombined) {
+      this._combined = {};
+      this._hasCombined = false;
+    }
+
+    if (line._hasExtendedAttrs) {
+      if (this._hasExtendedAttrs) {
+        this._extendedAttrs = {};
+      }
+      for (const el in line._extendedAttrs) {
+        this._extendedAttrs[el] = line._extendedAttrs[el];
+      }
+      this._hasExtendedAttrs = true;
+    } else if (this._hasExtendedAttrs) {
+      this._extendedAttrs = {};
+      this._hasExtendedAttrs = false;
+    }
   }
 
   private _invalidateStringCache(): void {

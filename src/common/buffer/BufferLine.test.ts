@@ -287,6 +287,13 @@ describe('BufferLine', function(): void {
     assert.equal(line2.length, line.length);
     assert.equal(line2.isWrapped, line.isWrapped);
   });
+  it('copyFrom should clear stale combined and extended attrs', function(): void {
+    const dest = new TestBufferLine(2, createCellData(1, 'e\u0301', 1));
+    const blank = new TestBufferLine(2, createCellData(1, ' ', 1));
+    dest.copyFrom(blank);
+    assert.deepEqual(dest.toArray(), blank.toArray());
+    assert.deepEqual(Object.keys(dest.combined), []);
+  });
   it('should support combining chars', function(): void {
     // CHAR_DATA_CODE_INDEX resembles current behavior in InputHandler.print
     // --> set code to the last charCodeAt value of the string
